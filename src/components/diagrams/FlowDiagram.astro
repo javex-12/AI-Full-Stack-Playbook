@@ -1,0 +1,145 @@
+---
+interface Step {
+  number?: string;
+  title: string;
+  subtitle?: string;
+  color?: string;
+}
+
+interface Props {
+  steps: Step[];
+  direction?: 'horizontal' | 'vertical';
+}
+
+const { steps, direction = 'horizontal' } = Astro.props;
+---
+
+<div class={`flow-diagram ${direction}`}>
+  {steps.map((step, i) => (
+    <div class="flow-step">
+      <div class="step-box" style={step.color ? `border-color: ${step.color}; --step-color: ${step.color}` : ''}>
+        {step.number && <span class="step-number">{step.number}</span>}
+        <span class="step-title">{step.title}</span>
+        {step.subtitle && <span class="step-subtitle">{step.subtitle}</span>}
+      </div>
+      {i < steps.length - 1 && (
+        <div class="step-connector">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {direction === 'horizontal' ? (
+              <><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></>
+            ) : (
+              <><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></>
+            )}
+          </svg>
+        </div>
+      )}
+    </div>
+  ))}
+</div>
+
+<style>
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 1.5rem 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .flow-diagram.vertical {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .flow-step {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .flow-diagram.vertical .flow-step {
+    flex-direction: column;
+  }
+
+  .step-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    min-width: 100px;
+    text-align: center;
+    transition: border-color 0.2s, transform 0.2s var(--ease-out);
+  }
+
+  .step-box:hover {
+    border-color: var(--step-color, var(--brand-accent));
+    transform: translateY(-2px);
+  }
+
+  .step-number {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--step-color, var(--brand-accent));
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.8;
+  }
+
+  .step-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .step-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  .step-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-faint);
+    padding: 0 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .flow-diagram.vertical .step-connector {
+    padding: 0.25rem 0;
+    transform: rotate(90deg);
+  }
+
+  @media (max-width: 768px) {
+    .flow-diagram {
+      padding: 1rem 0;
+      gap: 0;
+    }
+
+    .step-box {
+      padding: 0.75rem 1rem;
+      min-width: 80px;
+    }
+
+    .step-title {
+      font-size: 0.8rem;
+    }
+
+    .step-connector {
+      padding: 0 0.25rem;
+    }
+
+    .step-connector svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+</style>

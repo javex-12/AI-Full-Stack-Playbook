@@ -1,0 +1,118 @@
+---
+interface Item {
+  step: string;
+  title: string;
+  description?: string;
+  time?: string;
+  color?: string;
+}
+
+interface Props {
+  items: Item[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="timeline">
+  {items.map((item, i) => (
+    <div class="timeline-item" style={item.color ? `--timeline-color: ${item.color}` : ''}>
+      <div class="timeline-marker">
+        <div class="marker-dot"></div>
+        {i < items.length - 1 && <div class="marker-line"></div>}
+      </div>
+      <div class="timeline-content">
+        <div class="timeline-header">
+          <span class="timeline-step">{item.step}</span>
+          {item.time && <span class="timeline-time">{item.time}</span>}
+        </div>
+        <div class="timeline-title">{item.title}</div>
+        {item.description && <div class="timeline-desc">{item.description}</div>}
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 1rem 0;
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 24px;
+  }
+
+  .marker-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--timeline-color, var(--brand-accent));
+    border: 2px solid var(--bg-base);
+    box-shadow: 0 0 0 2px var(--timeline-color, var(--brand-accent));
+    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  .marker-line {
+    width: 2px;
+    flex: 1;
+    background: var(--border-default);
+    min-height: 20px;
+  }
+
+  .timeline-content {
+    padding-bottom: 1.25rem;
+    flex: 1;
+  }
+
+  .timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-step {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--timeline-color, var(--brand-accent));
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .timeline-time {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+  }
+
+  .timeline-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  .timeline-item:last-child .marker-line {
+    display: none;
+  }
+</style>

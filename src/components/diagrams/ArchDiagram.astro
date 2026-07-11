@@ -1,0 +1,122 @@
+---
+interface Layer {
+  name: string;
+  items: { name: string; icon?: string; color?: string }[];
+  color?: string;
+}
+
+interface Props {
+  title?: string;
+  layers: Layer[];
+}
+
+const { title, layers } = Astro.props;
+---
+
+<div class="arch-diagram">
+  {title && <div class="arch-title">{title}</div>}
+  <div class="arch-layers">
+    {layers.map((layer) => (
+      <div class="arch-layer" style={layer.color ? `--layer-color: ${layer.color}` : ''}>
+        <div class="layer-label">{layer.name}</div>
+        <div class="layer-items">
+          {layer.items.map((item) => (
+            <div class="layer-item" style={item.color ? `border-color: ${item.color}` : ''}>
+              {item.icon && <span class="item-icon">{item.icon}</span>}
+              <span class="item-name">{item.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .arch-diagram {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .arch-title {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+
+  .arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .arch-layer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-base);
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .layer-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--layer-color, var(--brand-accent));
+    min-width: 80px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+
+  .layer-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    flex: 1;
+  }
+
+  .layer-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.75rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    transition: border-color 0.15s;
+  }
+
+  .layer-item:hover {
+    border-color: var(--border-strong);
+  }
+
+  .item-icon {
+    font-size: 0.9rem;
+  }
+
+  .item-name {
+    font-weight: 500;
+  }
+
+  @media (max-width: 640px) {
+    .arch-layer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .layer-label {
+      min-width: auto;
+    }
+  }
+</style>
