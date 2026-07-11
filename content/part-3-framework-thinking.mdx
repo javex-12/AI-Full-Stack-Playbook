@@ -135,37 +135,11 @@ export default async function DashboardPage() {
 **The Modern Apex:** PPR breaks the binary trade-off between SSG and SSR. At build time, it generates a static HTML shell for parts of the page that never change (navbar, layout, footer) but leaves **dynamic holes** wrapped in React Suspense boundaries.
 
 ```
-┌─────────────────────────────────────────────────┐
-│ STATIC SHELL (instant from CDN)                  │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ Navigation Bar                              │ │
-│ │ [Logo]  [Home]  [Pricing]  [Docs]  [Login] │ │
-│ └─────────────────────────────────────────────┘ │
-│                                                  │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ STATIC: Hero Section                        │ │
-│ │ "Build faster with AI"                      │ │
-│ │ [Get Started]  [View Docs]                  │ │
-│ └─────────────────────────────────────────────┘ │
-│                                                  │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ DYNAMIC HOLE (Suspense boundary)            │ │
-│ │ ┌─────────────────────────────────────────┐ │ │
-│ │ │ <Skeleton /> (shown immediately)        │ │ │
-│ │ └─────────────────────────────────────────┘ │ │
-│ │         ↓ streams in when ready             │ │
-│ │ ┌─────────────────────────────────────────┐ │ │
-│ │ │ Personalized Dashboard Metrics          │ │ │
-│ │ │ "Welcome back, Sarah"                   │ │ │
-│ │ │ Revenue: $12,340  Users: 1,234          │ │ │
-│ │ └─────────────────────────────────────────┘ │ │
-│ └─────────────────────────────────────────────┘ │
-│                                                  │
-│ ┌─────────────────────────────────────────────┐ │
-│ │ STATIC FOOTER                               │ │
-│ │ © 2026 Company  |  Terms  |  Privacy        │ │
-│ └─────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────┘
+PPR PAGE STRUCTURE:
+
+STATIC (instant)     →  Nav, Hero, Footer
+DYNAMIC (streams)    →  User data, Dashboard metrics
+SKELETON (placeholder) →  Shown while dynamic loads
 ```
 
 **The Execution:** The instant a user clicks your link, the edge server ships the static shell immediately (~20ms TTFB). While the user reads the hero, the server streams the dynamic components down the same HTTP request. No extra round trips.

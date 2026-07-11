@@ -200,9 +200,14 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     border-radius: 8px;
     padding: 1.25rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     margin: 1.5rem 0;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     line-height: 1.6;
+    white-space: pre;
+    min-width: 0;
+    max-width: 100%;
+    position: relative;
   }
 
   .article-content :global(pre code) {
@@ -210,6 +215,35 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     border: none;
     padding: 0;
     color: var(--text-secondary);
+    white-space: pre;
+    display: block;
+    overflow-x: auto;
+    font-size: 0.8rem;
+  }
+
+  /* Scroll hint on mobile for wide code blocks */
+  @media (max-width: 768px) {
+    .article-content :global(pre) {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      padding: 1rem 1.5rem;
+    }
+
+    .article-content :global(pre)::after {
+      content: '→ scroll';
+      position: sticky;
+      right: 0;
+      float: right;
+      background: linear-gradient(90deg, transparent, var(--bg-surface) 30%);
+      padding: 0.25rem 0.5rem 0.25rem 2rem;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--text-faint);
+      pointer-events: none;
+    }
   }
 
   .article-content :global(blockquote) {

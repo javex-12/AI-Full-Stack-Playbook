@@ -12,23 +12,10 @@ lastUpdated: "2026-07-11"
 Building an AI app isn't just calling an API. It's architecting a system that handles prompts, manages context, streams responses, handles errors, and scales under load.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   YOUR AI APP                        │
-├─────────────────────────────────────────────────────┤
-│                                                      │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐      │
-│  │ Frontend │───▶│ Backend  │───▶│ AI API   │      │
-│  │ (React)  │    │ (Node)   │    │ (Groq/   │      │
-│  │          │◀───│          │◀───│  OpenAI)  │      │
-│  └──────────┘    └──────────┘    └──────────┘      │
-│                       │                              │
-│                       ▼                              │
-│                 ┌──────────┐                         │
-│                 │ Database │                         │
-│                 │ (for     │                         │
-│                 │  history)│                         │
-│                 └──────────┘                         │
-└─────────────────────────────────────────────────────┘
+Frontend (React) → Backend (Node) → AI API (Groq/OpenAI)
+                        │
+                        ▼
+                  Database (history)
 ```
 
 ---
