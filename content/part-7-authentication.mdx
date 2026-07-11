@@ -54,17 +54,14 @@ Every subsequent request:
 ### Stateless JWTs (Client-Side)
 
 ```
-User logs in
-    │
-    ▼
-Server creates JWT:
+User logs in → Server creates JWT
+```
 
 <div class="flow">
   <div class="flow-step">
     <div class="flow-box">
       <span class="flow-num">Header</span>
-      <span class="flow-label">{"alg": "HS256"}</span>
-      <span class="flow-sub">{"typ": "JWT"}</span>
+      <span class="flow-label">HS256 / JWT</span>
     </div>
   </div>
   <div class="flow-step">
@@ -73,8 +70,7 @@ Server creates JWT:
   <div class="flow-step">
     <div class="flow-box">
       <span class="flow-num">Payload</span>
-      <span class="flow-label">{"sub": 42}</span>
-      <span class="flow-sub">{"role": "admin"}</span>
+      <span class="flow-label">sub: 42, role: admin</span>
     </div>
   </div>
   <div class="flow-step">
@@ -84,7 +80,6 @@ Server creates JWT:
     <div class="flow-box">
       <span class="flow-num">Signature</span>
       <span class="flow-label">HMAC-SHA256</span>
-      <span class="flow-sub">header + payload + secret</span>
     </div>
   </div>
 </div>
