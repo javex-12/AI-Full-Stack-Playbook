@@ -1,0 +1,325 @@
+---
+import { getCollection, render } from 'astro:content';
+import PlaybookLayout from '../../layouts/PlaybookLayout.astro';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('content');
+  return entries.map(entry => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// Find prev/next entries
+const allEntries = await getCollection('content');
+const currentIndex = allEntries.findIndex(e => e.id === entry.id);
+const prevEntry = currentIndex > 0 ? allEntries[currentIndex - 1] : null;
+const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex + 1] : null;
+---
+
+<PlaybookLayout title={entry.data.title}>
+  <div class="content-wrapper">
+    <!-- Back to dashboard -->
+    <a href="/" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Back to Dashboard
+    </a>
+
+    <!-- Article header -->
+    <header class="article-header">
+      {entry.data.part && (
+        <div class="article-meta">
+          {entry.data.guide ? 'WORKSHOP' : `PART ${entry.data.part}`}
+          {entry.data.section && ` // ${entry.data.section}`}
+        </div>
+      )}
+      <h1 class="article-title">{entry.data.title}</h1>
+      <div class="article-info">
+        {entry.data.difficulty && (
+          <span class={`difficulty-badge ${entry.data.difficulty.toLowerCase()}`}>{entry.data.difficulty}</span>
+        )}
+        {entry.data.lastUpdated && (
+          <span class="last-updated">Updated {entry.data.lastUpdated}</span>
+        )}
+      </div>
+    </header>
+
+    <!-- Article content -->
+    <article class="article-content">
+      <Content />
+    </article>
+
+    <!-- Navigation -->
+    <nav class="article-nav">
+      {prevEntry ? (
+        <a href={`/content/${prevEntry.id}`} class="nav-prev">
+          <span class="nav-label">← Previous</span>
+          <span class="nav-title">{prevEntry.data.title}</span>
+        </a>
+      ) : <div />}
+      {nextEntry ? (
+        <a href={`/content/${nextEntry.id}`} class="nav-next">
+          <span class="nav-label">Next →</span>
+          <span class="nav-title">{nextEntry.data.title}</span>
+        </a>
+      ) : <div />}
+    </nav>
+  </div>
+</PlaybookLayout>
+
+<style>
+  .content-wrapper {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 3rem 2rem 6rem;
+  }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 2.5rem;
+    transition: color 0.15s;
+  }
+
+  .back-link:hover { color: var(--brand-accent); }
+
+  /* Article header */
+  .article-header { margin-bottom: 3rem; }
+
+  .article-meta {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--brand-accent);
+    letter-spacing: 0.04em;
+    margin-bottom: 1rem;
+  }
+
+  .article-title {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 1.15;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .article-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .difficulty-badge {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .difficulty-badge.foundational {
+    background: rgba(58, 210, 159, 0.1);
+    color: var(--brand-accent);
+  }
+
+  .difficulty-badge.senior, .difficulty-badge.hands-on {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+  }
+
+  .last-updated {
+    font-size: 0.8rem;
+    color: var(--text-faint);
+  }
+
+  /* Article content */
+  .article-content {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+
+  .article-content :global(h2) {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 3rem 0 1rem;
+    letter-spacing: -0.015em;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .article-content :global(h3) {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 2rem 0 0.75rem;
+  }
+
+  .article-content :global(p) {
+    margin-bottom: 1.25rem;
+    max-width: 65ch;
+  }
+
+  .article-content :global(strong) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .article-content :global(a) {
+    color: var(--brand-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .article-content :global(code) {
+    font-family: var(--font-mono);
+    background: var(--bg-elevated);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+    border: 1px solid var(--border-subtle);
+    color: var(--brand-accent);
+  }
+
+  .article-content :global(pre) {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    padding: 1.25rem;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .article-content :global(pre code) {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text-secondary);
+  }
+
+  .article-content :global(blockquote) {
+    border-left: 3px solid var(--brand-accent);
+    background: var(--brand-accent-dim);
+    padding: 1rem 1.25rem;
+    border-radius: 0 8px 8px 0;
+    margin: 1.5rem 0;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .article-content :global(blockquote p) {
+    margin-bottom: 0;
+  }
+
+  .article-content :global(ul), .article-content :global(ol) {
+    margin: 1rem 0 1.25rem;
+    padding-left: 1.5rem;
+  }
+
+  .article-content :global(li) {
+    margin-bottom: 0.5rem;
+  }
+
+  .article-content :global(li::marker) {
+    color: var(--brand-accent);
+  }
+
+  .article-content :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  .article-content :global(th) {
+    background: var(--bg-surface);
+    padding: 0.6rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .article-content :global(td) {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .article-content :global(hr) {
+    border: none;
+    border-top: 1px solid var(--border-subtle);
+    margin: 3rem 0;
+  }
+
+  .article-content :global(img) {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+  }
+
+  /* Navigation */
+  .article-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 4rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .nav-prev, .nav-next {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-decoration: none;
+    padding: 1rem;
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    transition: border-color 0.15s;
+    max-width: 48%;
+  }
+
+  .nav-prev:hover, .nav-next:hover {
+    border-color: var(--border-strong);
+  }
+
+  .nav-next { text-align: right; margin-left: auto; }
+
+  .nav-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .nav-title {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .content-wrapper { padding: 2rem 1.25rem 4rem; }
+    .article-title { font-size: 1.6rem; }
+    .article-nav { flex-direction: column; }
+    .nav-prev, .nav-next { max-width: 100%; }
+    .nav-next { text-align: left; }
+  }
+</style>
