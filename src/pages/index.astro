@@ -59,6 +59,12 @@ const phases = [
 
 const totalModules = phases.reduce((sum, p) => sum + p.chapters.length, 0);
 const totalTopics = phases.reduce((sum, p) => sum + p.chapters.reduce((s, ch) => s + ch.topics, 0), 0);
+
+const workshops = [
+  { title: "Build a Website", slug: "guide-build-website", desc: "From idea to production — Lovable, Cursor, Vercel, Google Search Console. The complete workflow.", icon: "web", time: "2-4 hours", projects: 1 },
+  { title: "Build AI Applications", slug: "guide-build-ai", desc: "Groq API, system prompts, streaming, function calling. Build a real AI chatbot from scratch.", icon: "ai", time: "3-5 hours", projects: 1 },
+  { title: "10 Projects to Build", slug: "guide-projects", desc: "Portfolio, blog, SaaS, AI chatbot, e-commerce — 10 projects from beginner to advanced.", icon: "projects", time: "9 weeks", projects: 10 },
+];
 ---
 
 <PlaybookLayout title="The Master Curriculum Dashboard">
@@ -171,6 +177,46 @@ const totalTopics = phases.reduce((sum, p) => sum + p.chapters.reduce((s, ch) =>
         </section>
       ))}
     </div>
+
+    <!-- Workshop Guides -->
+    <section class="workshop-section">
+      <div class="workshop-header">
+        <div class="workshop-badge">
+          <span class="badge-dot workshop-dot"></span>
+          <span>WORKSHOP GUIDES</span>
+        </div>
+        <h2 class="workshop-title">Build Real Things</h2>
+        <p class="workshop-desc">Practical, step-by-step guides to take you from idea to deployed product. These are separate from the curriculum — they're hands-on workshops.</p>
+      </div>
+
+      <div class="workshop-grid">
+        {workshops.map((w, i) => (
+          <a href={`/content/${w.slug}`} class="workshop-card" style={`animation-delay: ${i * 100}ms`}>
+            <div class="workshop-icon">
+              {w.icon === 'web' && (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              )}
+              {w.icon === 'ai' && (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a4 4 0 0 0-4 4v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2h-2V6a4 4 0 0 0-4-4z"/><circle cx="9" cy="14" r="1"/><circle cx="15" cy="14" r="1"/><path d="M9 18s1.5 1 3 1 3-1 3-1"/></svg>
+              )}
+              {w.icon === 'projects' && (
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              )}
+            </div>
+            <div class="workshop-content">
+              <h3 class="workshop-card-title">{w.title}</h3>
+              <p class="workshop-card-desc">{w.desc}</p>
+            </div>
+            <div class="workshop-meta">
+              <span>{w.time}</span>
+              <span class="meta-dot">·</span>
+              <span>{w.projects} project{w.projects > 1 ? 's' : ''}</span>
+            </div>
+            <span class="workshop-arrow">→</span>
+          </a>
+        ))}
+      </div>
+    </section>
 
     <!-- Footer CTA -->
     <footer class="page-footer">
@@ -563,6 +609,125 @@ const totalTopics = phases.reduce((sum, p) => sum + p.chapters.reduce((s, ch) =>
   }
 
   /* ========================================
+     WORKSHOP SECTION
+  ======================================== */
+  .workshop-section {
+    margin-top: 5rem;
+    padding-top: 4rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .workshop-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: #f59e0b;
+    letter-spacing: 0.06em;
+    margin-bottom: 1rem;
+  }
+
+  .workshop-dot {
+    background: #f59e0b !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.25) !important;
+  }
+
+  .workshop-title {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    margin-bottom: 0.75rem;
+  }
+
+  .workshop-desc {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  .workshop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+
+  .workshop-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s var(--ease-out), box-shadow 0.2s;
+    animation: cardIn 0.5s var(--ease-out) both;
+  }
+
+  .workshop-card:hover {
+    border-color: #f59e0b;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+
+  .workshop-icon {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+    color: #f59e0b;
+    margin-bottom: 1rem;
+  }
+
+  .workshop-content { flex: 1; }
+
+  .workshop-card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+  }
+
+  .workshop-card-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1rem;
+  }
+
+  .workshop-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .workshop-arrow {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    color: #f59e0b;
+    font-size: 1rem;
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .workshop-card:hover .workshop-arrow { transform: translateX(4px); }
+
+  .workshop-card { position: relative; }
+
+  /* ========================================
      FOOTER
   ======================================== */
   .page-footer {
@@ -595,6 +760,8 @@ const totalTopics = phases.reduce((sum, p) => sum + p.chapters.reduce((s, ch) =>
     .phase-desc, .phase-progress, .phase-grid { padding-left: 0; }
     .phase-grid { grid-template-columns: 1fr; }
     .phase-connector { padding-left: 0; }
+    .workshop-grid { grid-template-columns: 1fr; }
+    .workshop-title { font-size: 1.5rem; }
   }
 
   @media (max-width: 480px) {

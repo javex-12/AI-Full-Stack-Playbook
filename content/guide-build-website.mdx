@@ -1,0 +1,527 @@
+---
+title: "Build a Website: From Idea to Production"
+guide: true
+section: "Workshop"
+keywords: ["Lovable", "Bolt.new", "Cursor", "Antigravity", "Mimo CLI", "Qodo", "Vercel", "Google Search Console"]
+difficulty: "Hands-On"
+lastUpdated: "2026-07-11"
+---
+
+## The Complete Workflow
+
+This guide walks you through building a production website from zero — from the first idea to a live URL indexed on Google. Every step uses real tools, real commands, and real decision points.
+
+```
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│ 1. IDEA  │───▶│ 2. PLAN  │───▶│ 3. BUILD │───▶│ 4. POLISH│
+│ What to  │    │ AI-assisted│    │ Scaffold │    │ Clean &  │
+│ build    │    │ structure  │    │ in Lovable│    │ refine   │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
+                                                       │
+┌──────────┐    ┌──────────┐    ┌──────────┐           │
+│ 7. INDEX │◀───│ 6. SEO   │◀───│ 5. DEPLOY│◀──────────┘
+│ Google   │    │ Search   │    │ Push to  │
+│ Console  │    │ Console  │    │ Vercel   │
+└──────────┘    └──────────┘    └──────────┘
+```
+
+---
+
+## Step 1: The Idea (5 Minutes)
+
+Before touching any tool, answer three questions:
+
+```
+1. WHO is this for?
+   → Your target audience (developers, students, businesses, etc.)
+
+2. WHAT problem does it solve?
+   → One sentence. If you can't say it in one sentence, the scope is too large.
+
+3. WHAT are the core features?
+   → List 3-5 features maximum. Everything else is Phase 2.
+```
+
+### Example: Building a Portfolio Site
+
+```
+WHO:     Freelance developers looking for work
+WHAT:    Showcase projects and get hired
+FEATURES:
+  1. Hero section with name and tagline
+  2. Project gallery with images and descriptions
+  3. About me section
+  4. Contact form
+  5. Blog (optional — can add later)
+```
+
+**The rule:** Start with the smallest version that delivers value. A one-page portfolio with 3 projects is better than a 20-page site you never finish.
+
+---
+
+## Step 2: Planning with AI (15 Minutes)
+
+Use Claude or ChatGPT to structure your idea into a concrete plan. This is where Context Engineering (Part XIV) becomes practical.
+
+### The Planning Prompt
+
+```
+I want to build a [type of website] for [target audience].
+
+The core features are:
+1. [Feature 1]
+2. [Feature 2]
+3. [Feature 3]
+
+Please create:
+1. A site map (all pages and their purpose)
+2. A component tree (what UI elements each page needs)
+3. A database schema (if the site needs user data or content storage)
+4. A tech stack recommendation (framework, hosting, styling)
+5. A prioritized build order (what to build first, second, third)
+
+Output everything as clean markdown.
+```
+
+### What Claude Gives You Back
+
+```markdown
+## Site Map
+- / (Landing page — hero, features, CTA)
+- /projects (Project gallery — grid of cards)
+- /projects/[slug] (Individual project page)
+- /about (About me — bio, skills, experience)
+- /contact (Contact form — name, email, message)
+- /blog (Blog listing — optional Phase 2)
+
+## Component Tree
+App
+├── Layout
+│   ├── Header (nav links, logo)
+│   ├── Main (page content via router)
+│   └── Footer (copyright, social links)
+├── Pages
+│   ├── Home
+│   │   ├── HeroSection
+│   │   ├── FeatureGrid
+│   │   └── CTASection
+│   ├── Projects
+│   │   └── ProjectCard (grid)
+│   └── Contact
+│       └── ContactForm
+
+## Tech Stack
+- Framework: Astro (static-first, zero JS)
+- Styling: Tailwind CSS
+- Content: MDX files (for blog)
+- Hosting: Vercel (free tier)
+- Forms: Formspree or Netlify Forms
+
+## Build Order
+1. Project setup (Astro + Tailwind)
+2. Layout (Header, Footer, page shell)
+3. Home page (Hero, Features, CTA)
+4. Projects page (grid of cards)
+5. Individual project pages
+6. About page
+7. Contact form
+8. Blog (Phase 2)
+```
+
+### Why This Matters
+
+The AI gives you a **blueprint** before you write a single line of code. You're not guessing what to build next — you have a prioritized checklist. This prevents the "vibe coding" death loop where you randomly generate code without structure.
+
+---
+
+## Step 3: Scaffold the Prototype (30 Minutes)
+
+Now you have a plan. Time to generate the initial codebase. You have two paths:
+
+### Path A: Lovable (Recommended for Full-Stack)
+
+Lovable generates clean React/TypeScript code with Supabase integration.
+
+```
+1. Go to lovable.dev
+2. Click "New Project"
+3. Paste your planning prompt (from Step 2) as the first message
+4. Lovable generates:
+   - Full project structure
+   - All components
+   - Styling
+   - Basic routing
+5. Preview in the browser — click through every page
+6. Fix obvious issues by prompting:
+   "The hero section needs more padding on mobile"
+   "Change the accent color to #3ad29f"
+   "Add a loading skeleton to the projects page"
+```
+
+### Path B: Bolt.new (Recommended for Quick Prototypes)
+
+Bolt runs a full Node.js sandbox in your browser — instant feedback.
+
+```
+1. Go to bolt.new
+2. Describe your project in the prompt
+3. Bolt generates and runs the project live
+4. Edit code directly in the browser IDE
+5. When satisfied, connect to GitHub and push
+```
+
+### Path C: Google AI Studio (Free Alternative)
+
+Google AI Studio can generate code from prompts — free with a Google account.
+
+```
+1. Go to aistudio.google.com
+2. Use the "Generate Code" feature
+3. Describe your website
+4. Copy the generated code
+5. Paste into a local project (create with npm create astro@latest)
+```
+
+### The Critical Rule
+
+**Stop prompting the scaffold engine once the core layout works.** Do not try to build an entire production app inside Lovable or Bolt. These tools are for **scaffolding**, not final products. Once you have:
+- Working navigation
+- All pages rendering
+- Basic styling applied
+- Core components in place
+
+**Export to GitHub and move to Step 4.**
+
+---
+
+## Step 4: Export to GitHub (5 Minutes)
+
+### From Lovable
+
+```
+1. In Lovable, click the GitHub icon (top right)
+2. Connect your GitHub account
+3. Click "Push to GitHub"
+4. Lovable creates a new repository with your code
+5. Clone it locally:
+   git clone https://github.com/your-username/your-project.git
+```
+
+### From Bolt.new
+
+```
+1. Click the GitHub icon in Bolt
+2. Authorize the connection
+3. Bolt creates the repo and pushes the code
+4. Clone locally
+```
+
+### From Google AI Studio
+
+```
+1. Copy the generated code
+2. Create a new GitHub repository
+3. Initialize locally:
+   mkdir my-project && cd my-project
+   git init
+   # Paste your code into the appropriate files
+   git add -A
+   git commit -m "Initial scaffold"
+   git remote add origin https://github.com/your-username/my-project.git
+   git push -u origin main
+```
+
+---
+
+## Step 5: Polish & Refine (1-3 Hours)
+
+This is where the real engineering happens. You're taking scaffolded code and making it production-ready.
+
+### Tool Options
+
+| Tool | What It Does | Best For |
+|------|-------------|----------|
+| **Cursor** | AI-native code editor with full codebase context | Multi-file refactoring, adding features |
+| **Antigravity** | Terminal agent for running commands, tests, debugging | Command execution, file operations |
+| **Claude Code (Mimo CLI)** | CLI agent for complex multi-step tasks | Architecture changes, deep refactoring |
+| **Qodo** | AI code review and quality checks | Finding bugs, security issues, improvements |
+
+### The Polish Workflow
+
+```
+1. OPEN THE PROJECT IN CURSOR
+   │
+   ├── Review the generated code
+   │   - Does the component structure make sense?
+   │   - Are there unused files or imports?
+   │   - Is the styling consistent?
+   │
+   ├── Fix the architecture
+   │   - Move components to proper directories
+   │   - Add proper TypeScript types (remove `any`)
+   │   - Set up proper file-based routing
+   │
+   └── Add missing pieces
+       - Error handling
+       - Loading states
+       - Mobile responsive fixes
+       - Accessibility (alt text, ARIA labels, keyboard nav)
+│
+2. RUN QODO FOR CODE REVIEW
+   │
+   ├── qodo review src/
+   │   - Catches security issues
+   │   - Suggests performance improvements
+   │   - Flags unused code
+   │
+   └── Fix the issues Qodo identifies
+│
+3. USE ANTAGRAVITY FOR TESTING
+   │
+   ├── Run the test suite
+   ├── Fix any failing tests
+   ├── Run linter and fix warnings
+   └── Verify build succeeds
+│
+4. FINAL CLEANUP
+   │
+   ├── Remove console.log statements
+   ├── Update .env.example with required variables
+   ├── Add proper error boundaries
+   └── Verify all pages render correctly
+```
+
+### Cursor Prompt Examples
+
+```
+"Review this project and suggest improvements for:
+- TypeScript strictness
+- Component reusability
+- Performance optimization
+- Accessibility
+
+Output a prioritized list of changes."
+
+---
+
+"Refactor the ContactForm component to:
+1. Use server-side validation with Zod
+2. Add loading state during submission
+3. Show success/error messages
+4. Prevent double-submission
+
+Output the complete refactored component."
+
+---
+
+"Add proper error boundaries to this project.
+Wrap each page in a boundary that catches
+rendering errors and shows a fallback UI."
+```
+
+---
+
+## Step 6: Push to GitHub (5 Minutes)
+
+```bash
+# After all polish is done
+git add -A
+git commit -m "feat: polished production-ready site"
+git push origin main
+```
+
+### Verify Before Deploying
+
+```bash
+# Run the build locally to catch errors
+npm run build
+
+# Check for:
+# ✓ No TypeScript errors
+# ✓ No build warnings
+# ✓ All pages generate successfully
+# ✓ No broken links
+```
+
+---
+
+## Step 7: Deploy to Vercel (5 Minutes)
+
+### Initial Setup
+
+```
+1. Go to vercel.com
+2. Click "Add New Project"
+3. Import your GitHub repository
+4. Vercel auto-detects your framework (Astro, Next.js, etc.)
+5. Click "Deploy"
+6. Wait ~30 seconds
+7. Your site is live at https://your-project.vercel.app
+```
+
+### Custom Domain Setup
+
+```
+1. In Vercel dashboard → Settings → Domains
+2. Add your custom domain (e.g., portfolio.com)
+3. Vercel gives you DNS records to add at your registrar:
+   - Option A: CNAME → cname.vercel-dns.com
+   - Option B: A Record → 76.76.21.21
+4. Add these records at your domain registrar (Namecheap, Cloudflare, etc.)
+5. Wait 5-30 minutes for DNS propagation
+6. Vercel auto-provisions SSL certificate
+7. Your site is live at https://portfolio.com
+```
+
+### Environment Variables
+
+```
+1. In Vercel → Settings → Environment Variables
+2. Add any secrets your app needs:
+   - DATABASE_URL
+   - FORMSPREE_ENDPOINT
+   - Any API keys
+3. These are injected at runtime — never in your code
+```
+
+---
+
+## Step 8: Google Search Console (10 Minutes)
+
+This tells Google your site exists and should be indexed.
+
+### Setup
+
+```
+1. Go to search.google.com/search-console
+2. Click "Add Property"
+3. Choose "URL prefix" → enter your full URL (https://portfolio.com)
+4. Verify ownership:
+   - Option A: HTML file upload (download file, upload to your site root)
+   - Option B: HTML meta tag (add to your <head>)
+   - Option C: DNS record (add TXT record at your registrar)
+5. Click "Verify"
+```
+
+### Submit Your Sitemap
+
+```bash
+# If using Astro, generate a sitemap first
+# Install: npm install @astrojs/sitemap
+
+# astro.config.mjs
+import sitemap from '@astrojs/sitemap';
+
+export default defineConfig({
+  site: 'https://portfolio.com',
+  integrations: [sitemap()],
+});
+
+# After build, sitemap is at /sitemap-index.xml
+```
+
+```
+1. In Google Search Console → Sitemaps
+2. Enter: sitemap-index.xml
+3. Click "Submit"
+4. Google will crawl your site within 24-48 hours
+```
+
+### Verify Pages Are Indexed
+
+```
+1. In Google Search Console → Pages
+2. Check "Indexed" count — should increase over days/weeks
+3. Check "Not indexed" — fix any issues listed
+4. Use "URL Inspection" to test specific pages:
+   - Enter a URL
+   - Click "Test Live URL"
+   - If approved, click "Request Indexing"
+```
+
+### The SEO Checklist
+
+```
+□ All pages have unique <title> tags
+□ All pages have unique <meta description> tags
+□ OG images are set for social sharing
+□ Sitemap is submitted
+□ robots.txt allows crawling (check: yoursite.com/robots.txt)
+□ No broken links (use: brokenlinkcheck.com)
+□ Mobile-friendly (check: Google Mobile-Friendly Test)
+□ Fast loading (check: Google PageSpeed Insights)
+□ Structured data (Schema.org) is present
+□ Canonical URLs are set correctly
+```
+
+---
+
+## The Complete Checklist
+
+```
+IDEA
+□ Defined target audience
+□ Defined core problem
+□ Listed 3-5 features
+
+PLANNING
+□ Used Claude/ChatGPT to create site map
+□ Got component tree
+□ Got tech stack recommendation
+□ Got prioritized build order
+
+SCAFFOLDING
+□ Built initial prototype in Lovable/Bolt/Google AI Studio
+□ Previewed all pages
+□ Fixed obvious layout issues
+□ STOPPED prompting scaffold engine
+
+EXPORT
+□ Pushed to GitHub
+□ Cloned locally
+
+POLISH
+□ Opened in Cursor
+□ Reviewed architecture
+□ Fixed TypeScript strictness
+□ Added error handling
+□ Added loading states
+□ Fixed mobile responsiveness
+□ Added accessibility
+□ Ran Qodo code review
+□ Fixed flagged issues
+□ Removed console.log statements
+□ Verified build succeeds
+
+DEPLOY
+□ Pushed polished code to GitHub
+□ Connected to Vercel
+□ Deployed successfully
+□ Added custom domain
+□ Configured environment variables
+□ Verified SSL is active
+
+SEO
+□ Added to Google Search Console
+□ Verified ownership
+□ Generated sitemap
+□ Submitted sitemap
+□ Checked indexing status
+□ Verified mobile-friendly
+□ Verified page speed
+```
+
+---
+
+## Time Estimate
+
+| Phase | Time | Notes |
+|-------|------|-------|
+| Idea | 5 min | Quick decisions, don't overthink |
+| Planning | 15 min | AI generates the structure |
+| Scaffolding | 30 min | Lovable/Bolt does the heavy lifting |
+| Export | 5 min | Push to GitHub |
+| Polish | 1-3 hours | This is where quality lives |
+| Deploy | 5 min | Vercel is one-click |
+| SEO | 10 min | Google Search Console setup |
+| **Total** | **2-4 hours** | From idea to live, indexed site |

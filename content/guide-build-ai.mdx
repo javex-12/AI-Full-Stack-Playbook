@@ -1,0 +1,578 @@
+---
+title: "Build AI Applications: From API to Production"
+guide: true
+section: "Workshop"
+keywords: ["Groq", "OpenAI", "Claude API", "System Prompts", "Streaming", "Function Calling", "RAG"]
+difficulty: "Hands-On"
+lastUpdated: "2026-07-11"
+---
+
+## The AI Application Stack
+
+Building an AI app isn't just calling an API. It's architecting a system that handles prompts, manages context, streams responses, handles errors, and scales under load.
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   YOUR AI APP                        │
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐      │
+│  │ Frontend │───▶│ Backend  │───▶│ AI API   │      │
+│  │ (React)  │    │ (Node)   │    │ (Groq/   │      │
+│  │          │◀───│          │◀───│  OpenAI)  │      │
+│  └──────────┘    └──────────┘    └──────────┘      │
+│                       │                              │
+│                       ▼                              │
+│                 ┌──────────┐                         │
+│                 │ Database │                         │
+│                 │ (for     │                         │
+│                 │  history)│                         │
+│                 └──────────┘                         │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Step 1: Choose Your AI Provider
+
+| Provider | Speed | Cost | Best For |
+|----------|-------|------|----------|
+| **Groq** | Fastest (300+ tok/s) | Free tier available | Real-time chat, low latency |
+| **OpenAI** | Fast | $2.50-10/1M tokens | GPT-4o for complex tasks |
+| **Anthropic** | Fast | $3-15/1M tokens | Long context, safety-focused |
+| **Google Gemini** | Fast | Free tier generous | Multimodal (images + text) |
+| **DeepSeek** | Fast | Very cheap | Cost-sensitive production |
+
+### For This Guide: Groq (Free, Fastest)
+
+```
+1. Go to console.groq.com
+2. Sign up with GitHub or Google
+3. Create an API key
+4. Copy the key — you'll only see it once
+5. Store it as an environment variable:
+   GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
+```
+
+---
+
+## Step 2: System Prompt Architecture
+
+The system prompt is the most important part of your AI app. It defines the model's behavior, constraints, and output format.
+
+### The Anatomy
+
+```
+┌─────────────────────────────────────────┐
+│ 1. ROLE                                  │
+│    Who the model is acting as            │
+├─────────────────────────────────────────┤
+│ 2. CONTEXT                               │
+│    Background information                │
+├─────────────────────────────────────────┤
+│ 3. INSTRUCTIONS                          │
+│    Rules and constraints                 │
+├─────────────────────────────────────────┤
+│ 4. OUTPUT FORMAT                         │
+│    How to structure the response         │
+├─────────────────────────────────────────┤
+│ 5. EXAMPLES (optional)                   │
+│    Input/output demonstrations           │
+└─────────────────────────────────────────┘
+```
+
+### Example: Customer Support Bot
+
+```typescript
+const SYSTEM_PROMPT = `
+<role>
+You are a customer support agent for "TechStore", an online electronics retailer.
+You are helpful, professional, and solution-oriented.
+</role>
+
+<context>
+TechStore sells laptops, phones, tablets, and accessories.
+Orders can be tracked at track.techstore.com.
+Return policy: 30 days from delivery, item must be in original packaging.
+Refunds process within 5-7 business days.
+</context>
+
+<instructions>
+- Always greet the customer by name if provided
+- If the issue is about order status, direct them to track.techstore.com
+- If the issue is about returns, confirm the order is within 30 days
+- If you cannot resolve the issue, offer to connect them with a human agent
+- Never make up information about products, prices, or policies
+- Never share other customers' information
+- Keep responses under 150 words
+</instructions>
+
+<output_format>
+Respond in a friendly, professional tone.
+Use bullet points for multiple steps.
+Always end with: "Is there anything else I can help with?"
+</output_format>
+`;
+```
+
+### Example: Code Reviewer
+
+```typescript
+const SYSTEM_PROMPT = `
+<role>
+You are a senior code reviewer with 15 years of experience.
+You review code for security, performance, and maintainability.
+</role>
+
+<instructions>
+Review the provided code and output:
+
+1. SEVERITY: P1 (Critical) / P2 (Important) / P3 (Minor)
+2. ISSUE: What's wrong
+3. LINE: Which line(s) are affected
+4. FIX: The exact code change needed
+
+Focus on:
+- Security vulnerabilities (SQL injection, XSS, hardcoded secrets)
+- Performance bottlenecks
+- TypeScript type safety
+- Error handling gaps
+
+Never flag style preferences (tabs vs spaces, naming conventions)
+unless they impact readability significantly.
+</instructions>
+
+<output_format>
+Return a JSON array of issues:
+[
+  {
+    "severity": "P1",
+    "issue": "SQL injection vulnerability",
+    "line": 42,
+    "fix": "Use parameterized query instead of string concatenation"
+  }
+]
+</output_format>
+`;
+```
+
+---
+
+## Step 3: API Integration
+
+### Groq Integration (Fastest)
+
+```typescript
+// Using the Groq SDK
+import Groq from 'groq-sdk';
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+// Basic completion
+async function chat(userMessage: string, history: Message[]) {
+  const response = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history,
+      { role: 'user', content: userMessage },
+    ],
+    temperature: 0.7,
+    max_tokens: 1024,
+  });
+
+  return response.choices[0].message.content;
+}
+```
+
+### Streaming Response
+
+```typescript
+// Streaming — tokens arrive as they're generated
+async function chatStream(userMessage: string, history: Message[]) {
+  const stream = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history,
+      { role: 'user', content: userMessage },
+    ],
+    stream: true,  // Enable streaming
+  });
+
+  // Process tokens as they arrive
+  for await (const chunk of stream) {
+    const token = chunk.choices[0]?.delta?.content || '';
+    process.stdout.write(token);  // Send to client immediately
+  }
+}
+```
+
+### OpenAI Integration
+
+```typescript
+import OpenAI from 'openai';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Streaming with OpenAI
+async function chatStream(userMessage: string) {
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userMessage },
+    ],
+    stream: true,
+  });
+
+  for await (const chunk of stream) {
+    const token = chunk.choices[0]?.delta?.content || '';
+    // Send token to client via SSE or WebSocket
+  }
+}
+```
+
+---
+
+## Step 4: Frontend Integration
+
+### React Chat Component
+
+```tsx
+// components/Chat.tsx
+import { useState, useRef, useEffect } from 'react';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export function Chat() {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const userMessage = { role: 'user' as const, content: input };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: input,
+          history: messages,
+        }),
+      });
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      // Add empty assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      // Stream tokens into the message
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+
+        const token = decoder.decode(value);
+        setMessages(prev => {
+          const last = prev[prev.length - 1];
+          return [...prev.slice(0, -1), { ...last, content: last.content + token }];
+        });
+      }
+    } catch (err) {
+      console.error('Chat error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <div className="chat-container">
+      <div className="messages">
+        {messages.map((msg, i) => (
+          <div key={i} className={`message ${msg.role}`}>
+            {msg.content}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type your message..."
+          disabled={isLoading}
+        />
+        <button type="submit" disabled={isLoading}>
+          {isLoading ? 'Thinking...' : 'Send'}
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+## Step 5: Backend API Route
+
+### Next.js API Route
+
+```typescript
+// app/api/chat/route.ts
+import { Groq } from 'groq-sdk';
+
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
+
+const SYSTEM_PROMPT = `Your system prompt here`;
+
+export async function POST(req: Request) {
+  const { message, history } = await req.json();
+
+  // Validate input
+  if (!message || typeof message !== 'string') {
+    return new Response('Invalid message', { status: 400 });
+  }
+
+  // Rate limiting check
+  // (implement with Redis or in-memory store)
+
+  const stream = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      ...history.slice(-10),  // Keep last 10 messages for context
+      { role: 'user', content: message },
+    ],
+    stream: true,
+    temperature: 0.7,
+    max_tokens: 1024,
+  });
+
+  // Convert to ReadableStream for client
+  const encoder = new TextEncoder();
+  const readable = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of stream) {
+        const token = chunk.choices[0]?.delta?.content || '';
+        controller.enqueue(encoder.encode(token));
+      }
+      controller.close();
+    },
+  });
+
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+    },
+  });
+}
+```
+
+---
+
+## Step 6: Add Conversation History
+
+Store chat history so users can continue conversations.
+
+```typescript
+// Using a simple database (PostgreSQL)
+CREATE TABLE chat_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id),
+  title TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE TABLE chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES chat_sessions(id),
+  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Load last 20 messages for a session
+SELECT role, content
+FROM chat_messages
+WHERE session_id = $1
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+---
+
+## Step 7: Add Function Calling
+
+Let the AI call your functions when needed.
+
+```typescript
+const tools = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_order_status',
+      description: 'Check the status of a customer order',
+      parameters: {
+        type: 'object',
+        properties: {
+          orderId: { type: 'string', description: 'The order ID' },
+        },
+        required: ['orderId'],
+      },
+    },
+  },
+];
+
+// In your API route
+const response = await groq.chat.completions.create({
+  model: 'llama-3.3-70b-versatile',
+  messages: [...],
+  tools,
+  tool_choice: 'auto',
+});
+
+// Handle tool calls
+if (response.choices[0].message.tool_calls) {
+  const toolCall = response.choices[0].message.tool_calls[0];
+  const args = JSON.parse(toolCall.function.arguments);
+
+  // Execute the function
+  const result = await getOrderStatus(args.orderId);
+
+  // Send result back to the model
+  messages.push(response.choices[0].message);
+  messages.push({
+    role: 'tool',
+    tool_call_id: toolCall.id,
+    content: JSON.stringify(result),
+  });
+
+  // Get final response with the tool result
+  const finalResponse = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages,
+  });
+}
+```
+
+---
+
+## Step 8: Deploy
+
+```bash
+# Push to GitHub
+git add -A
+git commit -m "feat: AI chat application with Groq streaming"
+git push origin main
+
+# Deploy to Vercel
+# 1. Import repo in Vercel dashboard
+# 2. Add environment variable: GROQ_API_KEY
+# 3. Deploy
+```
+
+---
+
+## The Complete Checklist
+
+```
+SETUP
+□ Created Groq/OpenAI account
+□ Generated API key
+□ Stored key as environment variable
+
+SYSTEM PROMPT
+□ Defined role
+□ Added context
+□ Set instructions
+□ Defined output format
+□ Tested with sample inputs
+
+BACKEND
+□ Created API route
+□ Added streaming support
+□ Added error handling
+□ Added rate limiting
+□ Added conversation history
+
+FRONTEND
+□ Built chat UI component
+□ Added streaming display
+□ Added loading states
+□ Added error handling
+□ Mobile responsive
+
+FEATURES
+□ Conversation history
+□ Function calling (if needed)
+□ Message persistence
+□ Session management
+
+DEPLOY
+□ Pushed to GitHub
+□ Deployed to Vercel
+□ Environment variables configured
+□ Tested in production
+```
+
+---
+
+## Cost Estimation
+
+```
+Groq (Free Tier):
+  - 30 tokens/second
+  - 14,400 tokens/day
+  - ~200 messages/day
+  - Perfect for prototyping
+
+Groq (Paid):
+  - $0.59/1M input tokens
+  - $0.79/1M output tokens
+  - ~$0.001 per message
+  - 10,000 messages ≈ $10
+
+OpenAI GPT-4o:
+  - $2.50/1M input tokens
+  - $10.00/1M output tokens
+  - ~$0.01 per message
+  - 10,000 messages ≈ $100
+```
+
+---
+
+## Common Pitfalls
+
+| Pitfall | Why It Happens | Fix |
+|---------|---------------|-----|
+| **Model hallucinates facts** | No context provided | Add RAG with your own data |
+| **Response is too long** | No token limit | Set `max_tokens` |
+| **Model ignores instructions** | System prompt is vague | Use XML delimiters, be specific |
+| **API calls are slow** | Using wrong model | Use Groq for speed, GPT-4o for quality |
+| **Costs spiral** | No caching | Cache common responses in Redis |
+| **Rate limiting** | No protection | Add rate limiting on your API |
