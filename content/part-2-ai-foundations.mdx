@@ -99,22 +99,33 @@ But just because a model *can* read a massive context doesn't mean it processes 
 
 Research from Stanford (Liu et al., 2023) proved that LLMs pay heavy attention to the **very beginning** of your prompt (your instructions) and the **very end** (your latest message). Information buried in the middle gets blurry.
 
-```
-┌─────────────────────────────────────────┐
-│  HIGH ATTENTION                          │
-│  ├── Your system instructions            │
-│  ├── First few messages                  │
-│  │                                       │
-│  │   LOW ATTENTION (the middle)          │
-│  │   ├── Large code dumps                │
-│  │   ├── Documentation pasted in         │
-│  │   ├── Repeated context                │
-│  │                                       │
-│  │   HIGH ATTENTION                      │
-│  └── Your most recent message            │
-│      "Now fix the bug in line 42"        │
-└─────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Attention Distribution in a Prompt</div>
+  <div class="arch-layers">
+    <div class="arch-layer" style="border-color: var(--brand-accent);">
+      <div class="arch-label">High</div>
+      <div class="arch-items">
+        <div class="arch-item">System instructions</div>
+        <div class="arch-item">First few messages</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="border-color: var(--text-faint); opacity: 0.6;">
+      <div class="arch-label">Low</div>
+      <div class="arch-items">
+        <div class="arch-item">Large code dumps</div>
+        <div class="arch-item">Documentation pasted in</div>
+        <div class="arch-item">Repeated context</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="border-color: var(--brand-accent);">
+      <div class="arch-label">High</div>
+      <div class="arch-items">
+        <div class="arch-item">Your most recent message</div>
+        <div class="arch-item">"Now fix the bug in line 42"</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Senior Moves
 
@@ -185,34 +196,35 @@ You want your AI assistant to build features using your company's private, propr
 
 RAG is a three-step pipeline:
 
-```
-User Query: "How do I connect to our internal payment gateway?"
-        │
-        ▼
-┌─────────────────┐
-│ 1. EMBED QUERY  │  Convert the question into a vector
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ 2. RETRIEVE     │  Search vector DB for semantically
-│                  │  similar documents
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────────┐
-│ 3. AUGMENT + GENERATE                       │
-│                                              │
-│  "You are a helpful assistant.               │
-│   Use the following documentation            │
-│   to answer the user's question.             │
-│                                              │
-│   [RETRIEVED DOCUMENTS PASTED HERE]          │
-│                                              │
-│   User question: How do I connect to         │
-│   our internal payment gateway?"             │
-└─────────────────────────────────────────────┘
-```
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 1</span>
+      <span class="flow-label">Embed Query</span>
+      <span class="flow-sub">Convert question to vector</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 2</span>
+      <span class="flow-label">Retrieve</span>
+      <span class="flow-sub">Search vector DB for similar docs</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 3</span>
+      <span class="flow-label">Augment + Generate</span>
+      <span class="flow-sub">Paste docs into prompt, generate answer</span>
+    </div>
+  </div>
+</div>
 
 The LLM never "learned" your internal docs. But by pasting the relevant pages directly into the prompt, you give it the context it needs to autocomplete a perfect answer.
 
@@ -244,21 +256,41 @@ MCP, developed by Anthropic and now an open-source standard, is the biggest arch
 
 **MCP turns the AI into a client that connects to secure servers exposing tools and data.**
 
-```
-┌──────────────┐     JSON-RPC      ┌──────────────────┐
-│              │ ◄───────────────► │  MCP Server A     │
-│   AI Model   │                   │  (File System)    │
-│   (Client)   │                   │  - Read files     │
-│              │     JSON-RPC      │  - Write files    │
-│              │ ◄───────────────► │  - Search dirs    │
-│              │                   ├──────────────────┤
-│              │     JSON-RPC      │  MCP Server B     │
-│              │ ◄───────────────► │  (Database)       │
-│              │                   │  - Query schema   │
-│              │                   │  - Run SQL        │
-│              │                   │  - Check indexes  │
-└──────────────┘                   └──────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">MCP Architecture</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Client</div>
+      <div class="arch-items">
+        <div class="arch-item">AI Model (Claude, GPT)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Protocol</div>
+      <div class="arch-items">
+        <div class="arch-item">JSON-RPC over stdio/HTTP</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Server A</div>
+      <div class="arch-items">
+        <div class="arch-item">File System</div>
+        <div class="arch-item">Read files</div>
+        <div class="arch-item">Write files</div>
+        <div class="arch-item">Search dirs</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Server B</div>
+      <div class="arch-items">
+        <div class="arch-item">Database</div>
+        <div class="arch-item">Query schema</div>
+        <div class="arch-item">Run SQL</div>
+        <div class="arch-item">Check indexes</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### What MCP Enables for Full-Stack Devs
 

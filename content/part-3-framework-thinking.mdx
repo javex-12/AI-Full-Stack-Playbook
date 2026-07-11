@@ -55,21 +55,41 @@ Before choosing a tool, you must explicitly select your rendering pattern based 
 
 ```
 FRESHNESS →
-Never changes          Changes hourly          Real-time
-     │                     │                      │
-     ▼                     ▼                      ▼
-┌─────────┐          ┌──────────┐           ┌─────────┐
-│   SSG   │          │ ISR / PPR│           │   SSR   │
-│         │          │          │           │         │
-│ Build   │          │ Static   │           │ Request │
-│ once    │          │ shell +  │           │ time    │
-│         │          │ fresh    │           │ render  │
-│         │          │ data     │           │         │
-└─────────┘          └──────────┘           └─────────┘
-     │                     │                      │
-  Zero JS              Minimal JS             Full JS
-  Runtime              Runtime                Runtime
-     │                     │                      │
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">SSG</span>
+      <span class="flow-label">Static Site Generation</span>
+      <span class="flow-sub">Build once, serve forever</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">ISR / PPR</span>
+      <span class="flow-label">Incremental / Partial</span>
+      <span class="flow-sub">Static shell + fresh data</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">SSR</span>
+      <span class="flow-label">Server-Side Rendering</span>
+      <span class="flow-sub">Fresh render per request</span>
+    </div>
+  </div>
+</div>
+
+| Pattern | Freshness | JS Runtime | Best For |
+|---------|-----------|------------|----------|
+| **SSG** | Never changes | Zero | Docs, portfolios, blogs |
+| **ISR / PPR** | Changes hourly | Minimal | E-commerce, product pages |
+| **SSR** | Real-time | Full | Dashboards, user-specific |
   ~50ms TTFB           ~100ms TTFB            ~300ms+ TTFB
 ```
 

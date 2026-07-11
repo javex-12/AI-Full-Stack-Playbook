@@ -13,24 +13,55 @@ Every digital interaction begins with a boundary: the division between the **Cli
 
 When a user clicks a button, types a search, or loads a page, a structured lifecycle executes across the network:
 
-```
-┌──────────┐                                      ┌──────────┐
-│          │ ──── 1. DNS Resolution ────────────▶ │          │
-│          │      (domain → IP address)            │          │
-│          │                                       │          │
-│          │ ──── 2. TCP Handshake ──────────────▶ │          │
-│  CLIENT  │      (establish connection)           │  SERVER  │
-│          │                                       │          │
-│          │ ──── 3. HTTP Request ──────────────▶ │          │
-│          │      (method, headers, body)          │          │
-│          │                                       │          │
-│          │ ◀──── 4. HTTP Response ───────────── │          │
-│          │       (status, headers, body)         │          │
-│          │                                       │          │
-│          │ ──── 5. Connection Closes ──────────▶ │          │
-│          │      (or stays open for keep-alive)   │          │
-└──────────┘                                      └──────────┘
-```
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 1</span>
+      <span class="flow-label">DNS Resolution</span>
+      <span class="flow-sub">Domain → IP</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 2</span>
+      <span class="flow-label">TCP Handshake</span>
+      <span class="flow-sub">Establish connection</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 3</span>
+      <span class="flow-label">HTTP Request</span>
+      <span class="flow-sub">Method, headers, body</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 4</span>
+      <span class="flow-label">HTTP Response</span>
+      <span class="flow-sub">Status, headers, body</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 5</span>
+      <span class="flow-label">Connection Close</span>
+      <span class="flow-sub">Or keep-alive</span>
+    </div>
+  </div>
+</div>
 
 ### The HTTP Methods
 
@@ -79,54 +110,72 @@ Computers route traffic through numerical **IP addresses** (`192.0.2.1` or IPv6 
 
 When a user types `cydemy.com` into their browser:
 
-```
-User types: cydemy.com
-        │
-        ▼
-┌─────────────────────┐
-│ 1. Browser Cache     │  "Do I already know this IP?"
-└────────┬────────────┘
-         │ Cache miss
-         ▼
-┌─────────────────────┐
-│ 2. OS Cache          │  "Does the operating system know?"
-└────────┬────────────┘
-         │ Cache miss
-         ▼
-┌─────────────────────┐
-│ 3. Router Cache      │  "Does the local router know?"
-└────────┬────────────┘
-         │ Cache miss
-         ▼
-┌─────────────────────┐
-│ 4. ISP Resolver      │  "Does my ISP's DNS server know?"
-└────────┬────────────┘
-         │ Cache miss
-         ▼
-┌─────────────────────┐
-│ 5. Root Server       │  "Who handles .com domains?"
-│    (13 root clusters)│  → Directs to .com TLD server
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ 6. TLD Server        │  "Who owns cydemy.com?"
-│    (.com registry)   │  → Directs to authoritative nameserver
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ 7. Authoritative NS  │  "Here's the IP: 192.0.2.1"
-│    (Cloudflare/      │
-│     Namecheap/etc)   │
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ 8. Browser connects  │  → TCP to 192.0.2.1:443
-│    to 192.0.2.1      │
-└─────────────────────┘
-```
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">1. Browser Cache</span></div>
+      <div class="tl-title">Local browser checks first</div>
+      <div class="tl-desc">"Do I already know this IP address?"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">2. OS Cache</span></div>
+      <div class="tl-title">Operating system cache</div>
+      <div class="tl-desc">"Does the OS have this cached?"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">3. Router Cache</span></div>
+      <div class="tl-title">Local router cache</div>
+      <div class="tl-desc">"Does the router know this domain?"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">4. ISP Resolver</span></div>
+      <div class="tl-title">ISP DNS server</div>
+      <div class="tl-desc">"Does my internet provider know?"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">5. Root Server</span></div>
+      <div class="tl-title">13 root clusters worldwide</div>
+      <div class="tl-desc">"Who handles .com domains?" → directs to TLD server</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">6. TLD Server</span></div>
+      <div class="tl-title">Top-Level Domain registry</div>
+      <div class="tl-desc">"Who owns cydemy.com?" → directs to authoritative nameserver</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">7. Authoritative NS</span></div>
+      <div class="tl-title">Cloudflare, Namecheap, etc.</div>
+      <div class="tl-desc">"Here's the IP: 192.0.2.1"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">8. Connect</span></div>
+      <div class="tl-title">Browser connects via TCP</div>
+      <div class="tl-desc">TCP connection to 192.0.2.1:443</div>
+    </div>
+  </div>
+</div>
 
 **Total time:** Typically 20-120ms for the first lookup. Subsequent lookups are cached at various levels, taking &lt;1ms.
 

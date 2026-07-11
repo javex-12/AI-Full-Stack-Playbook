@@ -15,24 +15,34 @@ Choosing a database is not a matter of picking what is trendy. It is an engineer
 
 Data lives in rigid, pre-defined tables with rows and columns. Different entities are linked through **foreign keys** and queried via **joins**.
 
-```
-users                          orders
-┌────┬────────┬────────┐      ┌────┬─────────┬────────┬─────────┐
-│ id │ email  │ name   │      │ id │ user_id │ amount │ status  │
-├────┼────────┼────────┤      ├────┼─────────┼────────┼─────────┤
-│  1 │ a@x.com│ Alice  │      │  1 │    1    │  49.99 │ paid    │
-│  2 │ b@x.com│ Bob    │      │  2 │    1    │  29.99 │ pending │
-│  3 │ c@x.com│ Carol  │      │  3 │    2    │  99.99 │ paid    │
-└────┴────────┴────────┘      └────┴─────────┴────────┴─────────┘
-
-Query: SELECT users.name, orders.amount
-       FROM users
-       JOIN orders ON users.id = orders.user_id
-       WHERE users.id = 1;
-
-Result: Alice, 49.99
-        Alice, 29.99
-```
+<div class="arch">
+  <div class="arch-title">SQL: Relational Tables with JOINs</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Users</div>
+      <div class="arch-items">
+        <div class="arch-item">id: 1, Alice, a@x.com</div>
+        <div class="arch-item">id: 2, Bob, b@x.com</div>
+        <div class="arch-item">id: 3, Carol, c@x.com</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Orders</div>
+      <div class="arch-items">
+        <div class="arch-item">id: 1, user: 1, $49.99, paid</div>
+        <div class="arch-item">id: 2, user: 1, $29.99, pending</div>
+        <div class="arch-item">id: 3, user: 2, $99.99, paid</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">JOIN</div>
+      <div class="arch-items">
+        <div class="arch-item">users.id = orders.user_id</div>
+        <div class="arch-item">Result: Alice has 2 orders</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **ACID Compliance — The Mathematical Guarantee:**
 
@@ -47,27 +57,35 @@ Result: Alice, 49.99
 
 Data lives as independent, flexible JSON-like documents. No rigid schema — each document can have different fields.
 
-```
-users collection
-┌──────────────────────────────────────────────────────┐
-│ {                                                    │
-│   "_id": "abc123",                                   │
-│   "name": "Alice",                                   │
-│   "email": "a@x.com",                                │
-│   "orders": [                    ← Embedded array    │
-│     { "amount": 49.99, "status": "paid" },           │
-│     { "amount": 29.99, "status": "pending" }         │
-│   ],                                                 │
-│   "preferences": {               ← Nested object     │
-│     "theme": "dark",                                 │
-│     "notifications": true                            │
-│   }                                                  │
-│ }                                                    │
-└──────────────────────────────────────────────────────┘
+<div class="arch">
+  <div class="arch-title">NoSQL: Embedded Documents</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">User</div>
+      <div class="arch-items">
+        <div class="arch-item">_id: abc123</div>
+        <div class="arch-item">name: Alice</div>
+        <div class="arch-item">email: a@x.com</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Orders</div>
+      <div class="arch-items">
+        <div class="arch-item">amount: 49.99, status: paid</div>
+        <div class="arch-item">amount: 29.99, status: pending</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Prefs</div>
+      <div class="arch-items">
+        <div class="arch-item">theme: dark</div>
+        <div class="arch-item">notifications: true</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-Query: db.users.findOne({ _id: "abc123" })
-Result: Entire document in one read — no JOIN needed
-```
+Query: `db.users.findOne({ _id: "abc123" })` → Returns entire document in one read, no JOIN needed.
 
 **The Mindset:** Data that is read together should live together. If a user and their orders are always fetched together, embed the orders inside the user document.
 

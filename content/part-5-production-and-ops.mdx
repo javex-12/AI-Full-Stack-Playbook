@@ -331,21 +331,39 @@ An unprotected API is an invitation for abuse. Without rate limiting, a single m
 
 ### The Rate Limiting Stack
 
-```
-┌─────────────────────────────────────────────────┐
-│ CDN / Edge Layer (Cloudflare, Vercel Edge)       │
-│ └── Blocks DDoS, filters known bad IPs          │
-├─────────────────────────────────────────────────┤
-│ API Gateway / Load Balancer                      │
-│ └── Global rate limits (1000 req/min per IP)    │
-├─────────────────────────────────────────────────┤
-│ Application Middleware                           │
-│ └── Per-user rate limits (100 req/min per user) │
-├─────────────────────────────────────────────────┤
-│ Database                                         │
-│ └── Connection pooling, query timeouts          │
-└─────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Defense Layers</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Layer 1</div>
+      <div class="arch-items">
+        <div class="arch-item">CDN / Edge (Cloudflare)</div>
+        <div class="arch-item">Blocks DDoS, filters bad IPs</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Layer 2</div>
+      <div class="arch-items">
+        <div class="arch-item">API Gateway</div>
+        <div class="arch-item">Global rate limits (1000 req/min per IP)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Layer 3</div>
+      <div class="arch-items">
+        <div class="arch-item">Application Middleware</div>
+        <div class="arch-item">Per-user limits (100 req/min per user)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Layer 4</div>
+      <div class="arch-items">
+        <div class="arch-item">Database</div>
+        <div class="arch-item">Connection pooling, query timeouts</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Implementation: Express Middleware
 

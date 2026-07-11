@@ -189,32 +189,66 @@ For modern dashboard structures and product landing pages, utilize a modular **B
 ### Common Bento Layouts
 
 **Dashboard Layout:**
-```
-┌──────────────────────────────────────────┐
-│  HEADER (span 12)                        │
-├──────────────┬───────────────────────────┤
-│  SIDEBAR     │  MAIN CONTENT (span 8)    │
-│  (span 4)    │                           │
-│              ├───────────┬───────────────┤
-│              │ STAT (4)  │ STAT (4)      │
-├──────────────┴───────────┴───────────────┤
-│  TABLE / LIST (span 12)                  │
-└──────────────────────────────────────────┘
-```
+
+<div class="arch">
+  <div class="arch-title">Bento Grid: Dashboard</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Row 1</div>
+      <div class="arch-items"><div class="arch-item">Header (span 12)</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 2</div>
+      <div class="arch-items">
+        <div class="arch-item">Sidebar (span 4)</div>
+        <div class="arch-item">Main Content (span 8)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 3</div>
+      <div class="arch-items">
+        <div class="arch-item">Stat (span 4)</div>
+        <div class="arch-item">Stat (span 4)</div>
+        <div class="arch-item">Stat (span 4)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 4</div>
+      <div class="arch-items"><div class="arch-item">Table / List (span 12)</div></div>
+    </div>
+  </div>
+</div>
 
 **Landing Page Hero:**
-```
-┌──────────────────────────────────────────┐
-│  HERO TEXT (span 12)                     │
-├──────────────┬───────────────────────────┤
-│  FEATURE A   │  FEATURE B (span 8)       │
-│  (span 4)    │                           │
-├──────────────┴───────────────────────────┤
-│  TESTIMONIAL (span 12)                   │
-├───────────┬───────────┬─────────────────┤
-│  CARD (4) │  CARD (4) │  CARD (4)       │
-└───────────┴───────────┴─────────────────┘
-```
+
+<div class="arch">
+  <div class="arch-title">Bento Grid: Landing Page</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Row 1</div>
+      <div class="arch-items"><div class="arch-item">Hero Text (span 12)</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 2</div>
+      <div class="arch-items">
+        <div class="arch-item">Feature A (span 4)</div>
+        <div class="arch-item">Feature B (span 8)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 3</div>
+      <div class="arch-items"><div class="arch-item">Testimonial (span 12)</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Row 4</div>
+      <div class="arch-items">
+        <div class="arch-item">Card (span 4)</div>
+        <div class="arch-item">Card (span 4)</div>
+        <div class="arch-item">Card (span 4)</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 

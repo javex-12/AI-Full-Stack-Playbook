@@ -17,27 +17,44 @@ Once your system is live, it enters a black box. You can't open browser DevTools
 | **Logs** | *Why* it broke | "Payment failed: Stripe returned 402 — card declined" |
 | **Traces** | *Where* the bottleneck lives | Request → Edge (15ms) → API (200ms) → DB (800ms) → Cache (2ms) |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    OBSERVABILITY STACK                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  METRICS              LOGS                TRACES             │
-│  ┌──────────┐        ┌──────────┐        ┌──────────┐      │
-│  │ CPU: 34% │        │ Timestamp│        │ Edge: 15ms│      │
-│  │ RAM: 62% │        │ Level    │        │ API: 200ms│      │
-│  │ RPS: 342 │        │ Message  │        │ DB: 800ms │      │
-│  │ Errors: 2│        │ Context  │        │ Cache: 2ms│      │
-│  └──────────┘        └──────────┘        └──────────┘      │
-│       │                   │                   │              │
-│       └───────────────────┼───────────────────┘              │
-│                           ▼                                  │
-│                 ┌──────────────────┐                         │
-│                 │   Dashboard +    │                         │
-│                 │   Alerting       │                         │
-│                 └──────────────────┘                         │
-└─────────────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Observability Stack</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Metrics</div>
+      <div class="arch-items">
+        <div class="arch-item">CPU: 34%</div>
+        <div class="arch-item">RAM: 62%</div>
+        <div class="arch-item">RPS: 342</div>
+        <div class="arch-item">Errors: 2</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Logs</div>
+      <div class="arch-items">
+        <div class="arch-item">Timestamp</div>
+        <div class="arch-item">Level</div>
+        <div class="arch-item">Message</div>
+        <div class="arch-item">Context</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Traces</div>
+      <div class="arch-items">
+        <div class="arch-item">Edge: 15ms</div>
+        <div class="arch-item">API: 200ms</div>
+        <div class="arch-item">DB: 800ms</div>
+        <div class="arch-item">Cache: 2ms</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Output</div>
+      <div class="arch-items">
+        <div class="arch-item">Dashboard + Alerting</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 

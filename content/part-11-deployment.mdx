@@ -45,38 +45,32 @@ A **CDN (Content Delivery Network)** is a globally distributed network of server
 
 ### How Edge Resolution Works
 
-```
-User in Lagos requests: playbook.cydercoder.com
-        │
-        ▼
-┌───────────────────────────────────────────────────────┐
-│ 1. DNS Anycast Routing                                │
-│    DNS resolves to the NEAREST edge node               │
-│    (Lagos PoP, not US-East origin)                    │
-└───────────────────┬───────────────────────────────────┘
-                    │
-                    ▼
-┌───────────────────────────────────────────────────────┐
-│ 2. Edge Cache Check                                   │
-│    Lagos PoP checks its local cache                   │
-│                                                       │
-│    ┌─────────────┐                                    │
-│    │  HIT (~15ms)│ ──▶ Serve cached HTML to user     │
-│    └─────────────┘                                    │
-│                                                       │
-│    ┌──────────────┐                                   │
-│    │ MISS (~120ms)│ ──▶ Forward to origin            │
-│    └──────────────┘    (US-East server)               │
-└───────────────────────────────────────────────────────┘
-                    │ (on cache miss)
-                    ▼
-┌───────────────────────────────────────────────────────┐
-│ 3. Origin Server                                      │
-│    Fetches from database, renders HTML                 │
-│    Returns to Lagos PoP                               │
-│    PoP caches the response for future requests        │
-└───────────────────────────────────────────────────────┘
-```
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 1</span><span class="tl-time">DNS</span></div>
+      <div class="tl-title">DNS Anycast Routing</div>
+      <div class="tl-desc">DNS resolves to the NEAREST edge node (Lagos PoP, not US-East origin)</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 2</span><span class="tl-time">Edge</span></div>
+      <div class="tl-title">Edge Cache Check</div>
+      <div class="tl-desc">Lagos PoP checks its local cache. HIT (~15ms): serve cached. MISS (~120ms): forward to origin.</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 3</span><span class="tl-time">Origin</span></div>
+      <div class="tl-title">Origin Server</div>
+      <div class="tl-desc">Fetches from database, renders HTML, returns to Lagos PoP. PoP caches for future requests.</div>
+    </div>
+  </div>
+</div>
 
 ### Edge Computing: Code at the Edge
 

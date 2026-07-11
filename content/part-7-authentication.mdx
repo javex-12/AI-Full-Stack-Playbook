@@ -58,23 +58,41 @@ User logs in
     │
     ▼
 Server creates JWT:
-┌─────────────────────────────────────────────────┐
-│ HEADER              │ PAYLOAD                   │ SIGNATURE
-│ {                   │ {                         │ HMAC-SHA256(
-│   "alg": "HS256",  │   "sub": 42,              │   header + payload,
-│   "typ": "JWT"     │   "role": "admin",         │   "your-secret-key"
-│ }                   │   "exp": 1720000000       │ )
-│                     │ }                         │
-└─────────────────────────────────────────────────┘
 
-Server sends: eyJhbGciOi... (encoded string)
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Header</span>
+      <span class="flow-label">{"alg": "HS256"}</span>
+      <span class="flow-sub">{"typ": "JWT"}</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Payload</span>
+      <span class="flow-label">{"sub": 42}</span>
+      <span class="flow-sub">{"role": "admin"}</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Signature</span>
+      <span class="flow-label">HMAC-SHA256</span>
+      <span class="flow-sub">header + payload + secret</span>
+    </div>
+  </div>
+</div>
+
+Server sends: `eyJhbGciOi...` (encoded string)
 Browser stores: in HttpOnly cookie (NOT localStorage)
 
-Every subsequent request:
-    Browser sends: Authorization: Bearer eyJhbGciOi...
-    Server decodes JWT, verifies signature, reads payload → "Welcome, user 42"
-    (No database lookup needed)
-```
+Every subsequent request: Browser sends `Authorization: Bearer eyJhbGciOi...` → Server decodes JWT, verifies signature, reads payload → "Welcome, user 42" (No database lookup needed).
 
 **Pros:**
 - No server-side storage — token is self-contained
@@ -407,36 +425,65 @@ When users click "Sign in with Google" or "Continue with GitHub," they're using 
 
 ### The Authorization Code Flow
 
-```
-┌──────────┐                              ┌──────────┐
-│          │ ── 1. User clicks ────────▶ │          │
-│          │    "Sign in with Google"     │          │
-│          │                              │          │
-│  CLIENT  │ ── 2. Redirect to ────────▶ │  GOOGLE  │
-│          │    accounts.google.com       │          │
-│          │    ?client_id=YOUR_ID        │          │
-│          │    &redirect_uri=/callback   │          │
-│          │    &scope=profile email      │          │
-│          │                              │          │
-│          │ ◀── 3. User logs into ───── │          │
-│          │     Google, approves app     │          │
-│          │                              │          │
-│          │ ◀── 4. Redirect back to ─── │          │
-│          │     /callback?code=AUTH_CODE │          │
-│          │                              │          │
-│  SERVER  │ ── 5. Exchange code + ────▶ │  GOOGLE  │
-│  (behind │    client_secret for token   │  TOKEN   │
-│   scenes)│                              │  ENDPOINT│
-│          │ ◀── 6. Access token + ───── │          │
-│          │     user profile returned    │          │
-│          │                              │          │
-│  SERVER  │ ── 7. Create/find user ───▶ │  YOUR DB │
-│          │    in your database          │          │
-│          │                              │          │
-│  CLIENT  │ ◀── 8. Set session cookie ─ │          │
-│          │     User is logged in        │          │
-└──────────┘                              └──────────┘
-```
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 1</span><span class="tl-time">Client</span></div>
+      <div class="tl-title">User clicks "Sign in with Google"</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 2</span><span class="tl-time">Client → Google</span></div>
+      <div class="tl-title">Redirect to accounts.google.com</div>
+      <div class="tl-desc">With client_id, redirect_uri, scope=profile email</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 3</span><span class="tl-time">Google</span></div>
+      <div class="tl-title">User logs into Google, approves app</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 4</span><span class="tl-time">Google → Client</span></div>
+      <div class="tl-title">Redirect back to /callback?code=AUTH_CODE</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 5</span><span class="tl-time">Server → Google</span></div>
+      <div class="tl-title">Exchange code + client_secret for token</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 6</span><span class="tl-time">Google → Server</span></div>
+      <div class="tl-title">Access token + user profile returned</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 7</span><span class="tl-time">Server → DB</span></div>
+      <div class="tl-title">Create or find user in your database</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Step 8</span><span class="tl-time">Server → Client</span></div>
+      <div class="tl-title">Set session cookie — user is logged in</div>
+    </div>
+  </div>
+</div>
 
 ### Implementation with Passport.js
 
