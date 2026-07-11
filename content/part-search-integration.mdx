@@ -1,0 +1,721 @@
+---
+title: "Zero-Latency Static Search: Pagefind Integration"
+part: "Addendum"
+section: "Search Integration"
+keywords: ["Pagefind", "Static Search", "Command Palette", "Client-Side Search", "Full-Text Search"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## The Architecture: Why Pagefind
+
+Traditional search requires a running server — Elasticsearch, Algolia, Meilisearch — each with hosting costs, API key management, and latency from network round trips. For a static site, this is overkill.
+
+**Pagefind is different.** It runs a compiled Rust binary at build time, parsing your HTML and chunking keywords into tiny cached fragments. When a user searches, the browser downloads *only* the specific fragments needed — usually under 30KB total. Zero backend. Zero infrastructure. Zero latency.
+
+```
+Traditional Search (Algolia/Elasticsearch):
+User types → Network request → Server queries index → Response → Render
+            ~50-200ms round trip
+
+Pagefind (Static):
+User types → Local WASM index → Instant results → Render
+            ~1-5ms local execution
+```
+
+---
+
+## Step 1: Installation & Build Automation
+
+### Install Pagefind
+
+```bash
+# npm
+npm install -D pagefind
+
+# pnpm
+pnpm add -D pagefind
+
+# yarn
+yarn add -D pagefind
+```
+
+### Configure the Build Script
+
+Append Pagefind to your static build command. It runs *after* your site is built, parsing the output HTML.
+
+```json
+{
+  "name": "ai-fullstack-playbook",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && pagefind --site dist",
+    "preview": "astro preview",
+    "search:dev": "pagefind --site dist --serve"
+  }
+}
+```
+
+The `search:dev` script runs Pagefind's local server so you can test search without deploying. It serves the built site at `localhost:1414` with search enabled.
+
+### Astro Configuration
+
+```javascript
+// astro.config.mjs
+import { defineConfig } from 'astro/config';
+
+export default defineConfig({
+  site: 'https://your-playbook.com',
+  build: {
+    // Pagefind works best with standard HTML output
+    format: 'directory',
+  },
+});
+```
+
+---
+
+## Step 2: Content Targeting
+
+By default, Pagefind indexes your entire page — including navbars, footers, and sidebars. This creates noisy results. You need to tell Pagefind exactly what content to index.
+
+### Mark Indexable Content
+
+Add `data-pagefind-body` to your main content wrapper. Only content inside this attribute gets indexed.
+
+```astro
+---
+// src/layouts/PlaybookLayout.astro
+const { frontmatter } = Astro.props;
+---
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{frontmatter.title} — AI Full-Stack Playbook</title>
+  </head>
+  <body>
+    <!-- Sidebar — NOT indexed -->
+    <aside class="sidebar">
+      <nav><!-- navigation links --></nav>
+    </aside>
+
+    <!-- Main content — INDEXED -->
+    <main data-pagefind-body>
+      <div class="meta">
+        PART {frontmatter.part} // SECTION {frontmatter.section}
+      </div>
+      <h1>{frontmatter.title}</h1>
+      <slot />
+    </main>
+
+    <!-- Footer — NOT indexed -->
+    <footer><!-- footer links --></footer>
+  </body>
+</html>
+```
+
+### Fine-Grained Control
+
+| Attribute | Purpose | Example |
+|-----------|---------|---------|
+| `data-pagefind-body` | Mark indexable content area | `<main data-pagefind-body>` |
+| `data-pagefind-weight="2"` | Boost importance (default: 1) | `<h1 data-pagefind-weight="2">Title</h1>` |
+| `data-pagefind-weight="0.5"` | Reduce importance | `<aside data-pagefind-weight="0.5">Sidebar</aside>` |
+| `data-pagefind-exclude` | Exclude element and children | `<div data-pagefind-exclude>Hidden content</div>` |
+| `data-pagefind-meta="title"` | Extract metadata for results | `<h1 data-pagefind-meta="title">Page Title</h1>` |
+| `data-pagefind-filter="type:guide"` | Add filterable facets | `<article data-pagefind-filter="type:guide">` |
+
+### Excluding Navigation from Results
+
+```astro
+<!-- This content is visible but NOT searchable -->
+<nav data-pagefind-exclude>
+  <a href="/part-1">Part I: Foundations</a>
+  <a href="/part-2">Part II: AI Foundations</a>
+</nav>
+```
+
+---
+
+## Step 3: The Command Palette Component
+
+This is the full-featured search component with keyboard shortcuts, debouncing, arrow-key navigation, and responsive design.
+
+```astro
+---
+// src/components/CommandPalette.astro
+---
+
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-modal" role="dialog" aria-label="Search">
+    <div class="search-input-wrapper">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="search"
+        id="searchInput"
+        class="search-input"
+        placeholder="Search the playbook..."
+        autocomplete="off"
+        aria-label="Search playbook"
+        aria-controls="searchResults"
+        aria-expanded="false"
+      />
+      <kbd class="search-esc">ESC</kbd>
+    </div>
+
+    <div class="search-status" id="searchStatus" aria-live="polite"></div>
+
+    <div class="search-results" id="searchResults" role="listbox">
+      <!-- Results injected by JS -->
+    </div>
+
+    <div class="search-footer">
+      <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
+      <span><kbd>↵</kbd> Open</span>
+      <span><kbd>ESC</kbd> Close</span>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Overlay */
+  .search-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 15vh;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+
+  .search-overlay.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Modal */
+  .search-modal {
+    width: 100%;
+    max-width: 580px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    transform: translateY(-10px) scale(0.98);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .search-overlay.open .search-modal {
+    transform: translateY(0) scale(1);
+  }
+
+  /* Input */
+  .search-input-wrapper {
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .search-icon {
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  .search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 1rem;
+    font-size: 1rem;
+    font-family: var(--font-sans);
+    color: var(--text-primary);
+    outline: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-faint);
+  }
+
+  /* Remove default search clear button */
+  .search-input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+  }
+
+  .search-esc {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  /* Status bar */
+  .search-status {
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+    display: none;
+  }
+
+  .search-status.visible {
+    display: block;
+  }
+
+  /* Results */
+  .search-results {
+    max-height: 360px;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+
+  .search-results:empty {
+    display: none;
+  }
+
+  /* Individual result — styled via :global for JS injection */
+  :global(.search-result) {
+    display: block;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background 0.1s;
+    text-decoration: none;
+  }
+
+  :global(.search-result:hover),
+  :global(.search-result.active) {
+    background: var(--bg-hover);
+  }
+
+  :global(.search-result-title) {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.15rem;
+  }
+
+  :global(.search-result-section) {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--brand-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+  }
+
+  :global(.search-result-excerpt) {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  :global(.search-result-excerpt mark) {
+    background: var(--brand-accent-dim);
+    color: var(--brand-accent);
+    padding: 0 0.15rem;
+    border-radius: 2px;
+  }
+
+  :global(.search-no-results) {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.9rem;
+  }
+
+  /* Footer with keyboard hints */
+  .search-footer {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.6rem 1rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  .search-footer kbd {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    margin-right: 0.2rem;
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .search-overlay {
+      padding: 0;
+      align-items: flex-end;
+    }
+
+    .search-modal {
+      max-width: 100%;
+      border-radius: 12px 12px 0 0;
+      max-height: 85vh;
+    }
+
+    .search-footer {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  // =============================================
+  // Pagefind Search Integration
+  // =============================================
+
+  let pagefind: any = null;
+  let activeIndex = -1;
+  let currentResults: HTMLElement[] = [];
+
+  const overlay = document.getElementById('searchOverlay')!;
+  const input = document.getElementById('searchInput') as HTMLInputElement;
+  const resultsContainer = document.getElementById('searchResults')!;
+  const status = document.getElementById('searchStatus')!;
+
+  // -------------------------------------------
+  // Open / Close
+  // -------------------------------------------
+  function openSearch() {
+    overlay.classList.add('open');
+    input.focus();
+    input.value = '';
+    resultsContainer.innerHTML = '';
+    status.classList.remove('visible');
+    activeIndex = -1;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSearch() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    input.blur();
+  }
+
+  // -------------------------------------------
+  // Cmd+K / Ctrl+K to open
+  // -------------------------------------------
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      if (overlay.classList.contains('open')) {
+        closeSearch();
+      } else {
+        openSearch();
+      }
+    }
+
+    if (e.key === 'Escape' && overlay.classList.contains('open')) {
+      closeSearch();
+    }
+  });
+
+  // Click overlay background to close
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeSearch();
+  });
+
+  // -------------------------------------------
+  // Load Pagefind on first focus
+  // -------------------------------------------
+  let pagefindLoaded = false;
+
+  async function loadPagefind() {
+    if (pagefindLoaded) return;
+    try {
+      pagefind = await import('/pagefind/pagefind.js');
+      await pagefind.init();
+      pagefindLoaded = true;
+    } catch (err) {
+      console.error('Pagefind not available. Run build first.', err);
+    }
+  }
+
+  // -------------------------------------------
+  // Debounce utility
+  // -------------------------------------------
+  function debounce(fn: Function, ms: number) {
+    let timer: ReturnType<typeof setTimeout>;
+    return (...args: any[]) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  // -------------------------------------------
+  // Search execution
+  // -------------------------------------------
+  const executeSearch = debounce(async (query: string) => {
+    if (!query || !pagefind) {
+      resultsContainer.innerHTML = '';
+      status.classList.remove('visible');
+      currentResults = [];
+      activeIndex = -1;
+      return;
+    }
+
+    status.textContent = 'Searching...';
+    status.classList.add('visible');
+
+    const searchInstance = await pagefind.search(query);
+    const count = searchInstance.results.length;
+
+    status.textContent = count > 0
+      ? `${count} result${count !== 1 ? 's' : ''}`
+      : 'No results found';
+
+    resultsContainer.innerHTML = '';
+    currentResults = [];
+    activeIndex = -1;
+
+    if (count === 0) {
+      resultsContainer.innerHTML = `
+        <div class="search-no-results">
+          No results for "<strong>${escapeHtml(query)}</strong>"
+        </div>
+      `;
+      return;
+    }
+
+    // Load top 8 results
+    const topResults = searchInstance.results.slice(0, 8);
+
+    for (const item of topResults) {
+      const data = await item.data();
+      const el = document.createElement('a');
+      el.className = 'search-result';
+      el.href = data.url;
+      el.setAttribute('role', 'option');
+
+      // Extract section from meta if available
+      const section = data.meta?.section || '';
+
+      el.innerHTML = `
+        ${section ? `<div class="search-result-section">${escapeHtml(section)}</div>` : ''}
+        <div class="search-result-title">${escapeHtml(data.meta?.title || 'Untitled')}</div>
+        <div class="search-result-excerpt">${data.excerpt}</div>
+      `;
+
+      resultsContainer.appendChild(el);
+      currentResults.push(el);
+    }
+  }, 200);
+
+  // -------------------------------------------
+  // Input handler
+  // -------------------------------------------
+  input.addEventListener('input', () => {
+    executeSearch(input.value.trim());
+  });
+
+  // -------------------------------------------
+  // Keyboard navigation
+  // -------------------------------------------
+  input.addEventListener('keydown', (e) => {
+    if (!currentResults.length) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      activeIndex = Math.min(activeIndex + 1, currentResults.length - 1);
+      updateActiveResult();
+    }
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      activeIndex = Math.max(activeIndex - 1, -1);
+      updateActiveResult();
+    }
+
+    if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      const link = currentResults[activeIndex].getAttribute('href');
+      if (link) window.location.href = link;
+    }
+  });
+
+  function updateActiveResult() {
+    currentResults.forEach((el, i) => {
+      el.classList.toggle('active', i === activeIndex);
+    });
+
+    if (activeIndex >= 0 && currentResults[activeIndex]) {
+      currentResults[activeIndex].scrollIntoView({ block: 'nearest' });
+      input.setAttribute('aria-activedescendant', `result-${activeIndex}`);
+    } else {
+      input.removeAttribute('aria-activedescendant');
+    }
+  }
+
+  // -------------------------------------------
+  // Utility
+  // -------------------------------------------
+  function escapeHtml(str: string): string {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // -------------------------------------------
+  // Init: load Pagefind when search opens
+  // -------------------------------------------
+  input.addEventListener('focus', loadPagefind, { once: true });
+</script>
+```
+
+---
+
+## Step 4: Trigger Button in the Sidebar
+
+Add a search trigger button that opens the command palette. This should be visible in the sidebar header and respond to the same `Cmd+K` shortcut.
+
+```astro
+---
+// In your sidebar component (Sidebar.astro or similar)
+---
+
+<button class="search-trigger" id="searchTrigger" type="button">
+  <span>Search playbook...</span>
+  <kbd class="kbd">⌘K</kbd>
+</button>
+
+<style>
+  .search-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.8rem;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    margin-top: 0.75rem;
+  }
+
+  .search-trigger:hover {
+    border-color: var(--border-strong);
+  }
+
+  .search-trigger:focus-visible {
+    outline: none;
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 2px var(--brand-accent-dim);
+  }
+
+  .kbd {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-default);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: var(--text-faint);
+  }
+</style>
+
+<script>
+  // Wire the trigger button to open the search overlay
+  document.getElementById('searchTrigger')?.addEventListener('click', () => {
+    document.getElementById('searchOverlay')?.classList.add('open');
+    document.getElementById('searchInput')?.focus();
+  });
+</script>
+```
+
+---
+
+## Step 5: Verification & Testing
+
+### Build and Verify
+
+```bash
+# Build the site + generate search index
+npm run build
+
+# Verify Pagefind output exists
+ls dist/pagefind/
+
+# Expected files:
+# pagefind.js          — Main search WASM (~30KB)
+# pagefind-entry.json  — Index metadata
+# fragment/            — Chunked text fragments
+# wasm/                — Compiled search binary
+```
+
+### Test Locally
+
+```bash
+# Run Pagefind's local server
+npx pagefind --site dist --serve
+
+# Opens at http://localhost:1414
+# Test search: type "token", "RAG", "Docker"
+```
+
+### Verify Index Quality
+
+Check what Pagefind actually indexed:
+
+```bash
+# Generate a search summary
+npx pagefind --site dist --logfile pagefind-log.json
+
+# The log shows:
+# - Number of pages indexed
+# - Number of fragments generated
+# - Total index size
+```
+
+### Common Issues
+
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| Search returns nothing | Pagefind not run after build | Add `&& pagefind --site dist` to build script |
+| Navigation items in results | Missing `data-pagefind-exclude` | Add exclusion attribute to nav/footer |
+| Results show raw HTML tags | Content not properly rendered | Ensure `data-pagefind-body` is on rendered content |
+| Search is slow on first query | WASM not cached | Normal for first load; subsequent queries are instant |
+| Index is huge (>500KB) | Too much content indexed | Use `data-pagefind-exclude` to trim non-essential pages |
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Static Search | WASM binary runs locally in browser | Zero server cost, zero latency, zero API keys |
+| Content Targeting | `data-pagefind-body` marks indexable regions | Exclude nav/footer to avoid noisy results |
+| Weight & Metadata | Boost importance, extract titles | Use `data-pagefind-weight` to rank critical content higher |
+| Command Palette | Cmd+K opens search overlay | Keyboard navigation (↑↓ Enter ESC) is expected UX |
+| Debouncing | Wait 200ms after last keystroke | Prevents searching on every single character |
+| Lazy Loading | Import Pagefind WASM on first focus | Zero JS cost until the user actually wants to search |

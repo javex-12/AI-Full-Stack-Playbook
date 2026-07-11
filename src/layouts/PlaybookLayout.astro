@@ -1,0 +1,221 @@
+---
+import LoadingScreen from '../components/LoadingScreen.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "The AI Builder's Handbook — A senior-engineered guide to full-stack development with AI. Covers LLMs, frameworks, databases, security, deployment, and production operations." } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.com');
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary SEO -->
+  <title>{title} — CyderCoder</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="CyderCoder" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={`${title} — CyderCoder`} />
+  <meta property="og:description" content={description} />
+  <meta property="og:image" content="https://playbook.cydercoder.com/og-image.svg" />
+  <meta property="og:url" content={canonicalURL.href} />
+  <meta property="og:site_name" content="The AI Full-Stack Playbook" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={`${title} — CyderCoder`} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content="https://playbook.cydercoder.com/og-image.svg" />
+  <meta name="twitter:creator" content="@cydercoder" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
+
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#070a09" />
+
+  <!-- Structured Data -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "The AI Full-Stack Playbook",
+    "description": description,
+    "url": "https://playbook.cydercoder.com",
+    "author": {
+      "@type": "Person",
+      "name": "CyderCoder"
+    }
+  })} />
+
+  <style is:global>
+    /* ========================================
+       DESIGN TOKENS
+    ======================================== */
+    :root {
+      --bg-base: #070a09;
+      --bg-surface: #0d1210;
+      --bg-elevated: #131c18;
+      --bg-hover: #1a2621;
+      --bg-active: #1f2e29;
+
+      --text-primary: #e8efec;
+      --text-secondary: #b0bfb8;
+      --text-muted: #6b8579;
+      --text-faint: #3d564c;
+
+      --brand-primary: #1b4d3e;
+      --brand-accent: #3ad29f;
+      --brand-accent-dim: rgba(58, 210, 159, 0.12);
+      --brand-accent-glow: rgba(58, 210, 159, 0.25);
+
+      --border-subtle: rgba(255, 255, 255, 0.04);
+      --border-default: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.12);
+
+      --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+      background: var(--brand-accent-dim);
+      color: var(--brand-accent);
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #1f2e29; border-radius: 3px; }
+
+    a { color: var(--brand-accent); text-decoration: none; }
+    a:hover { opacity: 0.8; }
+  </style>
+</head>
+<body>
+  <LoadingScreen />
+  <slot />
+
+  <!-- Back to top button -->
+  <button class="back-to-top" id="backToTop" aria-label="Back to top">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"/>
+    </svg>
+  </button>
+
+  <style is:global>
+    .back-to-top {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 40px;
+      height: 40px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-default);
+      border-radius: 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all 0.25s var(--ease-out);
+      z-index: 50;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .back-to-top:hover {
+      background: var(--bg-hover);
+      border-color: var(--brand-accent);
+      color: var(--brand-accent);
+    }
+
+    .back-to-top:active {
+      transform: scale(0.95);
+    }
+
+    @media (max-width: 768px) {
+      .back-to-top {
+        bottom: 1.25rem;
+        right: 1.25rem;
+        width: 44px;
+        height: 44px;
+      }
+    }
+  </style>
+
+  <script>
+    function initBackToTop() {
+      const backToTop = document.getElementById('backToTop');
+      if (!backToTop) return;
+
+      function scrollToTop(e: Event) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // Show/hide on scroll
+      window.addEventListener('scroll', () => {
+        if (window.scrollY > 400) {
+          backToTop.classList.add('visible');
+        } else {
+          backToTop.classList.remove('visible');
+        }
+      }, { passive: true });
+
+      // Click handler
+      backToTop.addEventListener('click', scrollToTop);
+
+      // Touch handler for mobile (faster response)
+      backToTop.addEventListener('touchstart', scrollToTop, { passive: false });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initBackToTop);
+    } else {
+      initBackToTop();
+    }
+  </script>
+</body>
+</html>

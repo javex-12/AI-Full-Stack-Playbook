@@ -1,0 +1,725 @@
+---
+title: "Design Systems & Motion: The Senior Editorial Aesthetic"
+part: 10
+section: "Design & Motion"
+keywords: ["Typography", "Whitespace", "Bento Grid", "Three.js", "GSAP", "Micro-interactions", "Color System", "Skeleton"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Death of the Amateur Interface
+
+When you ask an AI to design a website UI from scratch, it relies on the statistical average of the internet: generic Bootstrap layouts, loud neon gradient buttons, heavy card borders, and cliché "hacker-style" terminal UIs with green text on black backgrounds. This screams "junior dev portfolio project."
+
+> **The Core Design Identity:** We do not build static web pages — we build highly predictable, interactive **systems**. Our aesthetic is premium and editorial: high-signal content, massive intentional whitespace, ultra-refined typography, and subtle, physics-aware motion.
+
+### Amateur vs. Premium: The Visual Comparison
+
+| Element | Amateur (AI Default) | Premium (Senior Design) |
+|---------|---------------------|------------------------|
+| **Background** | Pure black `#000` or loud gradients | Deep organic dark `#0a0f0d` with subtle surface layers |
+| **Cards** | Heavy 2px borders, drop shadows, rounded corners | Borderless or 1px subtle border, surface color differentiation |
+| **Buttons** | Saturated neon colors, centered text, equal padding | Muted accent, micro-interaction on hover, asymmetric padding |
+| **Typography** | Single font weight, centered everything, huge headings | 3-4 weight hierarchy, left-aligned, calibrated type scale |
+| **Spacing** | `padding: 1rem` everywhere | Intentional rhythm: tight for density, vast for breathing |
+| **Motion** | Random particle backgrounds, spinning loaders | Physics-based easing, purposeful transitions, skeleton states |
+| **Layout** | Centered single-column, floating cards | Bento grid, editorial magazine structure, visual hierarchy |
+
+The difference is **intentionality**. Every pixel in a premium interface exists for a reason. Every animation follows a physical law. Every color choice serves a functional purpose.
+
+---
+
+## 02. Typography: The Foundation of Visual Hierarchy
+
+Typography is the single most important design element. A mediocre layout with excellent typography will always outperform a beautiful layout with poor typography.
+
+### The Type Scale
+
+Use a modular scale based on a root size. The golden ratio for screen design is **1.25** — each level is 1.25x larger than the previous.
+
+```css
+:root {
+    /* Type Scale (1.25 ratio) */
+    --text-xs:    0.64rem;    /* 10.24px — captions, labels */
+    --text-sm:    0.8rem;     /* 12.8px  — secondary text */
+    --text-base:  1rem;       /* 16px    — body copy */
+    --text-lg:    1.25rem;    /* 20px    — lead paragraphs */
+    --text-xl:    1.563rem;   /* 25px    — section headings */
+    --text-2xl:   1.953rem;   /* 31.25px — page subheadings */
+    --text-3xl:   2.441rem;   /* 39px    — page titles */
+    --text-4xl:   3.052rem;   /* 48.8px  — hero headlines */
+    --text-5xl:   3.815rem;   /* 61px    — display headlines */
+
+    /* Font Weights */
+    --weight-normal:    400;
+    --weight-medium:    500;
+    --weight-semibold:  600;
+    --weight-bold:      700;
+    --weight-extrabold: 800;
+}
+```
+
+### The Typography Rules
+
+**1. Never center body text.** Centered text is for headlines and short labels only. Body copy is always left-aligned — centered paragraphs are exhausting to read.
+
+**2. Line height scales with font size.** Smaller text needs more breathing room; larger text needs tighter spacing.
+
+```css
+/* Line Height Scale */
+.text-xs   { line-height: 1.6; }  /* More room for tiny text */
+.text-sm   { line-height: 1.5; }
+.text-base { line-height: 1.7; }  /* Standard reading rhythm */
+.text-lg   { line-height: 1.6; }
+.text-xl   { line-height: 1.4; }
+.text-2xl  { line-height: 1.3; }
+.text-3xl  { line-height: 1.2; }
+.text-4xl  { line-height: 1.1; }
+.text-5xl  { line-height: 1.05; } /* Tight for impact */
+```
+
+**3. Measure (line length) matters.** The optimal reading line is **45-75 characters**. For screen design, target `max-width: 65ch` for body copy.
+
+```css
+.prose {
+    max-width: 65ch;           /* Optimal reading measure */
+    font-size: var(--text-base);
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.prose h2 {
+    max-width: none;           /* Headlines can be wider */
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    line-height: 1.2;
+    color: var(--text-primary);
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+}
+```
+
+**4. Contrast hierarchy.** Your eye should flow naturally: primary text (headings) → secondary text (body) → muted text (captions). Never make all text the same brightness.
+
+| Role | Color | Usage |
+|------|-------|-------|
+| Primary | `#e8efec` | Headings, labels, important numbers |
+| Secondary | `#b0bfb8` | Body copy, descriptions |
+| Muted | `#6b8579` | Captions, metadata, timestamps |
+| Faint | `#3d564c` | Placeholders, disabled states |
+
+---
+
+## 03. Layout Architecture & Spatial Theory
+
+### The Power of Intentional Whitespace
+
+The difference between a luxury brand's interface and a cheap template is the courage to leave space empty. Whitespace is not dead room — it is active structural support that guides the user's eye directly to your high-signal content.
+
+**The Rule of 2x:** If the AI generates a layout with `padding: 1.5rem`, scale it to `padding: 3rem` or even `4rem` for hero structures. Give your text components room to breathe.
+
+```css
+/* Spacing Scale */
+:root {
+    --space-1:  0.25rem;   /* 4px  — tight: icons, badges */
+    --space-2:  0.5rem;    /* 8px  — compact: related items */
+    --space-3:  0.75rem;   /* 12px — default: list items */
+    --space-4:  1rem;      /* 16px — standard: card padding */
+    --space-6:  1.5rem;    /* 24px — comfortable: section gaps */
+    --space-8:  2rem;      /* 32px — spacious: component separation */
+    --space-12: 3rem;      /* 48px — generous: section breaks */
+    --space-16: 4rem;      /* 64px — hero: page-level breathing */
+    --space-24: 6rem;      /* 96px — editorial: major section breaks */
+}
+```
+
+### The Editorial Bento Layout
+
+For modern dashboard structures and product landing pages, utilize a modular **Bento Grid** layout. Instead of floating independent cards, the entire layout grids like a high-end editorial magazine.
+
+```css
+/* 12-Column Bento Grid */
+.bento-container {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--space-6);
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-8);
+}
+
+/* Card Sizes */
+.bento-span-3  { grid-column: span 3; }   /* Quarter card */
+.bento-span-4  { grid-column: span 4; }   /* Third card */
+.bento-span-6  { grid-column: span 6; }   /* Half card */
+.bento-span-8  { grid-column: span 8; }   /* Two-thirds card */
+.bento-span-12 { grid-column: span 12; }  /* Full width */
+
+/* Card Styling */
+.bento-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: var(--space-8);
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.bento-card:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-elevated);
+}
+
+/* Responsive: Stack on mobile */
+@media (max-width: 900px) {
+    .bento-container {
+        grid-template-columns: 1fr;
+        padding: 0 var(--space-4);
+    }
+
+    .bento-span-3,
+    .bento-span-4,
+    .bento-span-6,
+    .bento-span-8,
+    .bento-span-12 {
+        grid-column: span 1;
+    }
+}
+```
+
+### Common Bento Layouts
+
+**Dashboard Layout:**
+```
+┌──────────────────────────────────────────┐
+│  HEADER (span 12)                        │
+├──────────────┬───────────────────────────┤
+│  SIDEBAR     │  MAIN CONTENT (span 8)    │
+│  (span 4)    │                           │
+│              ├───────────┬───────────────┤
+│              │ STAT (4)  │ STAT (4)      │
+├──────────────┴───────────┴───────────────┤
+│  TABLE / LIST (span 12)                  │
+└──────────────────────────────────────────┘
+```
+
+**Landing Page Hero:**
+```
+┌──────────────────────────────────────────┐
+│  HERO TEXT (span 12)                     │
+├──────────────┬───────────────────────────┤
+│  FEATURE A   │  FEATURE B (span 8)       │
+│  (span 4)    │                           │
+├──────────────┴───────────────────────────┤
+│  TESTIMONIAL (span 12)                   │
+├───────────┬───────────┬─────────────────┤
+│  CARD (4) │  CARD (4) │  CARD (4)       │
+└───────────┴───────────┴─────────────────┘
+```
+
+---
+
+## 04. The Professional Color System
+
+A senior color palette is restricted, highly intentional, and avoids saturated primary colors. We rely on a deeply premium, low-contrast dark mode system.
+
+### The Palette
+
+```css
+:root {
+    /* Background Layers (darkest → lightest) */
+    --bg-base:      #0a0f0d;   /* Page background — never pure black */
+    --bg-surface:   #121a17;   /* Cards, panels, elevated surfaces */
+    --bg-elevated:  #1a2621;   /* Hover states, dropdowns, modals */
+    --bg-active:    #1f2e29;   /* Active states, selected items */
+
+    /* Text Hierarchy */
+    --text-primary:   #e8efec; /* Headings, important content */
+    --text-secondary: #b0bfb8; /* Body copy, descriptions */
+    --text-muted:     #6b8579; /* Captions, metadata */
+    --text-faint:     #3d564c; /* Placeholders, disabled */
+
+    /* Brand Colors */
+    --brand-primary:    #1b4d3e;  /* Deep forest — trust, stability */
+    --brand-accent:     #3ad29f;  /* Aqua glow — actions, focus */
+    --brand-accent-dim: rgba(58, 210, 159, 0.12);  /* Accent backgrounds */
+
+    /* Borders */
+    --border-subtle:  rgba(255, 255, 255, 0.04);
+    --border-default: rgba(255, 255, 255, 0.08);
+    --border-strong:  rgba(255, 255, 255, 0.12);
+}
+```
+
+### Why Never Pure Black (`#000000`)
+
+Pure black backgrounds against white text create a contrast ratio of **21:1** — the maximum possible. This causes:
+- **Visual fatigue** — the harsh contrast strains eyes over time
+- **Halation** — white text appears to "glow" or blur on pure black
+- **No depth** — you can't create surface hierarchy with only one color
+
+Using `#0a0f0d` (near-black with a green undertone) reduces contrast to ~18:1 — still high contrast, but comfortable for extended reading. It also allows you to create depth by layering slightly lighter surfaces on top.
+
+### Color Usage Rules
+
+| Element | Color | Rule |
+|---------|-------|------|
+| Page background | `--bg-base` | Never change this — it's your anchor |
+| Cards / Panels | `--bg-surface` | Always 1 step lighter than base |
+| Hover states | `--bg-elevated` | 2 steps lighter — subtle but visible |
+| Active / Selected | `--bg-active` | 3 steps lighter — clear state change |
+| Primary action | `--brand-accent` | One accent color — never multiple |
+| Secondary actions | `--border-strong` | Border-only buttons, no fill |
+| Disabled | `--text-faint` | 30% opacity of primary text |
+
+### The One-Accent Rule
+
+A premium interface uses **one accent color** — the one that draws the eye to actions and focus states. Adding a second accent (red for errors, yellow for warnings) is acceptable only when those colors carry universal meaning (error = red, success = green).
+
+```css
+/* Accent is used sparingly — only for high-signal moments */
+.accent-text { color: var(--brand-accent); }
+.accent-border { border-color: var(--brand-accent); }
+.accent-bg { background: var(--brand-accent-dim); }
+.accent-glow { box-shadow: 0 0 20px rgba(58, 210, 159, 0.2); }
+```
+
+---
+
+## 05. Physics-Aware Motion Design
+
+Motion should never be decorative or flashy. Flashing glitch transitions and erratic floating particles are "dev toys" that distract from the product.
+
+> **The Motion Rule:** Animation must feel natural, cohesive, and physics-aware. Elements should behave like real-world objects obeying mass, inertia, and friction.
+
+### The Easing Functions
+
+Every animation needs an easing curve. Linear motion feels robotic. Default ease feels generic. Premium motion uses custom cubic-bezier curves that mimic physical physics.
+
+```css
+:root {
+    /* Standard easing — for most UI transitions */
+    --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+    /* Starts fast, decelerates smoothly — feels responsive */
+
+    /* Gentle easing — for subtle background transitions */
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    /* Symmetric acceleration/deceleration — feels fluid */
+
+    /* Sharp easing — for attention-grabbing micro-interactions */
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Overshoots then settles — feels alive, physical */
+
+    /* Duration scale */
+    --duration-instant: 100ms;  /* Hover states, focus rings */
+    --duration-fast:    150ms;  /* Button clicks, toggle switches */
+    --duration-normal:  250ms;  /* Panel slides, modal opens */
+    --duration-slow:    400ms;  /* Page transitions, complex animations */
+    --duration-glacial: 600ms;  /* Hero reveals, major state changes */
+}
+```
+
+### The Transition Patterns
+
+**Hover States — Instant Feedback:**
+```css
+.button {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    transition: all var(--duration-instant) var(--ease-out);
+}
+
+.button:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+    transform: translateY(-1px);  /* Subtle lift — physical weight */
+}
+
+.button:active {
+    transform: translateY(0);     /* Press down — gravity */
+    transition-duration: 50ms;   /* Faster on press — responsiveness */
+}
+```
+
+**Focus States — Keyboard Accessibility:**
+```css
+.input:focus {
+    outline: none;
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 3px var(--brand-accent-dim);
+    transition: border-color var(--duration-fast),
+                box-shadow var(--duration-fast);
+}
+```
+
+### Case Study: Cohesive 3D Ring Element
+
+Instead of scattered floating particles that drift randomly across the screen, a premium layout uses a tightly bound, solid mathematical structure — like a rotating ring or orb — to hold visual interest behind hero typography.
+
+```javascript
+import * as THREE from 'three';
+
+// 1. Scene Setup
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+);
+const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: true  // Transparent background — blends with page
+});
+
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+// 2. Cohesive Geometry — single torus ring, not scattered particles
+const geometry = new THREE.TorusGeometry(3, 0.08, 16, 100);
+const material = new THREE.MeshBasicMaterial({
+    color: 0x3ad29f,
+    wireframe: true
+});
+const torus = new THREE.Mesh(geometry, material);
+scene.add(torus);
+
+camera.position.z = 6;
+
+// 3. Inertial Animation Loop
+const clock = new THREE.Clock();
+
+function animate() {
+    const elapsed = clock.getElapsedTime();
+
+    // Slow, deliberate rotation — feels weighted, physical
+    torus.rotation.x = elapsed * 0.15;
+    torus.rotation.y = elapsed * 0.1;
+
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+// 4. Resize handler — maintains aspect ratio
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+```
+
+### GSAP for Non-WebGL Animations
+
+For DOM animations (text reveals, scroll-triggered transitions, staggered lists), use GSAP instead of CSS animations. GSAP gives you precise control over timing, easing, and sequencing.
+
+```javascript
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
+
+// Staggered card reveal on scroll
+gsap.from('.bento-card', {
+    y: 40,
+    opacity: 0,
+    duration: 0.6,
+    stagger: 0.1,        // 100ms between each card
+    ease: 'power3.out',   // GSAP's equivalent of --ease-out
+    scrollTrigger: {
+        trigger: '.bento-container',
+        start: 'top 80%',  // Trigger when container enters viewport
+    }
+});
+
+// Hero text line-by-line reveal
+gsap.from('.hero-line', {
+    y: 60,
+    opacity: 0,
+    duration: 0.8,
+    stagger: 0.15,
+    ease: 'power4.out',
+    delay: 0.3  // Small delay after page load
+});
+```
+
+### Senior Moves for Motion
+
+1. **Physics over flash.** Every animation should answer: "What would a real object do?" Real objects don't teleport, don't bounce forever, don't rotate at random speeds.
+2. **Duration scales with distance.** A button hover: 100ms. A modal sliding in: 250ms. A full page transition: 400ms. Larger movement = longer duration.
+3. **Stagger creates rhythm.** When revealing multiple elements, stagger them by 50-150ms. This creates a cascading effect that guides the eye.
+4. **Scroll triggers over auto-play.** Animations that play on scroll feel purposeful. Animations that play on page load feel like loading screens.
+5. **Reduce motion for accessibility.** Always respect `prefers-reduced-motion`:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+```
+
+---
+
+## 06. The Hierarchy of Skeleton States
+
+Never let the AI auto-generate a full-screen loading spinner blocking the entire interface. It shatters the user flow and signals a slow system architecture.
+
+### The Loading Hierarchy
+
+| Level | Pattern | When to Use |
+|-------|---------|-------------|
+| **Instant** | No loader needed | Response < 200ms (optimistic updates) |
+| **Micro** | Inline spinner or pulse | Button loading states, form submissions |
+| **Component** | Skeleton shimmer | Card content, list items, data tables |
+| **Section** | Skeleton layout | Dashboard sections, feed content |
+| **Page** | Skeleton page | Initial navigation (avoid if possible) |
+
+### Skeleton Shimmer
+
+When data is loading, the layout skeleton should already be rendered as empty, static Bento containers. A subtle shimmer tells the user *where* content is arriving without a jarring visual jump.
+
+```css
+/* Skeleton base */
+.skeleton {
+    background: var(--bg-surface);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer overlay */
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.04) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.8s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Shape variants */
+.skeleton-text {
+    height: 1rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text-sm {
+    height: 0.75rem;
+    width: 60%;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    height: 200px;
+    width: 100%;
+}
+```
+
+### Skeleton HTML Structure
+
+```html
+<!-- Dashboard skeleton — mirrors actual layout -->
+<div class="bento-container">
+    <div class="bento-span-12 skeleton skeleton-card" style="height: 80px;"></div>
+
+    <div class="bento-span-4">
+        <div class="bento-card">
+            <div class="skeleton skeleton-text" style="width: 40%;"></div>
+            <div class="skeleton skeleton-text" style="height: 2rem; width: 70%;"></div>
+            <div class="skeleton skeleton-text-sm" style="margin-top: 1rem;"></div>
+        </div>
+    </div>
+
+    <div class="bento-span-8">
+        <div class="bento-card">
+            <div class="skeleton skeleton-text" style="width: 30%;"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text" style="width: 80%;"></div>
+        </div>
+    </div>
+</div>
+```
+
+### Page Transitions
+
+For multi-page applications, use smooth transitions instead of instant swaps:
+
+```css
+/* Page transition wrapper */
+.page-transition {
+    animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Route change trigger */
+.page-enter {
+    animation: pageIn var(--duration-slow) var(--ease-out) both;
+}
+
+.page-exit {
+    animation: pageOut var(--duration-fast) ease-in both;
+}
+
+@keyframes pageIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pageOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-8px); }
+}
+```
+
+---
+
+## 07. Component Anatomy: Buttons Done Right
+
+Buttons are the most interaction-heavy element in any interface. A poorly designed button system breaks the entire design language.
+
+### The Button System
+
+```css
+/* Base button */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.6rem 1.2rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: var(--weight-medium);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--duration-instant) var(--ease-out);
+    text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* Primary — filled accent */
+.btn-primary {
+    background: var(--brand-accent);
+    color: var(--bg-base);
+    border-color: var(--brand-accent);
+}
+
+.btn-primary:hover {
+    background: #2ee0ac;  /* Slightly lighter */
+    box-shadow: 0 0 20px rgba(58, 210, 159, 0.25);
+}
+
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
+/* Secondary — ghost/border only */
+.btn-secondary {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-default);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+    border-color: var(--border-strong);
+    color: var(--text-primary);
+}
+
+/* Danger — for destructive actions */
+.btn-danger {
+    background: transparent;
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.3);
+}
+
+.btn-danger:hover {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.5);
+}
+
+/* Size variants */
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+.btn-lg { padding: 0.8rem 1.6rem; font-size: 1rem; }
+
+/* Disabled state */
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+```
+
+### Button Rules
+
+1. **Maximum 3 button styles.** Primary (accent), secondary (ghost), danger (destructive). Everything else is a variation of these three.
+2. **Asymmetric padding.** Horizontal padding should be 2x vertical padding. This creates a natural reading rhythm.
+3. **No centered text in buttons.** Left-aligned with an optional icon. Centered text only works for very short labels ("OK", "Cancel").
+4. **Loading state replaces label.** When a button is processing, replace the text with a spinner — don't add a spinner next to the text.
+
+```html
+<!-- Loading state pattern -->
+<button class="btn btn-primary" disabled>
+    <svg class="spinner" width="16" height="16" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" stroke="currentColor"
+                stroke-width="3" fill="none"
+                stroke-dasharray="31.4 31.4"
+                stroke-linecap="round"/>
+    </svg>
+    Processing...
+</button>
+
+<style>
+.spinner {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+</style>
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Typography | The foundation of hierarchy | Left-align body copy, use 65ch max-width, scale line height with font size |
+| Whitespace | Active structural support | Rule of 2x — double whatever the AI generates |
+| Bento Grid | Editorial magazine layout | 12-column grid with 3 card sizes, stack on mobile |
+| Color System | One accent, layered darkness | Never pure black — use organic near-black with surface layers |
+| Motion | Physics over flash | Custom easing, duration scales with distance, respect reduced-motion |
+| Skeletons | Show structure, not spinners | Shimmer on containers, stagger reveals, avoid full-page loaders |
+| Buttons | 3 styles max | Primary, secondary, danger — asymmetric padding, no centering |

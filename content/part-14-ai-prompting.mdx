@@ -1,0 +1,677 @@
+---
+title: "AI Prompting & Context Engineering: The Deterministic Contract"
+part: 14
+section: "AI Prompting"
+keywords: ["Context Engineering", "XML Delimiters", "Few-Shot", "Prompt Caching", "System Prompts", "Chain of Thought", "Output Formatting", "Role Prompting"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. Prompting vs. Context Engineering
+
+Casual users approach LLMs with open-ended, free-text sentences hoping the model infers their implicit constraints. This produces unpredictable output.
+
+Seniors treat prompts like software contracts. You define input parameters, enforce logical rules, outline the expected output schema, and dictate behavioral responses for edge cases. This is **Context Engineering**.
+
+### The Comparison
+
+| Aspect | Casual Prompting | Context Engineering |
+|--------|-----------------|---------------------|
+| **Input** | "Write me a React component" | Structured template with role, rules, examples, and output schema |
+| **Constraints** | Implicit, hoping the model guesses | Explicit, machine-parseable delimiters |
+| **Output** | Variable, often needs re-prompting | Deterministic, matches expected structure |
+| **Cost** | High (multiple re-tries waste tokens) | Low (one well-structured prompt succeeds) |
+| **Reusability** | None — each prompt is one-shot | Template-based — swap variables, keep structure |
+
+### The Prompt Anatomy
+
+Every production prompt has five layers:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ 1. ROLE          Who the model is acting as          │
+├─────────────────────────────────────────────────────┤
+│ 2. CONTEXT       Background information              │
+├─────────────────────────────────────────────────────┤
+│ 3. INSTRUCTIONS  Rules and constraints               │
+├─────────────────────────────────────────────────────┤
+│ 4. EXAMPLES      Concrete input/output demonstrations│
+├─────────────────────────────────────────────────────┤
+│ 5. INPUT         The actual user request/data        │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## 02. The Architecture of XML Delimiters
+
+When you mix systemic rules with raw variable user text, the model can confuse instructions with data. XML-style tags eliminate this drift by creating strict parseable boundaries.
+
+### Why XML Tags Work
+
+Modern models (Claude, GPT-4, Gemini) are explicitly trained to recognize XML tags as structural delimiters. They treat content inside `<instructions>` as meta-directives and content inside `<input_data>` as raw data to process — not to follow.
+
+### The Standard Delimiter Set
+
+```xml
+<!-- System-level: Who you are and how you behave -->
+<system_role>
+You are a senior TypeScript engineer specializing in API security.
+You write production-grade code with explicit error handling.
+You never use `any` types. You never skip input validation.
+</system_role>
+
+<!-- Context: Background the model needs -->
+<context>
+The user is building a SaaS payment platform using Express.js,
+Stripe, and PostgreSQL. All monetary values are in cents (INTEGER).
+</context>
+
+<!-- Rules: Hard constraints the model must follow -->
+<rules>
+- Every function must have a TypeScript return type
+- Every database query must use parameterized statements
+- Every external API call must have a timeout and error handler
+- Never log sensitive data (card numbers, passwords, tokens)
+</rules>
+
+<!-- Output format: Exactly what the model should produce -->
+<output_format>
+Return a single TypeScript file with:
+1. Import statements at the top
+2. Type definitions for all interfaces
+3. The main exported function
+4. JSDoc comment with @param and @returns
+</output_format>
+
+<!-- Input: The actual user request -->
+<input_data>
+Create a function that processes a Stripe webhook event and
+updates the order status in the database.
+</input_data>
+```
+
+### Nested Tags for Complex Prompts
+
+```xml
+<examples>
+  <example type="happy_path">
+    <input>Process a successful payment_intent.succeeded event</input>
+    <output>
+      // Stripe webhook handler for payment_intent.succeeded
+      export async function handlePaymentSuccess(
+        event: Stripe.Event
+      ): Promise&lt;OrderUpdateResult&gt; {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        // ... implementation
+      }
+    </output>
+  </example>
+
+  <example type="error_case">
+    <input>Process a payment_intent.payment_failed event</input>
+    <output>
+      // Stripe webhook handler for payment_intent.payment_failed
+      export async function handlePaymentFailure(
+        event: Stripe.Event
+      ): Promise&lt;OrderUpdateResult&gt; {
+        // ... implementation with error state
+      }
+    </output>
+  </example>
+
+  <example type="refusal">
+    <input>Process an event with no matching type</input>
+    <output>
+      // Unknown event type — acknowledge but don't process
+      return { status: 'ignored', reason: 'Unhandled event type' };
+    </output>
+  </example>
+</examples>
+```
+
+### Variable Injection Pattern
+
+```xml
+<instructions>
+Analyze the following code and suggest improvements.
+Focus on: security, performance, and TypeScript best practices.
+</instructions>
+
+<code language="{language}">
+{user_code}
+</code>
+
+<constraints>
+- Only suggest changes that improve the code
+- Don't rewrite the entire file — show diffs
+- Explain why each change matters
+</constraints>
+```
+
+**The key:** The model sees `{language}` and `{user_code}` as data placeholders. It processes the instructions above and applies them to the code below without conflating the two.
+
+---
+
+## 03. Few-Shot Prompting & The Golden Set
+
+Few-shot prompting — providing concrete input/output examples — is the most effective way to guarantee structural adherence. But bad examples waste tokens and teach the model bad habits.
+
+### The Golden Set Rules
+
+| Rule | Why It Matters |
+|------|---------------|
+| **Use production-quality examples** | The model clones your example's quality — deprecated syntax in = deprecated syntax out |
+| **Cover the happy path** | Show what "correct" looks like |
+| **Cover edge cases** | Show how to handle missing data, errors, ambiguity |
+| **Cover refusals** | Show when to say "I can't do that" instead of hallucinating |
+| **Keep examples minimal** | 3-5 lines per example — don't write full applications |
+
+### Example: API Response Generator
+
+```xml
+<system_role>
+You are a JSON API response formatter. You convert raw database
+rows into clean API responses matching the exact schema below.
+</system_role>
+
+<output_schema>
+{
+  "status": "success" | "error",
+  "data": { ... } | null,
+  "error": { "code": string, "message": string } | null,
+  "meta": { "timestamp": string, "requestId": string }
+}
+</output_schema>
+
+<examples>
+  <example>
+    <input>
+      Database row: { id: 1, name: "Alice", email: "a@x.com" }
+    </input>
+    <output>
+      {
+        "status": "success",
+        "data": { "id": 1, "name": "Alice", "email": "a@x.com" },
+        "error": null,
+        "meta": { "timestamp": "2026-07-11T10:00:00Z", "requestId": "req_abc123" }
+      }
+    </output>
+  </example>
+
+  <example>
+    <input>
+      Database row: null (user not found)
+    </input>
+    <output>
+      {
+        "status": "error",
+        "data": null,
+        "error": { "code": "USER_NOT_FOUND", "message": "No user with that ID exists" },
+        "meta": { "timestamp": "2026-07-11T10:00:00Z", "requestId": "req_abc123" }
+      }
+    </output>
+  </example>
+
+  <example>
+    <input>
+      Database query threw an error: "Connection timeout"
+    </input>
+    <output>
+      {
+        "status": "error",
+        "data": null,
+        "error": { "code": "INTERNAL_ERROR", "message": "An unexpected error occurred" },
+        "meta": { "timestamp": "2026-07-11T10:00:00Z", "requestId": "req_abc123" }
+      }
+    </output>
+  </example>
+</examples>
+```
+
+### Anti-Patterns: Bad Few-Shot Examples
+
+```xml
+<!-- BAD: Example is too vague — model can't learn the pattern -->
+<example>
+  <input>user data</input>
+  <output>formatted response</output>
+</example>
+
+<!-- BAD: Example uses deprecated/incorrect syntax -->
+<example>
+  <input>Create a component</input>
+  <output>
+    var MyComponent = React.createClass({  // ← Deprecated API
+      render: function() { ... }
+    });
+  </output>
+</example>
+
+<!-- BAD: Example is too long — wastes tokens, dilutes attention -->
+<example>
+  <input>Build a full auth system</input>
+  <output>
+    [200 lines of code with JWT, OAuth, sessions, middleware,
+     password hashing, rate limiting, CSRF protection, ...]
+  </output>
+</example>
+```
+
+---
+
+## 04. Chain of Thought (CoT) Prompting
+
+Chain of Thought forces the model to show its reasoning before producing a final answer. This dramatically improves accuracy for complex tasks.
+
+### When to Use CoT
+
+| Task Type | Without CoT | With CoT |
+|-----------|-------------|----------|
+| Simple code generation | Works fine | Unnecessary overhead |
+| Architecture decisions | Often misses trade-offs | Reasons through options |
+| Debugging complex issues | Jumps to wrong conclusion | Traces the logic step by step |
+| Math/logic problems | Frequent errors | Near-perfect accuracy |
+| Multi-step refactoring | Misses dependencies | Plans the full sequence |
+
+### The Pattern
+
+```xml
+<instructions>
+Solve this step-by-step before providing your final answer.
+Show your reasoning for each decision.
+</instructions>
+
+<problem>
+The user's API is returning 404 errors on /api/users/123 but
+200 on /api/users. The Express routes are defined as:
+  GET /api/users
+  GET /api/users/:id
+
+What is the most likely cause?
+</problem>
+
+<thinking>
+Let me trace the request lifecycle:
+1. Request hits GET /api/users/123
+2. Express matches against route patterns
+3. /api/users/:id should match — it's a parameterized route
+4. If it's returning 404, either:
+   a. The route is defined AFTER a catch-all route
+   b. The route is in a different router mounted at a different path
+   c. There's a middleware intercepting the request before it reaches the route
+5. Most likely: route ordering issue — Express matches first-defined route
+</thinking>
+
+<answer>
+The most likely cause is route ordering. If a catch-all route like
+`GET /api/users/*` is defined before `GET /api/users/:id`, Express
+matches the wildcard first and returns 404 because "123" doesn't
+match the wildcard's expected sub-path.
+
+Fix: Move `GET /api/users/:id` BEFORE `GET /api/users/*`.
+</answer>
+```
+
+### Auto-CoT vs Forced CoT
+
+```xml
+<!-- Auto-CoT: Model decides when to think (default behavior) -->
+<instructions>
+Answer the user's question. If it requires reasoning, think step-by-step.
+</instructions>
+
+<!-- Forced-CoT: Model MUST show reasoning (for debugging/auditing) -->
+<instructions>
+Before answering, write your reasoning inside <thinking> tags.
+Then provide your final answer inside <answer> tags.
+Always show your work — never skip the thinking step.
+</instructions>
+```
+
+---
+
+## 05. Output Format Control
+
+The most common failure mode: the model generates the right content in the wrong format. You asked for JSON, it gave you markdown. You wanted a function signature, it gave you a full implementation.
+
+### Explicit Format Instructions
+
+```xml
+<output_format>
+Return ONLY a valid JSON object. No markdown, no explanation,
+no code fences, no text before or after the JSON.
+
+The JSON must match this exact schema:
+{
+  "title": "string",
+  "description": "string",
+  "priority": "low" | "medium" | "high",
+  "tags": ["string"]
+}
+</output_format>
+```
+
+### JSON Mode (API-Level Enforcement)
+
+```typescript
+// OpenAI — force JSON output
+const response = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  response_format: { type: 'json_object' },  // Enforces valid JSON
+  messages: [
+    { role: 'system', content: 'You are a task analyzer. Return JSON.' },
+    { role: 'user', content: 'Analyze this task: Deploy the new API' },
+  ],
+});
+
+// The response is guaranteed to be valid JSON
+const result = JSON.parse(response.choices[0].message.content);
+```
+
+### Structured Output with Zod
+
+```typescript
+import { z } from 'zod';
+import { zodResponseFormat } from 'openai/helpers/zod';
+
+// Define the exact shape you want
+const TaskAnalysis = z.object({
+  title: z.string(),
+  description: z.string(),
+  priority: z.enum(['low', 'medium', 'high']),
+  estimatedHours: z.number(),
+  requiresDatabase: z.boolean(),
+});
+
+// Force the model to output exactly this shape
+const response = await openai.chat.completions.create({
+  model: 'gpt-4o',
+  response_format: zodResponseFormat(TaskAnalysis, 'task_analysis'),
+  messages: [...],
+});
+
+// TypeScript type is inferred automatically
+const analysis = TaskAnalysis.parse(
+  JSON.parse(response.choices[0].message.content)
+);
+// analysis.priority is guaranteed to be 'low' | 'medium' | 'high'
+```
+
+### The Format Enforcement Stack
+
+```
+Layer 1: Prompt instruction ("Return only valid JSON")
+         ↓ Weakest — model may ignore
+Layer 2: API parameter (response_format: json_object)
+         ↓ Strong — API validates before returning
+Layer 3: Schema validation (Zod/Pydantic parse)
+         ↓ Strongest — code catches malformed output
+```
+
+**Use all three layers in production.** Don't rely on just one.
+
+---
+
+## 06. Prompt Caching Economics
+
+Prompt Caching keeps your static system instructions, few-shot examples, and tool definitions hot in the provider's memory cache across multiple API calls. This cuts costs by up to 90% and reduces latency by 80%.
+
+### The Cache-Friendly Layout
+
+```
+┌─────────────────────────────────────────────────────┐
+│ STATIC (Cached — pay once, reuse forever)            │
+│                                                     │
+│ 1. System prompt + role instructions                │
+│ 2. Few-shot examples (golden set)                   │
+│ 3. Tool/function schemas                            │
+│ 4. Context documents (RAG results)                  │
+│                                                     │
+├─────────────────────────────────────────────────────┤
+│ DYNAMIC (Re-evaluated per request)                  │
+│                                                     │
+│ 5. User's actual message/query                      │
+│ 6. Conversation history (if applicable)             │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+**The rule:** Static content at the top, dynamic content at the bottom. The model reads cached content from fast memory and only processes the dynamic portion fresh.
+
+### Cost Comparison
+
+```
+Without Caching (every request re-processes everything):
+  System prompt:    2,000 tokens × $0.003 = $0.006
+  Examples:         3,000 tokens × $0.003 = $0.009
+  Tools:            1,500 tokens × $0.003 = $0.0045
+  User message:       500 tokens × $0.003 = $0.0015
+  ──────────────────────────────────────────────
+  Total per request:                    $0.021
+  10,000 requests/day:                $210/day
+
+With Caching (static content cached after first call):
+  System prompt:    2,000 tokens × $0.0003 = $0.0006  (90% discount)
+  Examples:         3,000 tokens × $0.0003 = $0.0009  (90% discount)
+  Tools:            1,500 tokens × $0.0003 = $0.00045 (90% discount)
+  User message:       500 tokens × $0.003  = $0.0015  (full price)
+  ──────────────────────────────────────────────
+  Total per request:                    $0.00345
+  10,000 requests/day:                 $34.50/day
+
+  SAVINGS: 83% cost reduction
+```
+
+### Implementation
+
+```typescript
+// Anthropic — automatic cache control
+const response = await anthropic.messages.create({
+  model: 'claude-sonnet-4-20250514',
+  max_tokens: 1024,
+  system: [
+    {
+      type: 'text',
+      text: SYSTEM_PROMPT,  // 2,000 tokens — cached after first call
+      cache_control: { type: 'ephemeral' },  // Enable caching
+    },
+  ],
+  messages: [
+    {
+      role: 'user',
+      content: userMessage,  // 500 tokens — always fresh
+    },
+  ],
+});
+
+// Check cache status in response
+console.log(response.usage);  // { input_tokens: 2500, cache_creation_input_tokens: 5000, cache_read_input_tokens: 5000 }
+```
+
+---
+
+## 07. Role Prompting & Persona Design
+
+The system prompt defines *who* the model is. This isn't decoration — it mathematically shifts the model's output distribution toward a specific knowledge domain and behavioral style.
+
+### The Role Stack
+
+```xml
+<system_role>
+You are a senior backend engineer with 12 years of experience
+building production Node.js applications. You specialize in:
+
+1. API security (OWASP top 10, rate limiting, input validation)
+2. Database optimization (PostgreSQL indexing, query plans, connection pooling)
+3. TypeScript strict mode (no `any`, explicit return types, branded types)
+
+You write code for other senior engineers — no hand-holding, no
+beginner explanations. Every suggestion must be production-ready,
+not a prototype.
+
+When you identify a security vulnerability, flag it immediately
+with severity (P1-P4) and the exact fix.
+</system_role>
+```
+
+### Persona Variations by Task
+
+| Task | Role | Tone |
+|------|------|------|
+| Code review | Senior security auditor | Critical, precise, no flattery |
+| Documentation | Technical writer for senior devs | Concise, example-heavy |
+| Debugging | Senior SRE on-call | Urgent, systematic, hypothesis-driven |
+| Architecture | Principal architect | Strategic, trade-off focused |
+| Onboarding | Senior engineer mentoring junior | Patient, explains "why" not just "what" |
+
+### The Anti-Pattern: Over-Specified Personas
+
+```xml
+<!-- BAD: Too specific — model can't maintain this persona -->
+<system_role>
+You are Michael, a 34-year-old senior engineer from San Francisco
+who graduated from MIT in 2014 with a degree in Computer Science.
+You have a cat named Whiskers and you enjoy rock climbing on
+weekends. You speak with a slightly sarcastic tone and always
+start your responses with "Hey there, friend!"
+</system_role>
+
+<!-- GOOD: Role-focused — model can maintain this consistently -->
+<system_role>
+You are a senior security engineer. You are direct, critical,
+and prioritize security over convenience. You flag every
+vulnerability with severity and exact remediation steps.
+</system_role>
+```
+
+---
+
+## 08. The Positive Framing Principle
+
+When writing constraints, developers list what the model should *not* do: "Don't use Bootstrap, don't make thick borders, don't use red." This triggers the **Pink Elephant Problem** — the model must evaluate the forbidden concept first, increasing the chance it appears in the output.
+
+### The Pattern
+
+```xml
+<!-- BAD: Negative framing — model must process forbidden concepts -->
+<rules>
+- Do not use Bootstrap or Tailwind CDN
+- Do not make the design look like a hacker terminal
+- Do not use bright neon colors
+- Do not center all text
+- Do not use Comic Sans
+</rules>
+
+<!-- GOOD: Positive framing — model follows the specified path -->
+<rules>
+- Use vanilla CSS with custom properties (no frameworks)
+- Design follows editorial luxury aesthetic: near-black backgrounds
+  with crisp white typography
+- Color palette: one accent color (#3ad29f) on dark surfaces
+- Body text is left-aligned; only headlines are centered
+- Typography: Inter for body, JetBrains Mono for code
+</rules>
+```
+
+### More Positive Framing Examples
+
+| Negative (Avoid) | Positive (Follow) |
+|-------------------|-------------------|
+| "Don't write verbose code" | "Write concise functions under 20 lines" |
+| "Don't use var" | "Use const by default; let only when reassignment is needed" |
+| "Don't skip error handling" | "Every async call must have try/catch with specific error types" |
+| "Don't make the API slow" | "Target <100ms P95 latency; cache aggressively" |
+| "Don't hallucinate API methods" | "Only use methods documented in the official Stripe v2024-12 API" |
+
+---
+
+## 09. Prompt Testing & Versioning
+
+Production prompts are code. They need version control, testing, and rollback capability.
+
+### The Prompt File Structure
+
+```
+prompts/
+├── v2.1.0/
+│   ├── system.md          # System prompt
+│   ├── examples/          # Few-shot examples
+│   │   ├── happy-path.md
+│   │   ├── edge-case.md
+│   │   └── refusal.md
+│   ├── schemas/           # Output schemas
+│   │   └── task-analysis.json
+│   └── tests/             # Prompt tests
+│       ├── test-basic.ts
+│       ├── test-edge-cases.ts
+│       └── test-regressions.ts
+├── v2.2.0/                # New version with changes
+│   └── ...
+└── CHANGELOG.md           # What changed between versions
+```
+
+### Prompt Testing
+
+```typescript
+// test-basic.ts — Verify prompt produces expected output
+import { generateTaskAnalysis } from '../prompts/v2.1.0/system.md';
+
+describe('Task Analysis Prompt', () => {
+  it('should classify a simple task as low priority', async () => {
+    const result = await generateTaskAnalysis('Update the README file');
+
+    expect(result.priority).toBe('low');
+    expect(result.estimatedHours).toBeLessThan(4);
+    expect(result.requiresDatabase).toBe(false);
+  });
+
+  it('should classify a security fix as high priority', async () => {
+    const result = await generateTaskAnalysis(
+      'Fix SQL injection vulnerability in user search endpoint'
+    );
+
+    expect(result.priority).toBe('high');
+    expect(result.requiresDatabase).toBe(true);
+  });
+
+  it('should handle ambiguous input gracefully', async () => {
+    const result = await generateTaskAnalysis('asdfghjkl');
+
+    expect(result.status).toBe('error');
+    expect(result.error.code).toBe('AMBIGUOUS_INPUT');
+  });
+});
+```
+
+### The Versioning Rule
+
+When you change a prompt, bump the version. Never edit a production prompt in place — that makes rollback impossible.
+
+```bash
+# Copy current version
+cp -r prompts/v2.1.0 prompts/v2.2.0
+
+# Make changes to v2.2.0
+# Update CHANGELOG.md
+# Run tests against new version
+# Deploy v2.2.0
+
+# If issues arise, revert to v2.1.0 instantly
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Context Engineering | Prompts are software contracts | Define input, rules, output schema, and edge case behavior — don't hope the model guesses |
+| XML Delimiters | Separate instructions from data | `<system_role>` for meta-directives, `<input_data>` for raw content — model parses the boundary |
+| Few-Shot Golden Sets | Show, don't tell | 3-5 lines per example; cover happy path, edge case, and refusal — never use "close enough" examples |
+| Chain of Thought | Force the model to reason before answering | Use for complex debugging, architecture decisions, and multi-step logic |
+| Output Control | Three layers: instruction → API parameter → schema validation | Use all three in production — don't rely on just one |
+| Prompt Caching | Static content at top, dynamic at bottom | Cuts costs 80%+ and latency 80%+ — requires strict static→dynamic ordering |
+| Role Prompting | System prompt shifts output distribution | Persona-focused, not biography-focused — "senior security engineer" not "Michael from San Francisco" |
+| Positive Framing | Define what TO do, not what NOT to do | "Left-aligned body text" beats "Don't center text" — avoids the Pink Elephant Problem |
+| Prompt Versioning | Prompts are code — version, test, rollback | Never edit production prompts in place — copy, modify, test, deploy |

@@ -1,0 +1,701 @@
+---
+title: "Production Thinking: Telemetry, Logging, and Crash Recovery"
+part: 15
+section: "Production Thinking"
+keywords: ["Telemetry", "Structured Logs", "Crash Recovery", "Sentry", "Health Checks", "Circuit Breaker", "Alerting", "Incident Response", "Post-Mortem"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Three Pillars of Observability
+
+Once your system is live, it enters a black box. You can't open browser DevTools or a local console to see why a transaction failed. You must architect deep observability using three pillars:
+
+| Pillar | What It Shows | Example |
+|--------|--------------|---------|
+| **Metrics** | *That* something is breaking | CPU at 95%, API latency spiked to 2s, error rate jumped to 5% |
+| **Logs** | *Why* it broke | "Payment failed: Stripe returned 402 — card declined" |
+| **Traces** | *Where* the bottleneck lives | Request → Edge (15ms) → API (200ms) → DB (800ms) → Cache (2ms) |
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    OBSERVABILITY STACK                        │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  METRICS              LOGS                TRACES             │
+│  ┌──────────┐        ┌──────────┐        ┌──────────┐      │
+│  │ CPU: 34% │        │ Timestamp│        │ Edge: 15ms│      │
+│  │ RAM: 62% │        │ Level    │        │ API: 200ms│      │
+│  │ RPS: 342 │        │ Message  │        │ DB: 800ms │      │
+│  │ Errors: 2│        │ Context  │        │ Cache: 2ms│      │
+│  └──────────┘        └──────────┘        └──────────┘      │
+│       │                   │                   │              │
+│       └───────────────────┼───────────────────┘              │
+│                           ▼                                  │
+│                 ┌──────────────────┐                         │
+│                 │   Dashboard +    │                         │
+│                 │   Alerting       │                         │
+│                 └──────────────────┘                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 02. Structured Logging: The Foundation
+
+Unstructured `console.log` statements are impossible to query, filter, or alert on. Structured JSON logging turns every log entry into a searchable, indexable data point.
+
+### The Logger Implementation
+
+```typescript
+// logger.ts — Production structured logger
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+
+interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  service: string;
+  requestId?: string;
+  userId?: string;
+  duration?: number;
+  [key: string]: unknown;
+}
+
+const SERVICE_NAME = process.env.SERVICE_NAME || 'api';
+
+function log(level: LogLevel, message: string, context?: Record<string, unknown>) {
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    service: SERVICE_NAME,
+    ...context,
+  };
+
+  // Production: structured JSON for log aggregators
+  if (process.env.NODE_ENV === 'production') {
+    const output = JSON.stringify(entry);
+    if (level === 'error' || level === 'fatal') {
+      process.stderr.write(output + '\n');
+    } else {
+      process.stdout.write(output + '\n');
+    }
+  } else {
+    // Development: human-readable
+    const color = { debug: 'gray', info: 'cyan', warn: 'yellow', error: 'red', fatal: 'red' }[level];
+    console.log(`\x1b[${color === 'gray' ? '90' : color === 'cyan' ? '36' : color === 'yellow' ? '33' : '31'}m[${level.toUpperCase()}]\x1b[0m ${message}`, context || '');
+  }
+}
+
+export const logger = {
+  debug: (msg: string, ctx?: Record<string, unknown>) => log('debug', msg, ctx),
+  info: (msg: string, ctx?: Record<string, unknown>) => log('info', msg, ctx),
+  warn: (msg: string, ctx?: Record<string, unknown>) => log('warn', msg, ctx),
+  error: (msg: string, ctx?: Record<string, unknown>) => log('error', msg, ctx),
+  fatal: (msg: string, ctx?: Record<string, unknown>) => log('fatal', msg, ctx),
+};
+```
+
+### Request Context Middleware
+
+Attach a unique request ID to every log entry so you can trace a single request across multiple services:
+
+```typescript
+import { randomUUID } from 'crypto';
+
+function requestLogger(req, res, next) {
+  const requestId = req.headers['x-request-id'] || randomUUID();
+  const start = Date.now();
+
+  // Attach to request for downstream use
+  req.requestId = requestId;
+  req.logger = logger.child({ requestId });
+
+  // Log the request
+  req.logger.info('Request started', {
+    method: req.method,
+    path: req.path,
+    userAgent: req.headers['user-agent'],
+  });
+
+  // Log when response finishes
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    req.logger.info('Request completed', {
+      method: req.method,
+      path: req.path,
+      statusCode: res.statusCode,
+      duration,
+    });
+  });
+
+  next();
+}
+```
+
+### Log Levels: When to Use Each
+
+| Level | When | Example | Alert? |
+|-------|------|---------|--------|
+| `debug` | Development troubleshooting | "Query returned 42 rows in 12ms" | No |
+| `info` | Normal operations worth recording | "User signed up", "Payment processed" | No |
+| `warn` | Unexpected but non-fatal events | "Rate limit approaching for user X" | Maybe |
+| `error` | Failures requiring attention | "Payment failed: Stripe 402" | Yes |
+| `fatal` | System cannot continue | "Database connection pool exhausted" | Yes (immediate) |
+
+**The rule:** In production, `debug` logs are disabled. `info` is your baseline. `warn` and `error` feed into your alerting system.
+
+### What NOT to Log
+
+```typescript
+// NEVER log these:
+logger.info('User login', {
+  email: user.email,           // ✗ PII — privacy violation
+  password: req.body.password, // ✗ Credentials — security breach
+  token: session.token,        // ✗ Secrets — can be used for impersonation
+  creditCard: payment.card,    // ✗ PCI violation — massive fines
+});
+
+// ALWAYS log these:
+logger.info('User login', {
+  userId: user.id,             // ✓ Reference ID, not PII
+  method: 'email',             // ✓ Auth method
+  ip: req.ip,                  // ✓ For security auditing
+  userAgent: req.headers['user-agent'], // ✓ For debugging
+});
+```
+
+---
+
+## 03. Error Tracking with Sentry
+
+Sentry captures errors in production with full stack traces, user context, and release tracking. It tells you not just *that* an error happened, but *where*, *when*, *to whom*, and *in which deployment*.
+
+### Setup
+
+```typescript
+// sentry.ts — Initialize at application entry point
+import * as Sentry from '@sentry/node';
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  release: process.env.GIT_COMMIT_SHA,  // Track which deploy introduced the error
+
+  // Sample 10% of normal traffic, 100% of errors
+  tracesSampleRate: 0.1,
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+
+  // Don't log these known non-errors
+  ignoreErrors: [
+    'ResizeObserver loop',        // Browser noise
+    'Network request failed',     // User went offline
+    'Request aborted',            // User navigated away
+  ],
+});
+```
+
+### Capture Errors with Context
+
+```typescript
+// Attach user context to errors
+app.use((req, res, next) => {
+  Sentry.setUser({
+    id: req.user?.id,
+    email: req.user?.email,  // Sentry encrypts this
+  });
+  next();
+});
+
+// Capture with additional context
+try {
+  await processPayment(order);
+} catch (err) {
+  Sentry.withScope((scope) => {
+    scope.setTag('orderId', order.id);
+    scope.setTag('paymentMethod', order.paymentMethod);
+    scope.setExtra('payload', order);
+    Sentry.captureException(err);
+  });
+
+  logger.error('Payment failed', { orderId: order.id, error: err.message });
+  throw err;  // Still throw — Sentry doesn't replace your error handling
+}
+```
+
+### The Error Budget
+
+Track your error rate as a percentage of total requests:
+
+```
+Error Budget Calculation:
+  Total requests (24h):    100,000
+  Error responses (5xx):     1,200
+  Error rate:                1.2%
+
+  Error budget (99.9% target): 100 errors allowed
+  Errors consumed:             1,200
+  Budget status:               ❌ OVER BUDGET
+
+  Action: Investigate immediately. Deploy rollback if needed.
+```
+
+---
+
+## 04. The Circuit Breaker Pattern
+
+When an external service (payment API, third-party API) starts failing, continuously retrying exhausts your resources and makes recovery slower. A circuit breaker stops calling the failing service and returns a fallback response.
+
+```
+CLOSED (Normal)
+    │
+    │  Error rate exceeds threshold (e.g., 5 failures in 60s)
+    ▼
+OPEN (Failing)
+    │
+    │  Return fallback immediately (no calls to failing service)
+    │  Wait for cooldown period (e.g., 30 seconds)
+    ▼
+HALF-OPEN (Testing)
+    │
+    │  Send one test request to failing service
+    │
+    ├──▶ Success → CLOSED (恢复正常)
+    │
+    └──▶ Failure → OPEN (still failing, wait again)
+```
+
+### Implementation
+
+```typescript
+class CircuitBreaker {
+  private failures = 0;
+  private lastFailure = 0;
+  private state: 'closed' | 'open' | 'half-open' = 'closed';
+
+  constructor(
+    private threshold: number = 5,      // Failures before opening
+    private cooldown: number = 30000,   // 30 seconds
+  ) {}
+
+  async execute<T>(fn: () => Promise<T>, fallback: () => T): Promise<T> {
+    // If circuit is open, check if cooldown has passed
+    if (this.state === 'open') {
+      if (Date.now() - this.lastFailure > this.cooldown) {
+        this.state = 'half-open';
+      } else {
+        return fallback();  // Return fallback immediately
+      }
+    }
+
+    try {
+      const result = await fn();
+
+      // Success — reset circuit
+      this.failures = 0;
+      this.state = 'closed';
+      return result;
+
+    } catch (err) {
+      this.failures++;
+      this.lastFailure = Date.now();
+
+      if (this.failures >= this.threshold) {
+        this.state = 'open';
+        logger.error('Circuit breaker opened', {
+          failures: this.failures,
+          service: 'payment-api',
+        });
+      }
+
+      return fallback();
+    }
+  }
+}
+
+// Usage
+const paymentBreaker = new CircuitBreaker(5, 30000);
+
+async function processPayment(order: Order) {
+  return paymentBreaker.execute(
+    // Try this
+    () => stripe.charges.create({ amount: order.amount, currency: 'usd' }),
+    // Fallback if circuit is open
+    () => ({ status: 'pending', message: 'Payment processing delayed — will retry' }),
+  );
+}
+```
+
+---
+
+## 05. Health Checks: Deep & Shallow
+
+A basic health check verifies the server is alive. A deep health check verifies the server and its dependencies are functional.
+
+### Shallow Health Check
+
+```typescript
+// GET /health — Just confirms the process is alive
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: Date.now() });
+});
+```
+
+### Deep Health Check
+
+```typescript
+// GET /health/deep — Verifies all dependencies
+app.get('/health/deep', async (req, res) => {
+  const checks: Record<string, { status: string; latency?: number }> = {};
+  let healthy = true;
+
+  // Check PostgreSQL
+  try {
+    const start = Date.now();
+    await db.query('SELECT 1');
+    checks.postgres = { status: 'healthy', latency: Date.now() - start };
+  } catch {
+    checks.postgres = { status: 'unhealthy' };
+    healthy = false;
+  }
+
+  // Check Redis
+  try {
+    const start = Date.now();
+    await redis.ping();
+    checks.redis = { status: 'healthy', latency: Date.now() - start };
+  } catch {
+    checks.redis = { status: 'unhealthy' };
+    healthy = false;
+  }
+
+  // Check external API (with timeout)
+  try {
+    const start = Date.now();
+    const response = await fetch('https://api.stripe.com/v1/health', {
+      signal: AbortSignal.timeout(5000),
+    });
+    checks.stripe = {
+      status: response.ok ? 'healthy' : 'degraded',
+      latency: Date.now() - start,
+    };
+  } catch {
+    checks.stripe = { status: 'unhealthy' };
+    healthy = false;
+  }
+
+  res.status(healthy ? 200 : 503).json({
+    status: healthy ? 'healthy' : 'degraded',
+    checks,
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+  });
+});
+```
+
+### Health Check Response
+
+```json
+{
+  "status": "healthy",
+  "checks": {
+    "postgres": { "status": "healthy", "latency": 3 },
+    "redis": { "status": "healthy", "latency": 1 },
+    "stripe": { "status": "healthy", "latency": 142 }
+  },
+  "uptime": 864000,
+  "timestamp": 1720000000000
+}
+```
+
+---
+
+## 06. Alerting: Know Before Users Do
+
+Alerts should fire *before* users notice problems. The key is setting the right thresholds and routing alerts to the right people.
+
+### Alert Severity Levels
+
+| Severity | Response Time | Example | Channel |
+|----------|--------------|---------|---------|
+| **P1 — Critical** | Immediate (< 5 min) | Database down, payment system failing | Phone call + Slack + PagerDuty |
+| **P2 — High** | < 30 min | Error rate > 5%, latency > 2s | Slack + Email |
+| **P3 — Medium** | < 4 hours | Disk usage > 80%, slow queries | Slack |
+| **P4 — Low** | Next business day | Deprecation warnings, non-critical alerts | Email |
+
+### Alert Rules
+
+```yaml
+# Example alert rules (Prometheus/Grafana or similar)
+alerts:
+  - name: High Error Rate
+    condition: error_rate > 5% for 5 minutes
+    severity: P2
+    action: Slack notification + on-call page
+
+  - name: High Latency
+    condition: p95_latency > 2000ms for 5 minutes
+    severity: P2
+    action: Slack notification
+
+  - name: Database Connection Pool Exhausted
+    condition: active_connections > 45 (max 50) for 2 minutes
+    severity: P1
+    action: PagerDuty alert + auto-scale trigger
+
+  - name: Disk Usage High
+    condition: disk_usage > 80%
+    severity: P3
+    action: Slack notification
+
+  - name: SSL Certificate Expiring
+    condition: days_until_expiry < 14
+    severity: P3
+    action: Email notification
+```
+
+### Alert Fatigue Prevention
+
+```
+BAD ALERTS (cause fatigue):
+  "CPU > 50% for 1 minute"     → Triggers constantly, ignored
+  "Memory > 60%"               → Normal for most apps
+  "Request count > 100"        → Too low threshold
+
+GOOD ALERTS (actionable):
+  "Error rate > 5% for 5 min"  → Something is actually broken
+  "P95 latency > 2s for 5 min" → Users are experiencing slowness
+  "Health check failing for 3 min" → Service is down
+```
+
+**The rule:** If an alert fires and you don't need to take action, delete the alert. Every non-actionable alert trains your team to ignore alerts.
+
+---
+
+## 07. Graceful Shutdown
+
+When a crash occurs or a new deployment replaces an active server, you can't just kill the process. If you force-quit mid-transaction, you corrupt user data.
+
+### The Shutdown Sequence
+
+```
+SIGTERM received (from orchestrator or deployment)
+        │
+        ▼
+1. Stop accepting new connections
+   (server.close() — existing requests finish)
+        │
+        ▼
+2. Drain database connection pool
+   (wait for in-flight queries to complete)
+        │
+        ▼
+3. Disconnect from Redis
+   (close pub/sub connections cleanly)
+        │
+        ▼
+4. Flush remaining logs
+   (ensure all log entries are written)
+        │
+        ▼
+5. Process exits cleanly (exit code 0)
+```
+
+### Implementation
+
+```typescript
+import { server } from './app';
+import { db } from './database';
+import { redis } from './cache';
+import { logger } from './logger';
+
+let isShuttingDown = false;
+
+async function gracefulShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info('Shutdown initiated', { signal });
+
+  // 1. Stop accepting new requests (existing requests finish)
+  server.close(() => {
+    logger.info('HTTP server closed');
+  });
+
+  // 2. Set a hard timeout — force exit if shutdown takes too long
+  const forceExitTimeout = setTimeout(() => {
+    logger.fatal('Forced shutdown — grace period exceeded');
+    process.exit(1);
+  }, 30000);  // 30 seconds max
+
+  try {
+    // 3. Drain database connections
+    await db.pool.end();
+    logger.info('Database connections drained');
+
+    // 4. Disconnect Redis
+    await redis.quit();
+    logger.info('Redis disconnected');
+
+    // 5. All clean — exit
+    clearTimeout(forceExitTimeout);
+    logger.info('Graceful shutdown complete');
+    process.exit(0);
+
+  } catch (err) {
+    logger.error('Error during shutdown', { error: err.message });
+    process.exit(1);
+  }
+}
+
+// Listen for termination signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions — log and exit cleanly
+process.on('uncaughtException', (err) => {
+  logger.fatal('Uncaught exception', {
+    message: err.message,
+    stack: err.stack,
+  });
+  gracefulShutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled rejection', { reason: String(reason) });
+});
+```
+
+---
+
+## 08. The Incident Response Playbook
+
+Things will break. The difference between junior and senior engineers is how fast they detect, respond, and recover.
+
+### The 5-Step Process
+
+```
+DETECT (< 1 min)
+│  Automated monitoring alerts fire
+│  (error rate spike, latency spike, health check failing)
+│
+├──▶ ASSESS (< 5 min)
+│    • Is it user-facing? How many users affected?
+│    • Is data at risk? (writes failing, reads corrupted?)
+│    • What changed recently? (last deploy, config change, traffic spike?)
+│
+├──▶ COMMUNICATE (< 10 min)
+│    • Status page update: "Investigating reports of [issue]"
+│    • Internal Slack: #incidents channel
+│    • If P1: Page on-call engineer
+│
+├──▶ MITIGATE (< 30 min)
+│    ├── ROLLBACK (most common fix — revert last deploy)
+│    ├── SCALE UP (traffic spike — add instances)
+│    ├── FEATURE FLAG OFF (broken feature — disable it)
+│    ├── FAILOVER (region down — route to backup)
+│    └── DEGRADE GRACEFULLY (non-critical service down — continue without it)
+│
+└──▶ RETROSPECTIVE (within 48 hours)
+     • Timeline of events
+     • Root cause analysis
+     • What went well, what went wrong
+     • Action items to prevent recurrence
+```
+
+### The Post-Mortem Template
+
+```markdown
+# Incident Post-Mortem: [Title]
+
+## Summary
+- **Date:** 2026-07-11
+- **Duration:** 45 minutes
+- **Severity:** P2
+- **Impact:** 12% of users unable to log in
+- **Root Cause:** Redis connection pool exhaustion after traffic spike
+
+## Timeline
+- 14:00 — Traffic spike begins (3x normal)
+- 14:05 — Redis connection pool hits 50/50 max
+- 14:06 — Login requests start failing with 500 errors
+- 14:08 — Alert fires: "Error rate > 5%"
+- 14:10 — On-call engineer acknowledges
+- 14:15 — Root cause identified: Redis pool exhaustion
+- 14:20 — Mitigation: increased pool size to 100, restarted affected instances
+- 14:45 — Service fully restored
+- 14:50 — Verified via monitoring dashboards
+
+## Root Cause
+Traffic spike exhausted the Redis connection pool (max: 50). All subsequent requests waiting for a connection timed out after 5s, causing 500 errors on login.
+
+## What Went Well
+- Alert fired within 1 minute
+- On-call responded within 5 minutes
+- Root cause identified quickly
+
+## What Went Wrong
+- Redis pool size was hardcoded to 50 — not configurable
+- No auto-scaling for connection pool under load
+- No graceful degradation when Redis is unavailable
+
+## Action Items
+- [ ] Make Redis pool size configurable via environment variable
+- [ ] Add connection pool auto-scaling based on utilization
+- [ ] Implement graceful degradation for cache misses (fall through to DB)
+- [ ] Add load testing to CI/CD pipeline
+```
+
+---
+
+## 09. Production Monitoring Dashboard
+
+At minimum, track these metrics:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  SYSTEM HEALTH                                                   │
+│  ├── Request Rate:           342 req/min                       │
+│  ├── Error Rate:             0.3% (2xx: 99.7%)                 │
+│  ├── P50 Response Time:      120ms                             │
+│  ├── P95 Response Time:      450ms                             │
+│  ├── P99 Response Time:      1.2s                              │
+│  └── Active Connections:     89                                │
+├─────────────────────────────────────────────────────────────────┤
+│  RESOURCES                                                        │
+│  ├── CPU Usage:              34%                               │
+│  ├── Memory Usage:           62% (3.1GB / 5GB)                │
+│  ├── Disk Usage:             28%                               │
+│  ├── DB Connections:         12 / 50 pool limit               │
+│  └── Redis Memory:           45% (1.2GB / 2.5GB)              │
+├─────────────────────────────────────────────────────────────────┤
+│  DEPENDENCIES                                                     │
+│  ├── PostgreSQL:             ✅ Healthy (3ms)                  │
+│  ├── Redis:                  ✅ Healthy (1ms)                  │
+│  ├── Stripe API:             ✅ Healthy (142ms)                │
+│  └── Email Service:          ⚠️ Degraded (890ms)               │
+├─────────────────────────────────────────────────────────────────┤
+│  ALERTS (last 24h)                                               │
+│  ├── ⚠️  P99 latency exceeded 1s at 03:14 UTC                  │
+│  ├── ✅ Resolved: database connection pool exhaustion           │
+│  └── ℹ️  Deployment v2.4.1 completed successfully               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Three Pillars | Metrics show *that*, Logs show *why*, Traces show *where* | You need all three — metrics alone tell you something is wrong but not what |
+| Structured Logging | JSON over console.log | Timestamp + level + message + requestId — queryable, alertable, indexable |
+| Error Tracking | Sentry captures errors with context | Tag by release, user, and feature — know which deploy broke what |
+| Circuit Breaker | Stop calling failing services | Fail fast, return fallback, retry after cooldown — prevents cascade failures |
+| Health Checks | Deep checks verify dependencies | Shallow: "am I alive?" Deep: "can I reach my database, cache, and APIs?" |
+| Alerting | Right threshold, right channel | If an alert doesn't require action, delete it — alert fatigue kills response times |
+| Graceful Shutdown | Finish in-flight work before exit | SIGTERM → stop accepting → drain connections → flush logs → exit cleanly |
+| Incident Response | Detect → Assess → Mitigate → Retrospective | The fastest fix is almost always a rollback — test your rollback process regularly |
+| Post-Mortem | Blameless, action-oriented | Focus on systems and processes, not individuals — "what failed?" not "who failed?" |

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#070a09"/>
+      <stop offset="100%" style="stop-color:#0d1210"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#3ad29f"/>
+      <stop offset="100%" style="stop-color:#1b4d3e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="60" y="60" width="1080" height="510" rx="16" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="100" y="140" font-family="system-ui,sans-serif" font-size="14" font-weight="500" fill="#3ad29f" letter-spacing="3">THE SENIOR FULL-STACK COMPENDIUM</text>
+  <text x="100" y="220" font-family="system-ui,sans-serif" font-size="52" font-weight="800" fill="#e8efec" letter-spacing="-1">The AI Builder's</text>
+  <text x="100" y="290" font-family="system-ui,sans-serif" font-size="52" font-weight="800" fill="url(#accent)" letter-spacing="-1">Handbook</text>
+  <text x="100" y="360" font-family="system-ui,sans-serif" font-size="20" fill="#6b8579">A senior-engineered guide to full-stack development</text>
+  <text x="100" y="390" font-family="system-ui,sans-serif" font-size="20" fill="#6b8579">with AI, databases, security, and production operations.</text>
+  <rect x="100" y="440" width="60" height="4" rx="2" fill="#3ad29f"/>
+  <text x="100" y="490" font-family="monospace" font-size="14" fill="#3d564c">playbook.cydercoder.com</text>
+  <circle cx="1050" cy="150" r="80" fill="none" stroke="rgba(58,210,159,0.1)" stroke-width="1"/>
+  <circle cx="1050" cy="150" r="60" fill="none" stroke="rgba(58,210,159,0.15)" stroke-width="1"/>
+  <circle cx="1050" cy="150" r="40" fill="none" stroke="rgba(58,210,159,0.2)" stroke-width="1"/>
+  <text x="1050" y="160" font-family="system-ui,sans-serif" font-size="32" font-weight="800" fill="#3ad29f" text-anchor="middle">C</text>
+</svg>

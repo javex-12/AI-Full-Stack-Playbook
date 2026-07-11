@@ -1,0 +1,520 @@
+---
+title: "Deployment & Edge Infrastructure: Global Distribution"
+part: 11
+section: "Deployment"
+keywords: ["CDN", "Edge Networks", "Edge Functions", "DNS Routing", "Caching Headers", "Vercel", "Cloudflare", "Preview Deployments", "Rollback"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Single Server Fallacy
+
+Amateur builders deploy to a single server in one region (usually US-East). A user in Lagos, Nigeria or Tokyo, Japan waits 200-500ms for every request to cross undersea fiber-optic cables before even receiving a byte.
+
+> **The Global Model:** Static assets, HTML shells, and lightweight API logic live on the **Edge** — cached or executing inside data centers miles from the end user, not thousands of miles away.
+
+### Latency by Region (Single US-East Server)
+
+| User Location | Round Trip Distance | Typical TTFB | User Experience |
+|---------------|--------------------:|-------------:|-----------------|
+| New York | ~50 km | ~30ms | Instant |
+| London | ~5,500 km | ~100ms | Fast |
+| Lagos | ~8,500 km | ~180ms | Acceptable |
+| Mumbai | ~13,000 km | ~250ms | Noticeable delay |
+| Tokyo | ~11,000 km | ~220ms | Noticeable delay |
+| Sydney | ~16,000 km | ~300ms | Frustrating |
+
+### With a CDN (Edge Nodes Everywhere)
+
+| User Location | Edge Node Distance | Typical TTFB | User Experience |
+|---------------|-------------------:|-------------:|-----------------|
+| New York | ~5 km | ~15ms | Instant |
+| London | ~3 km | ~12ms | Instant |
+| Lagos | ~50 km | ~25ms | Instant |
+| Mumbai | ~20 km | ~20ms | Instant |
+| Tokyo | ~10 km | ~15ms | Instant |
+| Sydney | ~15 km | ~18ms | Instant |
+
+**The difference:** 300ms → 18ms. A 16x improvement for the furthest users, achieved by distributing your content globally — not by writing faster code.
+
+---
+
+## 02. CDN Architecture & Edge Routing
+
+A **CDN (Content Delivery Network)** is a globally distributed network of servers. When you deploy to Vercel, Netlify, or Cloudflare, your build assets are duplicated across hundreds of **PoPs (Points of Presence)** worldwide.
+
+### How Edge Resolution Works
+
+```
+User in Lagos requests: playbook.cydercoder.com
+        │
+        ▼
+┌───────────────────────────────────────────────────────┐
+│ 1. DNS Anycast Routing                                │
+│    DNS resolves to the NEAREST edge node               │
+│    (Lagos PoP, not US-East origin)                    │
+└───────────────────┬───────────────────────────────────┘
+                    │
+                    ▼
+┌───────────────────────────────────────────────────────┐
+│ 2. Edge Cache Check                                   │
+│    Lagos PoP checks its local cache                   │
+│                                                       │
+│    ┌─────────────┐                                    │
+│    │  HIT (~15ms)│ ──▶ Serve cached HTML to user     │
+│    └─────────────┘                                    │
+│                                                       │
+│    ┌──────────────┐                                   │
+│    │ MISS (~120ms)│ ──▶ Forward to origin            │
+│    └──────────────┘    (US-East server)               │
+└───────────────────────────────────────────────────────┘
+                    │ (on cache miss)
+                    ▼
+┌───────────────────────────────────────────────────────┐
+│ 3. Origin Server                                      │
+│    Fetches from database, renders HTML                 │
+│    Returns to Lagos PoP                               │
+│    PoP caches the response for future requests        │
+└───────────────────────────────────────────────────────┘
+```
+
+### Edge Computing: Code at the Edge
+
+Modern edge platforms don't just cache — they **execute code** at the edge node. This means your server logic runs in Lagos, not just your static files.
+
+| Platform | Edge Runtime | What Runs at the Edge |
+|----------|-------------|----------------------|
+| **Vercel** | Edge Functions (V8 isolates) | Middleware, API routes, ISR revalidation |
+| **Cloudflare** | Workers (V8 isolates) | Full request handling, transforms, routing |
+| **Netlify** | Edge Functions (Deno) | Request rewriting, A/B testing, auth checks |
+| **AWS** | Lambda@Edge (Node.js) | Request/response manipulation |
+
+```typescript
+// Vercel Edge Function — runs in the nearest edge node
+export const config = {
+  matcher: '/api/:path*',
+};
+
+export function middleware(request: Request) {
+  // This code runs in Lagos, Tokyo, London — wherever the user is
+  const url = new URL(request.url);
+
+  // A/B testing at the edge — no origin round trip
+  const bucket = request.cookies.get('ab-bucket');
+  if (!bucket) {
+    const response = NextResponse.next();
+    response.cookies.set('ab-bucket', Math.random() > 0.5 ? 'a' : 'b');
+    return response;
+  }
+
+  return NextResponse.next();
+}
+```
+
+### When to Use Edge vs. Origin
+
+| Task | Edge | Origin | Why |
+|------|------|--------|-----|
+| Serve static HTML/CSS/JS | ✅ | ❌ | No computation needed — just cache |
+| Rewrite URLs | ✅ | ❌ | Lightweight, no database access |
+| A/B testing | ✅ | ❌ | Cookie-based routing, no DB |
+ | Rate limiting | ✅ | ✅ | Edge for fast rejection, origin for full logic |
+| Authentication checks | ✅ | ✅ | Edge for JWT validation, origin for session lookup |
+| Database queries | ❌ | ✅ | Database is in one region — edge can't reach it fast |
+| Payment processing | ❌ | ✅ | Requires secure origin with Stripe webhooks |
+| File uploads | ❌ | ✅ | Large payloads shouldn't traverse edge network |
+
+---
+
+## 03. Caching Headers: The Production Playbook
+
+Caching headers control how long CDNs and browsers remember your files. Getting this wrong means stale content or overloaded servers.
+
+### The Strategy Matrix
+
+| Content Type | Cache-Control Header | Why |
+|-------------|---------------------|-----|
+| **Hashed assets** (`main.a1b2c3.js`) | `public, max-age=31536000, immutable` | Filename changes when content changes — cache forever |
+| **Fonts** (`inter-latin.woff2`) | `public, max-age=31536000, immutable` | Fonts rarely change — cache forever |
+| **Images** (hero, thumbnails) | `public, max-age=2592000` | Cache 30 days — images change occasionally |
+| **Dynamic HTML** (SSR pages) | `public, max-age=0, s-maxage=60, stale-while-revalidate=86400` | Serve stale instantly, refresh in background |
+| **API responses** (public data) | `public, max-age=300` | Cache 5 minutes — balance freshness and speed |
+| **API responses** (user data) | `private, no-cache` | Never cache — always revalidate with server |
+| **Sensitive data** (tokens, PII) | `no-store` | Never cache, never store |
+
+### Stale-While-Revalidate Explained
+
+```
+Request arrives at edge node
+        │
+        ▼
+┌───────────────────────────────────────────────┐
+│ Is cached copy under 60s old (s-maxage)?      │
+│                                               │
+│   YES ──▶ Serve stale copy instantly (15ms)   │
+│           │                                   │
+│           └──▶ Meanwhile, fetch fresh copy    │
+│                from origin in background      │
+│                Update cache for next user     │
+│                                               │
+│   NO ───▶ Fetch fresh copy from origin        │
+│           (120ms round trip)                  │
+│           Serve to user + cache for 60s       │
+└───────────────────────────────────────────────┘
+```
+
+**The result:** Users almost always get a cached response (~15ms). The cache refreshes transparently in the background. No flash of stale content, no waiting for origin.
+
+### Cache Busting Patterns
+
+```bash
+# Build tools inject content hashes into filenames
+dist/
+├── main.a1b2c3.js      ← Hash changes when file content changes
+├── style.d4e5f6.css    ← Browser caches "a1b2c3" version forever
+├── logo.789abc.svg     ← New build = new hash = new filename = cache miss
+└── index.html          ← Small, usually not cached (or short TTL)
+```
+
+### Cache Purging
+
+When you deploy a new version, you need to purge stale caches:
+
+```bash
+# Cloudflare — purge everything
+curl -X DELETE "https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache" \
+  -H "Authorization: Bearer API_TOKEN" \
+  -d '{"purge_everything":true}'
+
+# Vercel — automatic on deploy (no manual purge needed)
+vercel --prod  # Deployments auto-invalidate edge cache
+
+# Manual purge for specific paths
+curl -X DELETE "https://api.vercel.com/v1/urls/URL_ID" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+---
+
+## 04. Environment Variables: Build vs. Runtime
+
+When deploying, you must separate variables needed during compilation from variables needed during execution.
+
+### The Two Environments
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    BUILD TIME                            │
+│  Runs once inside the deployment pipeline                │
+│                                                         │
+│  • Access to PUBLIC_* variables (bundled into client JS) │
+│  • CMS API tokens (to fetch content at build)           │
+│  • Build-time analytics IDs                             │
+│  • Variables set in Vercel/Netlify dashboard            │
+│                                                         │
+│  Output: Static HTML + JS bundles                       │
+└─────────────────────────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│                    RUNTIME                               │
+│  Runs continuously inside server containers             │
+│                                                         │
+│  • DATABASE_URL (server-side only)                      │
+│  • STRIPE_SECRET_KEY (never in client bundle)           │
+│  • JWT_SECRET (used to sign tokens)                     │
+│  • REDIS_URL (for caching layer)                        │
+│  • Variables updated WITHOUT rebuild                    │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Platform Configuration
+
+**Vercel:**
+```bash
+# Build-time variables (set in dashboard or vercel.json)
+vercel env add CMS_API_TOKEN production
+
+# Runtime variables (set in dashboard, live immediately)
+vercel env add DATABASE_URL production
+
+# vercel.json — explicit build vs runtime
+{
+  "build": {
+    "env": {
+      "CMS_API_TOKEN": "@cms-api-token"  // Available during build
+    }
+  },
+  "functions": {
+    "api/**": {
+      "env": {
+        "DATABASE_URL": "@database-url"  // Available at runtime
+      }
+    }
+  }
+}
+```
+
+**Cloudflare Pages:**
+```bash
+# Build variables (set in dashboard)
+wrangler pages secret put DATABASE_URL
+
+# Or via CLI
+npx wrangler pages secret put DATABASE_URL --project-name=my-app
+```
+
+### The Rule
+
+| Variable Type | Prefix | Where It Lives | Example |
+|---------------|--------|---------------|---------|
+| **Public** | `NEXT_PUBLIC_` or `PUBLIC_` | Client bundle (visible to everyone) | `PUBLIC_SITE_URL` |
+| **Build** | None | Build pipeline only | `CMS_API_TOKEN` |
+| **Runtime (Secret)** | None | Server environment only | `DATABASE_URL`, `JWT_SECRET` |
+
+**The test:** Grep your built output for the variable name. If it appears in any JS file, it's leaking to the client.
+
+---
+
+## 05. Platform Comparison
+
+| Feature | Vercel | Netlify | Cloudflare Pages | AWS Amplify |
+|---------|--------|---------|-----------------|-------------|
+| **Edge Runtime** | V8 (V8 Isolates) | Deno | V8 (Workers) | Lambda@Edge |
+| **Framework Support** | Next.js (first-class), Astro, SvelteKit | Astro, SvelteKit, 11ty | Any (static or Functions) | Any (via buildpacks) |
+| **Preview Deployments** | ✅ Automatic | ✅ Automatic | ✅ Automatic | ❌ Manual |
+| **Analytics** | Built-in (Web Vitals) | Basic analytics | Full analytics suite | CloudWatch integration |
+| **Pricing** | Generous free tier, usage-based | Generous free tier | Free for most sites | Pay-per-use |
+| **Best For** | Next.js apps, full-stack | Static sites, JAMstack | Global edge, Workers | Enterprise AWS |
+| **CI/CD** | Git push → auto deploy | Git push → auto deploy | Git push → auto deploy | Git push → auto deploy |
+| **Custom Domains** | Free SSL, easy setup | Free SSL, easy setup | Free SSL, easy setup | Route 53 integration |
+
+### The Recommendation
+
+```
+Building a Next.js app?
+├── YES → Vercel (first-class Next.js support, preview deployments, analytics)
+│
+└── NO → Is it a static site (Astro, Hugo, 11ty)?
+         ├── YES → Cloudflare Pages (free, fast, edge Workers available)
+         │
+         └── NO → Does it need server-side logic?
+                  ├── YES → Vercel or Netlify (both support serverless functions)
+                  │
+                  └── NO → Any platform works — pick by preference
+```
+
+---
+
+## 06. Preview Deployments
+
+Preview deployments create a unique, shareable URL for every pull request. Stakeholders review the live app before merging to production.
+
+### How It Works
+
+```
+Developer pushes feature branch
+        │
+        ▼
+CI/CD pipeline builds the project
+        │
+        ▼
+Deploy to unique URL: feature-branch-abc123.vercel.app
+        │
+        ├──▶ PR comment: "Preview: https://feature-branch-abc123.vercel.app"
+        │
+        ├──▶ Designer reviews UI changes
+        │
+        ├──▶ QA tests on the live preview
+        │
+        └──▶ Merge to main → auto-deploys to production
+```
+
+### Vercel Configuration
+
+```json
+// vercel.json — preview deployment settings
+{
+  "github": {
+    "silent": false,
+    "comments": true  // Auto-comment on PRs with preview URL
+  },
+  "preview": {
+    "maxDuration": 30,  // Preview functions timeout after 30s
+    "env": {
+      "DATABASE_URL": "@database-url-preview"  // Separate preview database
+    }
+  }
+}
+```
+
+### The Preview Database Pattern
+
+Never point preview deployments at production databases. Use a separate preview database or database branch:
+
+```typescript
+// Automatic database branching (Supabase, PlanetScale, Neon)
+const dbUrl = process.env.VERCEL_GIT_COMMIT_REF === 'main'
+  ? process.env.DATABASE_URL          // Production
+  : process.env.DATABASE_URL_PREVIEW; // Preview/development
+```
+
+---
+
+## 07. Rollback Strategies
+
+When a deployment breaks production, the fastest recovery is rolling back to the last known good state.
+
+### Platform Rollbacks
+
+```bash
+# Vercel — instant rollback (zero-downtime)
+vercel rollback
+
+# Netlify — rollback via dashboard or CLI
+netlify api rollbackSiteDeploy --data '{"deploy_id":"PREVIOUS_DEPLOY_ID"}'
+
+# Cloudflare Pages — rollback via dashboard
+# Pages → Deployments → find previous → click "Rollback to this deployment"
+```
+
+### The Rollback Checklist
+
+```
+1. DETECT — Monitoring alerts fire (error rate spike, latency spike)
+         │
+2. ASSESS — Is it user-facing? How many users affected?
+         │
+3. DECIDE — Rollback or hotfix?
+         │
+         ├──▶ ROLLBACK (fastest, safest)
+         │    vercel rollback  (takes ~30 seconds)
+         │    Verify: check monitoring dashboard
+         │
+         └──▶ HOTFIX (if rollback isn't possible)
+              git revert HEAD
+              git push origin main
+              CI/CD auto-deploys the revert
+              Verify: check monitoring dashboard
+         │
+4. VERIFY — Error rate returns to baseline
+         │
+5. RETROSPECTIVE — What caused the issue? How to prevent it?
+```
+
+### Database Rollback
+
+If a migration caused the issue:
+
+```bash
+# Drizzle — rollback last migration
+npx drizzle-kit migrate:rollback
+
+# Prisma — revert to previous migration state
+npx prisma migrate reset  # WARNING: destructive — resets to baseline
+
+# Safer: use a forward-fix migration instead
+# Create a new migration that undoes the problematic change
+npx drizzle-kit generate --name revert-add-column
+```
+
+### The Rule: Make Rollbacks Easy
+
+If your rollback process takes more than 5 minutes, your deployment architecture is too complex. Simplify until rollback is a single command.
+
+---
+
+## 08. Custom Domains & SSL
+
+### Domain Setup
+
+```bash
+# 1. Add domain in your platform dashboard
+# Vercel: Settings → Domains → Add → playbook.cydercoder.com
+
+# 2. Configure DNS at your registrar
+# Option A: CNAME (recommended — works with most registrars)
+playbook  CNAME  cname.vercel-dns.com
+
+# Option B: A Records (if CNAME isn't supported for apex domain)
+@  A  76.76.21.21
+
+# 3. Wait for DNS propagation (usually 5-30 minutes)
+# Verify:
+dig playbook.cydercoder.com +short
+nslookup playbook.cydercoder.com
+```
+
+### SSL/TLS Configuration
+
+```bash
+# Vercel/Cloudflare/Netlify — SSL is automatic
+# You don't need to configure anything
+
+# Verify SSL is working:
+curl -I https://playbook.cydercoder.com
+# Look for: Strict-Transport-Security: max-age=31536000
+
+# Force HTTP → HTTPS redirect (usually automatic)
+# If not, add in your hosting dashboard or _redirects file:
+# https://playbook.cydercoder.com/:splat  301!
+```
+
+### DNS Propagation Timeline
+
+| Action | Typical Time | Worst Case |
+|--------|-------------|------------|
+| Add CNAME record | 5-30 minutes | 48 hours |
+| Update existing record | 5-15 minutes | 24 hours |
+| SSL certificate issuance | Instant (Let's Encrypt) | 5 minutes |
+| Global propagation | 5-30 minutes | 48 hours |
+
+**The senior move:** Lower TTL to 300 (5 minutes) 48 hours before making DNS changes. This ensures old records expire quickly.
+
+---
+
+## 09. Deployment Checklist
+
+```
+Pre-Deploy
+□ All environment variables set in platform dashboard
+□ No secrets in client bundle (grep for NEXT_PUBLIC_ with secret values)
+□ Build succeeds in clean environment (no local node_modules)
+□ Database migrations tested against staging database
+□ Preview deployment reviewed and approved
+
+Deploy
+□ Push to main triggers CI/CD pipeline
+□ Build passes (lint, type check, test, build)
+□ Deployment URL accessible and functional
+□ SSL certificate active (HTTPS enforced)
+□ Custom domain resolves correctly
+
+Post-Deploy
+□ Health check endpoint returns 200
+□ Monitoring dashboards show normal metrics
+□ Error rate within baseline (no spike)
+□ Page load performance within budget (< 2.5s LCP)
+□ Rollback command tested and ready
+
+Ongoing
+□ Monitor for 24 hours after major changes
+□ Cache purge triggered if stale content detected
+□ SSL auto-renewal verified (Let's Encrypt)
+□ Branch protection rules enforced on main
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Single Server Fallacy | One location = high latency for global users | CDN reduces TTFB from 300ms to 15ms for distant users |
+| CDN | Globally distributed cache + compute | Edge nodes serve static files; origin serves dynamic data |
+| Edge Computing | Code executes at the edge, not just caches | Use for A/B testing, URL rewriting, JWT validation — not database queries |
+| Caching Headers | Control how long files are remembered | Hashed assets: cache forever. Dynamic HTML: stale-while-revalidate |
+| Build vs Runtime | Variables needed at compile time vs execution time | PUBLIC_* in client bundle, secrets in server environment only |
+| Preview Deployments | Every PR gets a unique live URL | Never point previews at production databases |
+| Rollback | Fastest recovery is reverting to last good state | If rollback takes >5 min, architecture is too complex |
+| Custom Domains | CNAME or A record + automatic SSL | Lower TTL before DNS changes, verify with dig/nslookup |

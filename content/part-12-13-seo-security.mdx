@@ -1,0 +1,686 @@
+---
+title: "SEO & Operational Security: Visibility and Fortification"
+part: 12
+section: "SEO & Security"
+keywords: ["Core Web Vitals", "Schema.org", "Meta Tags", "Rate Limiting", "SQL Injection", "XSS", "CSRF", "Path Traversal", "Security Headers"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Modern SEO Equation: Core Web Vitals
+
+SEO is no longer about stuffing hidden keywords into footer text. Modern search engines evaluate performance, accessibility, and user experience as core ranking signals. If your app is sluggish, your ranking plummets.
+
+### The Three Critical Metrics
+
+| Metric | What It Measures | Target | Impact |
+|--------|-----------------|--------|--------|
+| **LCP** (Largest Contentful Paint) | When the main content becomes visible | < 2.5s | Slow LCP = users leave before seeing content |
+| **INP** (Interaction to Next Paint) | Responsiveness to user input | < 200ms | High INP = UI feels frozen, users abandon |
+| **CLS** (Cumulative Layout Shift) | Visual stability (elements jumping) | < 0.1 | High CLS = users click wrong buttons, lose trust |
+
+### Fixing LCP: The Loading Bottleneck
+
+LCP is almost always caused by one of three things: a slow server, render-blocking resources, or large images.
+
+```html
+<!-- 1. Preload critical assets — browser fetches them first -->
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/hero-image.webp" as="image" />
+
+<!-- 2. Fetch important resources early -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="dns-prefetch" href="https://api.yourapp.com" />
+
+<!-- 3. Hero image — never let the browser guess dimensions -->
+<img
+  src="/hero-image.webp"
+  width="1200"
+  height="675"
+  alt="Dashboard preview"
+  fetchpriority="high"
+  decoding="async"
+/>
+```
+
+```css
+/* 4. Self-host fonts to avoid third-party render blocking */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  font-display: swap;  /* Show fallback text immediately, swap when loaded */
+  font-weight: 400 700;
+}
+
+/* 5. Critical CSS inline — above-the-fold styles in <head> */
+<style>
+  /* Paste your above-the-fold CSS here (hero, nav, first section) */
+  body { margin: 0; font-family: system-ui; background: #0a0f0d; }
+  .hero { min-height: 100vh; display: grid; place-items: center; }
+</style>
+```
+
+### Fixing INP: The Responsiveness Bottleneck
+
+INP measures the delay between a user interaction (click, tap, keypress) and the next visual update. High INP happens when the main thread is blocked by long JavaScript execution.
+
+```javascript
+// BAD: Long task blocks the main thread for 300ms
+function processLargeDataset(data) {
+  const results = data.map(item => heavyComputation(item)); // Blocks main thread
+  renderResults(results);
+}
+
+// GOOD: Break into chunks using requestIdleCallback or scheduler.yield
+async function processLargeDataset(data) {
+  const batchSize = 50;
+  for (let i = 0; i < data.length; i += batchSize) {
+    const batch = data.slice(i, i + batchSize);
+    const results = batch.map(item => heavyComputation(item));
+
+    renderResults(results);
+
+    // Yield to the browser — lets it handle user interactions
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+}
+
+// BETTER: Use the Scheduler API (Chrome 94+)
+async function processLargeDataset(data) {
+  for (const item of data) {
+    await scheduler.yield(); // Cooperative scheduling
+    const result = heavyComputation(item);
+    renderSingleResult(result);
+  }
+}
+```
+
+### Fixing CLS: The Visual Stability Bottleneck
+
+CLS happens when elements shift after the page loads — usually because images or ads don't have reserved dimensions.
+
+```css
+/* Always reserve space for dynamic content */
+.hero-image {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;  /* Reserves space before image loads */
+  background: var(--bg-surface);  /* Skeleton color while loading */
+}
+
+.ad-banner {
+  min-height: 250px;  /* Reserve space even if ad hasn't loaded yet */
+}
+
+/* Animated content that expands — reserve max space */
+.accordion-content {
+  max-height: 500px;  /* Reserves space, prevents shift */
+  transition: max-height 0.3s ease;
+}
+```
+
+### Testing with Lighthouse
+
+```bash
+# Run Lighthouse CLI
+npx lighthouse https://yourapp.com --output=json --output-path=./report.json
+
+# Or use the Chrome DevTools tab
+# F12 → Lighthouse → Generate Report
+
+# CI/CD integration — fail build if score drops below threshold
+npx lighthouse-ci autorun --config=lighthouserc.json
+```
+
+```json
+// lighthouserc.json
+{
+  "ci": {
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9 }],
+        "categories:accessibility": ["error", { "minScore": 0.95 }],
+        "categories:seo": ["error", { "minScore": 0.95 }]
+      }
+    }
+  }
+}
+```
+
+---
+
+## 02. Meta Tags: The First Impression
+
+Search engines and social platforms read your meta tags to understand what your page is about. Missing or generic meta tags mean missed clicks.
+
+### The Complete Meta Tag Template
+
+```html
+<head>
+  <!-- Primary SEO -->
+  <title>The AI Full-Stack Playbook — CyderCoder</title>
+  <meta name="description" content="A senior-engineered guide to full-stack development with AI. Covers LLMs, frameworks, security, and production operations." />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://playbook.cydercoder.com/part-2-ai-foundations/" />
+
+  <!-- Open Graph (Facebook, LinkedIn, Slack) -->
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="AI Foundations: The Autocomplete Engine under the Hood" />
+  <meta property="og:description" content="Strip away the academic jargon. Understand LLMs, tokens, embeddings, and MCP through clean senior-engineered mental models." />
+  <meta property="og:image" content="https://playbook.cydercoder.com/og/ai-foundations.png" />
+  <meta property="og:url" content="https://playbook.cydercoder.com/part-2-ai-foundations/" />
+  <meta property="og:site_name" content="The AI Full-Stack Playbook" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="AI Foundations: The Autocomplete Engine under the Hood" />
+  <meta name="twitter:description" content="Strip away the academic jargon. Understand LLMs, tokens, embeddings, and MCP." />
+  <meta name="twitter:image" content="https://playbook.cydercoder.com/og/ai-foundations.png" />
+  <meta name="twitter:creator" content="@cydercoder" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+  <!-- Canonical & Language -->
+  <link rel="alternate" hreflang="en" href="https://playbook.cydercoder.com/" />
+</head>
+```
+
+### OG Image Generation
+
+Social platforms show a preview image when your page is shared. Without one, your link looks incomplete.
+
+```typescript
+// Generate OG images dynamically with @vercel/og
+import { ImageResponse } from '@vercel/og';
+
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const title = searchParams.get('title') || 'The AI Full-Stack Playbook';
+
+  return new ImageResponse(
+    (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        width: '100%',
+        height: '100%',
+        background: '#0a0f0d',
+        color: '#e8efec',
+        padding: '80px',
+        fontFamily: 'system-ui',
+      }}>
+        <div style={{ fontSize: 24, color: '#3ad29f', marginBottom: 20 }}>
+          CyderCoder.playbook
+        </div>
+        <div style={{ fontSize: 64, fontWeight: 800, lineHeight: 1.1 }}>
+          {title}
+        </div>
+      </div>
+    ),
+    { width: 1200, height: 630 }
+  );
+}
+```
+
+---
+
+## 03. Structured Data: Schema.org JSON-LD
+
+Schema.org gives search engines explicit semantic meaning about your content. This unlocks rich snippets — star ratings, FAQ dropdowns, breadcrumb trails — directly in search results.
+
+### Article Schema
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Framework Thinking: Decoupling the Rendering Matrix",
+  "description": "An architectural breakdown of SSR, CSR, and Island hydration models.",
+  "author": {
+    "@type": "Person",
+    "name": "Michael Dosunmu",
+    "alternateName": "CyderCoder"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "CyderCoder",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://playbook.cydercoder.com/logo.png"
+    }
+  },
+  "datePublished": "2026-07-11",
+  "dateModified": "2026-07-11",
+  "inLanguage": "en-US",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://playbook.cydercoder.com/part-3-framework-thinking/"
+  }
+}
+</script>
+```
+
+### FAQ Schema (Unlocks FAQ Dropdowns in Search)
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is the difference between SSR and SSG?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SSG (Static Site Generation) builds HTML once at build time. SSR (Server-Side Rendering) generates HTML on every request. SSG is faster but static; SSR is slower but dynamic."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "When should I use Redis for caching?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Use Redis when your database queries exceed 100ms or when you need sub-millisecond reads for frequently accessed data like sessions, user profiles, or product listings."
+      }
+    }
+  ]
+}
+</script>
+```
+
+### BreadcrumbList Schema
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://playbook.cydercoder.com/" },
+    { "@type": "ListItem", "position": 2, "name": "Part II", "item": "https://playbook.cydercoder.com/part-2/" },
+    { "@type": "ListItem", "position": 3, "name": "AI Foundations" }
+  ]
+}
+</script>
+```
+
+---
+
+## 04. SQL Injection: The Classic Attack
+
+SQL injection happens when user input is concatenated directly into a database query string, allowing an attacker to manipulate the query logic.
+
+### The Vulnerability
+
+```typescript
+// !! CRITICAL VULNERABILITY — NEVER DO THIS !!
+const email = req.body.email;
+const query = `SELECT * FROM users WHERE email = '${email}'`;
+
+// If attacker submits: email = "' OR '1'='1' --"
+// The query becomes:
+// SELECT * FROM users WHERE email = '' OR '1'='1' --'
+// This returns ALL users — authentication bypassed completely
+```
+
+### The Fix: Parameterized Queries
+
+```typescript
+// SAFE — database treats input as a literal value, never as code
+const query = 'SELECT * FROM users WHERE email = $1';
+const result = await db.query(query, [email]);
+
+// Even if email = "' OR '1'='1' --"
+// The database looks for a user whose email literally equals that string
+// No user found → login fails → attack fails
+```
+
+### ORM Safety
+
+Modern ORMs (Prisma, Drizzle, SQLAlchemy) use parameterized queries by default:
+
+```typescript
+// Prisma — automatically parameterized
+const user = await prisma.user.findUnique({
+  where: { email: userInput }
+});
+
+// Drizzle — automatically parameterized
+const user = await db.select().from(users).where(eq(users.email, userInput));
+```
+
+**The rule:** Never use raw SQL string concatenation with user input. Always use parameterized queries or an ORM.
+
+---
+
+## 05. XSS: Cross-Site Scripting
+
+XSS happens when user-controlled content is rendered as executable HTML/JavaScript in another user's browser.
+
+### The Three Types
+
+| Type | How It Works | Example |
+|------|-------------|---------|
+| **Stored XSS** | Malicious script saved to database, served to all users | Comment field saves `<script>steal()</script>` |
+| **Reflected XSS** | Malicious script in URL, reflected in page response | `/search?q=<script>alert(1)</script>` |
+| **DOM XSS** | JavaScript reads URL/DOM and writes it unsafely | `element.innerHTML = location.hash` |
+
+### The Defense: Output Encoding
+
+```typescript
+import DOMPurify from 'dompurify';
+
+// Server-side: Sanitize before storing
+function sanitizeInput(input: string): string {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p'],
+    ALLOWED_ATTR: ['href'],
+  });
+}
+
+// Client-side: Never use innerHTML with user data
+// BAD:
+element.innerHTML = userComment;  // XSS if comment contains <script>
+
+// GOOD:
+element.textContent = userComment;  // Safe — renders as text, not HTML
+
+// GOOD (if you need HTML):
+element.innerHTML = DOMPurify.sanitize(userComment);
+```
+
+### Content Security Policy (CSP)
+
+CSP is the last line of defense. Even if XSS slips through, CSP blocks the browser from executing unauthorized scripts.
+
+```http
+Content-Security-Policy:
+  default-src 'self';
+  script-src 'self' https://trusted-cdn.com;
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: https:;
+  connect-src 'self' https://api.yourapp.com;
+  font-src 'self' https://fonts.gstatic.com;
+  frame-ancestors 'none';
+  base-uri 'self';
+  form-action 'self';
+  report-uri /csp-violations;
+```
+
+---
+
+## 06. Path Traversal & Command Injection
+
+### Path Traversal
+
+An attacker manipulates file paths to access files outside your intended directory:
+
+```typescript
+// VULNERABLE — attacker can read /etc/passwd
+app.get('/files/:filename', (req, res) => {
+  const path = `/uploads/${req.params.filename}`;
+  // If filename = "../../../etc/passwd", attacker reads system files
+  res.sendFile(path);
+});
+
+// SAFE — validate and sanitize the path
+import path from 'path';
+
+app.get('/files/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename);  // Strips directory traversal
+  const safePath = path.join('/uploads', filename);
+
+  // Ensure the resolved path is still inside the uploads directory
+  const resolved = path.resolve(safePath);
+  if (!resolved.startsWith('/uploads')) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  res.sendFile(resolved);
+});
+```
+
+### Command Injection
+
+If your app passes user input to a shell command, an attacker can execute arbitrary system commands:
+
+```typescript
+// VULNERABLE — attacker can execute any system command
+const filename = req.body.filename;
+exec(`convert ${filename} output.png`);
+// If filename = "image.png; rm -rf /", the server deletes everything
+
+// SAFE — use execFile with array arguments (no shell interpretation)
+import { execFile } from 'child_process';
+
+execFile('convert', [filename, 'output.png'], (err, stdout) => {
+  // filename is treated as a single argument, never parsed by shell
+});
+```
+
+---
+
+## 07. Rate Limiting: The Traffic Firewall
+
+Without rate limiting, your API is vulnerable to brute-force attacks, credential stuffing, and DDoS.
+
+### Fixed Window Algorithm
+
+Simple but has a burst problem — 100 requests at 11:59:59 + 100 requests at 12:00:00 = 200 requests in 2 seconds.
+
+```typescript
+import Redis from 'ioredis';
+const redis = new Redis(process.env.REDIS_URL);
+
+async function fixedWindowLimiter(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const key = `rate:${ip}`;
+
+  const count = await redis.incr(key);
+  if (count === 1) {
+    await redis.expire(key, 60);  // 60-second window
+  }
+
+  if (count > 100) {
+    return res.status(429).json({
+      error: 'Too many requests',
+      retryAfter: await redis.ttl(key),
+    });
+  }
+
+  res.setHeader('X-RateLimit-Limit', '100');
+  res.setHeader('X-RateLimit-Remaining', Math.max(0, 100 - count));
+  next();
+}
+```
+
+### Sliding Window Log Algorithm
+
+More accurate — tracks individual request timestamps, not just a counter.
+
+```typescript
+async function slidingWindowLimiter(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const now = Date.now();
+  const windowMs = 60 * 1000;  // 1-minute window
+  const maxRequests = 100;
+
+  const key = `ratelimit:${ip}`;
+
+  // Remove expired entries, add current request
+  await redis.zremrangebyscore(key, 0, now - windowMs);
+  await redis.zadd(key, now, `${now}`);
+  await redis.expire(key, Math.ceil(windowMs / 1000));
+
+  // Count requests in current window
+  const count = await redis.zcard(key);
+
+  if (count > maxRequests) {
+    const oldest = await redis.zrange(key, 0, 0, 'WITHSCORES');
+    const retryAfter = oldest.length > 0
+      ? Math.ceil((parseInt(oldest[1]) + windowMs - now) / 1000)
+      : 60;
+
+    return res.status(429).json({
+      error: 'Too many requests',
+      retryAfter,
+    });
+  }
+
+  res.setHeader('X-RateLimit-Limit', String(maxRequests));
+  res.setHeader('X-RateLimit-Remaining', String(maxRequests - count));
+  next();
+}
+```
+
+### Token Bucket Algorithm
+
+Allows controlled bursts — a bucket fills with tokens at a steady rate, each request consumes one token.
+
+```typescript
+async function tokenBucketLimiter(req, res, next) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const key = `bucket:${ip}`;
+
+  const bucket = await redis.hgetall(key);
+  const now = Date.now();
+
+  let tokens = parseFloat(bucket.tokens) || 10;  // Max 10 tokens
+  const lastRefill = parseInt(bucket.lastRefill) || now;
+
+  // Refill tokens based on time elapsed
+  const refillRate = 0.1;  // 1 token per 10 seconds
+  const elapsed = (now - lastRefill) / 1000;
+  tokens = Math.min(10, tokens + elapsed * refillRate);
+
+  if (tokens < 1) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
+  }
+
+  // Consume one token
+  await redis.hset(key, {
+    tokens: String(tokens - 1),
+    lastRefill: String(now),
+  });
+  await redis.expire(key, 120);
+
+  next();
+}
+```
+
+### Rate Limiting Strategy
+
+| Layer | Limit | Window | Purpose |
+|-------|-------|--------|---------|
+| **Global** | 1000 req/min per IP | 60s | Prevent DDoS |
+| **API endpoints** | 100 req/min per user | 60s | Prevent abuse |
+| **Auth endpoints** | 5 req/15 min per IP | 15min | Prevent brute-force |
+| **Write endpoints** | 20 req/min per user | 60s | Prevent spam |
+
+---
+
+## 08. Security Headers: The Complete Setup
+
+```typescript
+import helmet from 'helmet';
+
+app.use(helmet());
+
+// Or configure manually for full control:
+app.use((req, res, next) => {
+  // Prevent XSS
+  res.setHeader('Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+  );
+
+  // Prevent clickjacking
+  res.setHeader('X-Frame-Options', 'DENY');
+
+  // Prevent MIME sniffing
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+
+  // Force HTTPS
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+
+  // Control referrer info
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // Restrict browser features
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+  // Prevent DNS prefetching leak
+  res.setHeader('X-DNS-Prefetch-Control', 'off');
+
+  next();
+});
+```
+
+### Security Headers Reference
+
+| Header | What It Blocks | Recommended Value |
+|--------|---------------|-------------------|
+| `Content-Security-Policy` | XSS, data injection | `default-src 'self'; script-src 'self'` |
+| `X-Frame-Options` | Clickjacking | `DENY` |
+| `X-Content-Type-Options` | MIME sniffing attacks | `nosniff` |
+| `Strict-Transport-Security` | Protocol downgrade attacks | `max-age=31536000; includeSubDomains` |
+| `Referrer-Policy` | Referrer leakage | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | Feature abuse | `camera=(), microphone=()` |
+| `X-XSS-Protection` | Legacy XSS filter | `0` (CSP replaces this) |
+
+---
+
+## 09. API Security Checklist
+
+```
+Authentication & Authorization
+□ JWT tokens stored in HttpOnly cookies, NOT localStorage
+□ Refresh tokens have short expiry (15 min) + rotation
+□ RBAC middleware on every protected endpoint
+□ API keys scoped to minimum required permissions
+
+Input Validation
+□ All user input validated with Zod/Joi schema
+□ Parameterized queries for ALL database operations
+□ File uploads validated for type, size, and content
+□ Request body size limits enforced
+
+Rate Limiting
+□ Global rate limit on all endpoints
+□ Stricter limits on auth endpoints (5 req/15min)
+□ Write endpoints rate-limited to prevent spam
+□ Retry-After headers sent with 429 responses
+
+Security Headers
+□ CSP header blocks inline scripts
+□ HSTS forces HTTPS
+□ X-Frame-Options prevents clickjacking
+□ X-Content-Type-Options prevents MIME sniffing
+
+Logging & Monitoring
+□ Failed auth attempts logged with IP + timestamp
+□ Rate limit violations logged
+□ SQL injection attempts detected and alerted
+□ Unusual traffic patterns trigger alerts
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| LCP | When main content appears | Preload critical assets, self-host fonts, use `fetchpriority="high"` on hero images |
+| INP | Input-to-visual delay | Break long tasks with `scheduler.yield()`, never block the main thread for >50ms |
+| CLS | Elements jumping around | Always set explicit width/height/aspect-ratio on images and containers |
+| Meta Tags | First impression in search results | Title + description + OG image = complete social preview |
+| Schema.org | Structured data for rich snippets | FAQ schema unlocks dropdowns, Article schema unlocks knowledge panels |
+| SQL Injection | User input as executable code | Parameterized queries — never concatenate user input into SQL |
+| XSS | Injected scripts steal data | Sanitize on input, encode on output, CSP as last line of defense |
+| Path Traversal | Directory manipulation | `path.basename()` + resolve validation — never trust filename input |
+| Rate Limiting | Traffic firewall | Sliding window for accuracy, token bucket for controlled bursts |
+| Security Headers | Browser-level defenses | CSP + HSTS + X-Frame-Options = baseline protection |

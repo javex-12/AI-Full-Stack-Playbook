@@ -1,0 +1,579 @@
+---
+title: "Global Foundations: The Internet's Plumbing"
+part: 1
+section: "Global Foundations"
+keywords: ["DNS", "HTTP", "HTTPS", "TLS", "CORS", "WebSockets", "SSE", "Caching", "Status Codes", "Client-Server"]
+difficulty: "Foundational"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Request-Response Lifecycle
+
+Every digital interaction begins with a boundary: the division between the **Client** (browser, mobile app, frontend) and the **Server** (remote machine holding logic and data).
+
+When a user clicks a button, types a search, or loads a page, a structured lifecycle executes across the network:
+
+```
+┌──────────┐                                      ┌──────────┐
+│          │ ──── 1. DNS Resolution ────────────▶ │          │
+│          │      (domain → IP address)            │          │
+│          │                                       │          │
+│          │ ──── 2. TCP Handshake ──────────────▶ │          │
+│  CLIENT  │      (establish connection)           │  SERVER  │
+│          │                                       │          │
+│          │ ──── 3. HTTP Request ──────────────▶ │          │
+│          │      (method, headers, body)          │          │
+│          │                                       │          │
+│          │ ◀──── 4. HTTP Response ───────────── │          │
+│          │       (status, headers, body)         │          │
+│          │                                       │          │
+│          │ ──── 5. Connection Closes ──────────▶ │          │
+│          │      (or stays open for keep-alive)   │          │
+└──────────┘                                      └──────────┘
+```
+
+### The HTTP Methods
+
+Every request carries a **method** — the verb that tells the server what you want to do:
+
+| Method | Purpose | Has Body? | Idempotent? | Example |
+|--------|---------|-----------|-------------|---------|
+| `GET` | Read data | No | Yes | Fetch user profile |
+| `POST` | Create data | Yes | No | Submit a form, create account |
+| `PUT` | Replace data | Yes | Yes | Update entire user profile |
+| `PATCH` | Partial update | Yes | Yes | Change just the email field |
+| `DELETE` | Remove data | Yes | Yes | Delete a comment |
+
+**Idempotent** means calling it 10 times has the same effect as calling it once. `GET` is idempotent — fetching a page 10 times doesn't create 10 copies. `POST` is not — submitting a form 10 times creates 10 records.
+
+### Status Codes: The Server's Language
+
+The server communicates the outcome of every request through a three-digit status code:
+
+| Range | Category | Common Codes | Meaning |
+|-------|----------|-------------|---------|
+| **2xx** | Success | `200 OK` | Request succeeded |
+| | | `201 Created` | Resource created successfully |
+| | | `204 No Content` | Success, but no body returned (e.g., DELETE) |
+| **3xx** | Redirect | `301 Moved Permanently` | Resource moved permanently (SEO transfers rank) |
+| | | `302 Found` | Temporary redirect |
+| | | `304 Not Modified` | Use cached version (saves bandwidth) |
+| **4xx** | Client Error | `400 Bad Request` | Malformed syntax, missing fields |
+| | | `401 Unauthorized` | Not authenticated (no valid credentials) |
+| | | `403 Forbidden` | Authenticated but not authorized (no permission) |
+| | | `404 Not Found` | Resource doesn't exist |
+| | | `429 Too Many Requests` | Rate limited |
+| **5xx** | Server Error | `500 Internal Server Error` | Something broke on the server |
+| | | `502 Bad Gateway` | Upstream server returned invalid response |
+| | | `503 Service Unavailable` | Server overloaded or down for maintenance |
+
+**The Senior Rule:** Never return `200` for an error. Never return `500` for a missing resource (that's a `404`). Status codes are a contract — your clients, load balancers, and monitoring tools depend on them being accurate.
+
+---
+
+## 02. DNS (Domain Name System): The Internet's Phonebook
+
+Computers route traffic through numerical **IP addresses** (`192.0.2.1` or IPv6 equivalents). DNS is the globally distributed translation layer that converts human-readable domains into machine routing targets.
+
+### The Resolution Chain
+
+When a user types `cydemy.com` into their browser:
+
+```
+User types: cydemy.com
+        │
+        ▼
+┌─────────────────────┐
+│ 1. Browser Cache     │  "Do I already know this IP?"
+└────────┬────────────┘
+         │ Cache miss
+         ▼
+┌─────────────────────┐
+│ 2. OS Cache          │  "Does the operating system know?"
+└────────┬────────────┘
+         │ Cache miss
+         ▼
+┌─────────────────────┐
+│ 3. Router Cache      │  "Does the local router know?"
+└────────┬────────────┘
+         │ Cache miss
+         ▼
+┌─────────────────────┐
+│ 4. ISP Resolver      │  "Does my ISP's DNS server know?"
+└────────┬────────────┘
+         │ Cache miss
+         ▼
+┌─────────────────────┐
+│ 5. Root Server       │  "Who handles .com domains?"
+│    (13 root clusters)│  → Directs to .com TLD server
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ 6. TLD Server        │  "Who owns cydemy.com?"
+│    (.com registry)   │  → Directs to authoritative nameserver
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ 7. Authoritative NS  │  "Here's the IP: 192.0.2.1"
+│    (Cloudflare/      │
+│     Namecheap/etc)   │
+└────────┬────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│ 8. Browser connects  │  → TCP to 192.0.2.1:443
+│    to 192.0.2.1      │
+└─────────────────────┘
+```
+
+**Total time:** Typically 20-120ms for the first lookup. Subsequent lookups are cached at various levels, taking <1ms.
+
+### DNS Record Types
+
+| Record | Purpose | Example |
+|--------|---------|---------|
+| **A** | Maps domain to IPv4 address | `cydemy.com → 192.0.2.1` |
+| **AAAA** | Maps domain to IPv6 address | `cydemy.com → 2606:4700::1` |
+| **CNAME** | Alias pointing to another domain | `www.cydemy.com → cydemy.com` |
+| **MX** | Mail server for the domain | `cydemy.com → mail.protonmail.ch` |
+| **TXT** | Arbitrary text (domain verification) | `google-site-verification=abc123` |
+| **NS** | Nameserver for the domain | `cydemy.com → ns1.cloudflare.com` |
+| **SRV** | Service location (port + protocol) | `_sip._tcp.cydemy.com → sip.cydemy.com:5060` |
+
+### TTL (Time to Live)
+
+Every DNS record has a **TTL** — how long (in seconds) resolvers should cache the answer before asking again.
+
+```
+TTL = 300    → Cache for 5 minutes (good for migrations)
+TTL = 3600   → Cache for 1 hour (standard)
+TTL = 86400  → Cache for 24 hours (stable records)
+```
+
+**The Senior Move:** Before changing your server's IP address, lower the TTL to 300 (5 minutes) 24-48 hours in advance. This ensures the old IP expires from caches quickly when you make the switch. Changing IP with a high TTL means some users hit the old server for hours.
+
+### Practical DNS Tools
+
+```bash
+# See the full resolution chain
+dig cydemy.com +trace
+
+# Quick IP lookup
+dig cydemy.com +short
+
+# Check specific record type
+dig cydemy.com MX
+dig cydemy.com TXT
+
+# nslookup (simpler alternative)
+nslookup cydemy.com
+
+# Test from multiple locations (online)
+# https://dnschecker.org — shows resolution from 100+ global locations
+```
+
+---
+
+## 03. HTTP vs HTTPS: The Encryption Wall
+
+Standard **HTTP** transmits data in plain text. If a user enters their password on an HTTP page, anyone on the same Wi-Fi network can read it with a basic packet sniffer.
+
+**HTTPS** wraps HTTP inside a **TLS (Transport Layer Security)** cryptographic tunnel. Every byte is encrypted end-to-end.
+
+### The TLS Handshake
+
+```
+CLIENT                                          SERVER
+  │                                                │
+  │ ──── 1. ClientHello ────────────────────────▶ │
+  │       "I support TLS 1.3, these ciphers"      │
+  │                                                │
+  │ ◀──── 2. ServerHello + Certificate ────────── │
+  │       "Here's my SSL cert + public key"        │
+  │                                                │
+  │ ──── 3. Key Exchange ───────────────────────▶ │
+  │       Client generates session key,             │
+  │       encrypts with server's public key,        │
+  │       sends it back                            │
+  │                                                │
+  │ ◀──── 4. Finished ────────────────────────── │
+  │       Both sides switch to encrypted            │
+  │       symmetric communication                   │
+  │                                                │
+  │ ◀══════════ Encrypted Data ════════════════▶  │
+  │       (every packet unreadable to interceptors) │
+```
+
+**Why the complexity?** The server's public key can encrypt data, but can't decrypt it. Only the private key can decrypt. So the client generates a temporary symmetric key (which is fast), encrypts it with the public key (so only the server can read it), and now both sides share a secret key for fast symmetric encryption.
+
+### Certificate Types
+
+| Type | Validation Level | Cost | Use Case |
+|------|-----------------|------|----------|
+| **DV** (Domain Validation) | Proves you own the domain | Free (Let's Encrypt) | Most websites |
+| **OV** (Organization Validation) | Proves your organization exists | $50-200/year | Business sites |
+| **EV** (Extended Validation) | Full legal entity verification | $200-1000/year | Banks, enterprise |
+
+**For 99% of projects:** Use Let's Encrypt (free DV certificates). They're trusted by all browsers, auto-renew, and cost nothing.
+
+### HSTS (HTTP Strict Transport Security)
+
+HSTS tells the browser: "Never connect to this domain over HTTP — always use HTTPS, even if the user types `http://`."
+
+```http
+Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+```
+
+**The rule:** Once you enable HSTS, you cannot easily go back to HTTP. Make sure HTTPS works perfectly before setting this header.
+
+---
+
+## 04. CORS (Cross-Origin Resource Sharing): The Browser's Bouncer
+
+Every frontend engineer eventually hits the dreaded error: `Access to fetch at '...' from origin '...' has been blocked by CORS policy.`
+
+> **The Mental Model:** CORS is not a server error. It is a **browser security mechanism**. Your server didn't block the request — the user's browser blocked the frontend from *reading* the response because the server didn't explicitly grant permission.
+
+### Why CORS Exists
+
+Without CORS, any malicious website could make requests to your bank's API using your cookies. The browser would send your session cookie automatically, the bank's server would respond with your account data, and the malicious site could read it. CORS prevents this by requiring the server to explicitly say "I trust this origin."
+
+### The Same-Origin Policy
+
+A **same-origin** request means the protocol, hostname, and port all match:
+
+```
+Frontend: https://cydemy.com
+API:      https://api.cydemy.com     ← Different hostname = CORS applies
+API:      https://cydemy.com:3001    ← Different port = CORS applies
+API:      http://cydemy.com          ← Different protocol = CORS applies
+```
+
+### The Preflight Handshake
+
+For "complex" requests (POST with JSON body, custom headers, PUT, DELETE), the browser fires a hidden **preflight** request first:
+
+```
+BROWSER                                              SERVER
+  │                                                    │
+  │ ──── OPTIONS /api/users ────────────────────────▶ │
+  │       Origin: https://cydemy.com                   │
+  │       Access-Control-Request-Method: POST           │
+  │       Access-Control-Request-Headers: Content-Type  │
+  │                                                    │
+  │ ◀──── 200 OK ─────────────────────────────────── │
+  │       Access-Control-Allow-Origin: https://cydemy.com
+  │       Access-Control-Allow-Methods: POST, GET, DELETE
+  │       Access-Control-Allow-Headers: Content-Type, Authorization
+  │       Access-Control-Max-Age: 86400               │
+  │                                                    │
+  │ ──── POST /api/users (actual request) ──────────▶ │
+  │       (browser sends the real request only if      │
+  │        preflight was approved)                     │
+```
+
+### Common CORS Headers
+
+| Header | What It Does |
+|--------|-------------|
+| `Access-Control-Allow-Origin` | Which origins can read the response (`*` or specific URL) |
+| `Access-Control-Allow-Methods` | Which HTTP methods are allowed (GET, POST, PUT, DELETE) |
+| `Access-Control-Allow-Headers` | Which custom headers are allowed (Authorization, Content-Type) |
+| `Access-Control-Allow-Credentials` | Whether cookies/auth headers can be sent |
+| `Access-Control-Max-Age` | How long to cache the preflight result (seconds) |
+| `Access-Control-Expose-Headers` | Which response headers the frontend can read |
+
+### Solutions When You Control the Server
+
+```javascript
+// Express.js — Add CORS middleware
+import cors from 'cors';
+
+app.use(cors({
+  origin: 'https://cydemy.com',           // Only allow this origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true,                       // Allow cookies
+  maxAge: 86400,                           // Cache preflight for 24h
+}));
+```
+
+### Solutions When You Don't Control the Server
+
+```javascript
+// Proxy through your own backend (Next.js example)
+// next.config.js
+module.exports = {
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'https://external-api.com/:path*',
+      },
+    ];
+  },
+};
+```
+
+**The Senior Rule:** CORS errors in development are almost always because you're running frontend on `localhost:3000` and API on `localhost:4000` — different ports = different origins. Add your dev origin to the CORS whitelist.
+
+---
+
+## 05. HTTP/2 & HTTP/3: The Modern Protocol
+
+### HTTP/1.1: The Old Way
+
+Each request opens a new TCP connection (or reuses one with keep-alive). Only one request can use a connection at a time — this is called **head-of-line blocking**. If one request is slow, everything behind it waits.
+
+### HTTP/2: Multiplexing
+
+HTTP/2 allows multiple requests and responses to travel simultaneously over a **single TCP connection** using binary frames.
+
+```
+HTTP/1.1:
+  Request 1 ──────────▶ Response 1
+                          Request 2 ──────────▶ Response 2
+                                                Request 3 ─────▶ Response 3
+
+HTTP/2:
+  Request 1 ────┐
+  Request 2 ────┤═════════ Single Connection ═══════▶ Response 1
+  Request 3 ────┘                                    Response 2
+                                                     Response 3
+```
+
+**Impact:** Pages with 50+ resources load dramatically faster because requests don't queue.
+
+### HTTP/3: QUIC Protocol
+
+HTTP/3 replaces TCP with **QUIC** (built on UDP). This eliminates head-of-line blocking at the transport layer — if one packet is lost, only that stream is affected, not all of them.
+
+```
+HTTP/2 (over TCP):
+  Stream 1: ████████░░████  ← Packet loss blocks ALL streams
+  Stream 2: ████████░░████
+  Stream 3: ████████░░████
+
+HTTP/3 (over QUIC):
+  Stream 1: ████████░░████  ← Packet loss only affects this stream
+  Stream 2: ██████████████
+  Stream 3: ██████████████
+```
+
+**Adoption:** Cloudflare, Google, and most modern CDNs support HTTP/3. You get it for free when deploying behind Cloudflare or Vercel.
+
+---
+
+## 06. WebSockets vs. SSE vs. REST: Real-Time Patterns
+
+Standard HTTP is **stateless and unidirectional** — the client asks, the server responds, the connection closes. For real-time features, you need persistent connections.
+
+### The Three Patterns
+
+```
+REST (Polling):
+  Client ──[Request]──▶ Server ──[Response]──▶ Close
+  Client ──[Request]──▶ Server ──[Response]──▶ Close
+  Client ──[Request]──▶ Server ──[Response]──▶ Close
+  (Wasteful — most responses say "nothing changed")
+
+WebSocket (Bi-directional):
+  Client ◀══════════ Persistent Pipe ══════════▶ Server
+  Either side can push data at any time
+
+SSE (Server → Client):
+  Client ──[Request]──▶ Server
+  Client ◀══════════ Event Stream ═══════════════ Server
+  (Server pushes, client listens — one-way)
+```
+
+### WebSockets
+
+A persistent, bi-directional TCP connection. Either side can send data at any time with zero HTTP overhead.
+
+```javascript
+// Client — Connect to WebSocket server
+const ws = new WebSocket('wss://api.example.com/ws');
+
+ws.onopen = () => {
+  console.log('Connected');
+  ws.send(JSON.stringify({ type: 'subscribe', channel: 'prices' }));
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  updatePriceDisplay(data);
+};
+
+ws.onclose = () => {
+  console.log('Disconnected — reconnecting in 3s...');
+  setTimeout(reconnect, 3000);
+};
+```
+
+```javascript
+// Server (Node.js + ws library)
+import { WebSocketServer } from 'ws';
+
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on('connection', (ws) => {
+  ws.on('message', (msg) => {
+    const data = JSON.parse(msg);
+
+    if (data.type === 'subscribe') {
+      // Send live data to this client
+      setInterval(() => {
+        ws.send(JSON.stringify({
+          type: 'price_update',
+          symbol: 'BTC',
+          price: 67500 + Math.random() * 100,
+        }));
+      }, 1000);
+    }
+  });
+});
+```
+
+**Use WebSockets when:** Both sides need to push data frequently (chat, multiplayer games, live collaboration, real-time trading).
+
+### Server-Sent Events (SSE)
+
+A one-way persistent connection where the server pushes events to the client. Simpler than WebSockets, works over standard HTTP, and auto-reconnects.
+
+```javascript
+// Client — Listen to server events
+const events = new EventSource('/api/events');
+
+events.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  updateUI(data);
+};
+
+events.onerror = () => {
+  console.log('Connection lost — browser will auto-reconnect');
+};
+```
+
+```javascript
+// Server (Express)
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  // Send events every second
+  const interval = setInterval(() => {
+    sendEvent({ timestamp: Date.now(), status: 'alive' });
+  }, 1000);
+
+  req.on('close', () => clearInterval(interval));
+});
+```
+
+**Use SSE when:** Only the server needs to push data (live feeds, notifications, progress updates, activity logs).
+
+### When to Use What
+
+| Pattern | Direction | Connection | Auto-Reconnect | Best For |
+|---------|-----------|------------|----------------|----------|
+| **REST** | Client → Server | New per request | N/A | CRUD operations, form submissions |
+| **WebSocket** | Bi-directional | Persistent TCP | No (manual) | Chat, games, collaboration |
+| **SSE** | Server → Client | Persistent HTTP | Yes (built-in) | Feeds, notifications, dashboards |
+| **Polling** | Client → Server | New per request | N/A | Legacy systems, simple intervals |
+
+### Senior Moves
+
+1. **Prefer SSE over WebSockets** for one-way data (dashboards, feeds). SSE is simpler, works over standard HTTP, and handles reconnection automatically.
+2. **WebSockets need a stateful server.** Each connection is a persistent session. This complicates horizontal scaling — you need sticky sessions or a message broker (Redis Pub/Sub).
+3. **Never use polling for real-time.** Requesting "anything new?" every 5 seconds wastes bandwidth and server resources. Use SSE or WebSockets.
+4. **Implement heartbeat/ping.** WebSocket connections can silently die (NAT timeouts, network switches). Send a ping every 30s and close the connection if no pong arrives.
+
+---
+
+## 07. HTTP Caching: The Performance Multiplier
+
+Every request to your server costs time and bandwidth. Caching stores copies of responses so subsequent requests are served instantly without hitting your server.
+
+### The Caching Headers
+
+```http
+# Server response headers that control caching
+
+Cache-Control: public, max-age=3600          # Cache for 1 hour
+Cache-Control: private, no-cache              # User-specific, always revalidate
+Cache-Control: no-store                       # Never cache (sensitive data)
+ETag: "a1b2c3d4"                             # Unique hash of the response
+Last-Modified: Tue, 15 Jul 2026 10:00:00 GMT  # When the resource last changed
+```
+
+### Cache-Control Directives
+
+| Directive | Meaning |
+|-----------|---------|
+| `public` | Any cache can store this (CDN, browser, proxy) |
+| `private` | Only the user's browser can cache this (not CDN) |
+| `no-cache` | Cache it, but always revalidate with server before using |
+| `no-store` | Don't cache at all (banking, medical data) |
+| `max-age=N` | Cache is valid for N seconds |
+| `s-maxage=N` | CDN cache valid for N seconds (overrides max-age for CDN) |
+| `stale-while-revalidate=N` | Serve stale cache while fetching fresh copy in background |
+
+### The Caching Strategy
+
+```
+Static Assets (CSS, JS, images, fonts)
+  → Cache-Control: public, max-age=31536000, immutable
+  → Filename includes hash: /assets/style.a1b2c3.css
+  → Never changes — cache forever
+
+API Responses (user-specific)
+  → Cache-Control: private, no-cache
+  → ETag included for revalidation
+  → Browser always checks with server
+
+API Responses (public, semi-static)
+  → Cache-Control: public, max-age=3600
+  → Stale-while-revalidate: 86400
+  → CDN caches for 1 hour, serves stale while refreshing
+
+Sensitive Data (tokens, medical records)
+  → Cache-Control: no-store
+  → Never cached, ever
+```
+
+### CDN Caching
+
+A **Content Delivery Network** (Cloudflare, Vercel Edge, AWS CloudFront) caches your static assets at edge locations worldwide. A user in Tokyo gets assets from the Tokyo edge node, not your server in Virginia.
+
+```
+Without CDN:
+  Tokyo User ──[200ms]──▶ Virginia Server ──[200ms]──▶ Tokyo User
+  Total: 400ms round trip
+
+With CDN:
+  Tokyo User ──[20ms]──▶ Tokyo Edge Node ──[20ms]──▶ Tokyo User
+  Total: 40ms round trip (10x faster)
+```
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Request-Response | Client asks, server answers, connection closes | HTTP methods are a contract — GET reads, POST creates, DELETE removes |
+| DNS | Domain → IP translation chain | Lower TTL 48h before IP changes to avoid stale caches |
+| TLS/HTTPS | Encrypted tunnel over plain HTTP | Use Let's Encrypt (free), enable HSTS after verifying HTTPS works |
+| CORS | Browser's bouncer, not server's block | Different port = different origin = CORS applies |
+| HTTP/2 | Multiplexing over single connection | Eliminates head-of-line blocking — critical for asset-heavy pages |
+| HTTP/3 | QUIC protocol over UDP | Packet loss only affects one stream, not all |
+| WebSockets | Persistent bi-directional pipe | Need sticky sessions or Redis for horizontal scaling |
+| SSE | Server-push over HTTP | Simpler than WebSockets, auto-reconnects, works through proxies |
+| Caching | Store responses to avoid re-fetching | Static assets: cache forever with hashed filenames. Sensitive data: never cache |
+| CDN | Edge nodes serve assets locally | 10x latency improvement for global users — free with Cloudflare/Vercel |

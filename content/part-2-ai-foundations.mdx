@@ -1,0 +1,747 @@
+---
+title: "AI Foundations: The Autocomplete Engine under the Hood"
+part: 2
+section: "AI Foundations"
+keywords: ["LLM", "Tokens", "Embeddings", "Context Window", "RAG", "MCP", "Temperature", "Top P", "Function Calling", "Agents", "Multi-Agent", "Reasoning Models"]
+difficulty: "Foundational"
+lastUpdated: "2026-07-11"
+---
+
+## 01. What is an LLM? (The Autocomplete Illusion)
+
+The biggest mistake junior developers make is treating a Large Language Model like a human mind or a database. It is neither.
+
+> **The Core Mental Model:** An LLM is exactly like your phone's keyboard autocomplete — but instead of predicting the next *letter*, it predicts the next **token**. One at a time. Sequentially. It chains thousands of single-token predictions together so fast that it *feels* like it wrote a paragraph in one shot.
+
+When you pass code or a prompt to an AI, it doesn't "think" about your software architecture. It reads the text you wrote, looks at its internal map of how billions of pages of code across the internet are structured, and asks:
+
+*"Statistically, what token usually comes next after a sequence like this?"*
+
+Then it outputs that token, appends it to the context, and asks the same question again. Repeated. Thousands of times per second.
+
+Because it operates entirely on probability, it doesn't verify if the code works unless you force it to. If you give it a bad setup, it will happily autocomplete bad code with absolute confidence.
+
+### Senior Move: Treat the LLM like a Junior Dev with Perfect Recall
+
+A junior dev with 10 years of reading experience but zero project context will write code that *looks* right but breaks in production. That's your LLM. It needs your specs, your constraints, your test cases — or it will freestyle.
+
+```
+
+---
+
+## 02. Tokens & Tokenization (The Raw Currency)
+
+LLMs do not read words, sentences, or characters. They read **Tokens**.
+
+A token is a chunk of characters that the model treats as a single unit. The tokenizer is a preprocessing step that breaks your raw text into these chunks before the model ever sees it.
+
+**Rules of thumb:**
+- 1 token ≈ 4 characters (in English)
+- 1 token ≈ 0.75 words
+- Common words like `function` or `const` = 1 token
+- Complex identifiers like `myCustomStateModifierFunction` = 3-5 tokens
+- Code is tokenized differently than natural language — brackets, operators, and whitespace each consume tokens
+
+### Why This Matters to a Full-Stack Builder
+
+Every model has a cost structure and a processing limit built entirely around tokens. When you copy-paste an entire 1,000-line CSS file into an AI tool just to change a button color, you are:
+
+1. **Burning money** — tokens are the billing unit
+2. **Polluting context** — the model has to wade through noise
+3. **Degrading quality** — more irrelevant tokens = weaker next-token prediction
+
+### Practical Example
+
+```python
+import tiktoken
+
+encoder = tiktoken.encoding_for_model("gpt-4")
+
+# See exactly what tokens your code becomes
+code = """
+export async function fetchUserData(userId: string) {
+  const response = await fetch(`/api/users/${userId}`);
+  return response.json();
+}
+"""
+
+tokens = encoder.encode(code)
+print(f"Token count: {len(tokens)}")
+print(f"Tokens: {[encoder.decode([t]) for t in tokens]}")
+
+# Token count: 34
+# Tokens: ['\n\n', 'export', ' async', ' function', ' fetch', 'User', 'Data', '(', 'userId', ':', ' string', ')', ' {\n', '  ', 'const', ' response', ' =', ' await', ' fetch', '(`/', 'api', '/users', '/$', '{', 'userId', '}`', ');\n', '  ', 'return', ' response', '.', 'json', '();\n', '}']
+```
+
+Notice how `fetchUserData` splits into `fetch`, `User`, `Data` — the tokenizer doesn't know your variable names are meaningful. It just chunks by statistical patterns.
+
+### Common Pitfall
+
+Uploading your entire repo to "give the AI context" is almost always counterproductive. Be surgical. Give it exactly the files and functions it needs — nothing more.
+
+```
+
+---
+
+## 03. Context Window & Attention Economics
+
+The **Context Window** is the maximum number of tokens the model can "see" at any single moment. Think of it like a developer's short-term memory while debugging a bug.
+
+| Model | Context Window | Rough Capacity |
+|-------|---------------|----------------|
+| GPT-4o | 128k tokens | ~200 pages of code |
+| Claude 3.5 | 200k tokens | ~300 pages of code |
+| Gemini 1.5 Pro | 1M tokens | ~1,500 pages of code |
+
+But just because a model *can* read a massive context doesn't mean it processes everything equally.
+
+### The "Lost in the Middle" Problem
+
+Research from Stanford (Liu et al., 2023) proved that LLMs pay heavy attention to the **very beginning** of your prompt (your instructions) and the **very end** (your latest message). Information buried in the middle gets blurry.
+
+```
+┌─────────────────────────────────────────┐
+│  HIGH ATTENTION                          │
+│  ├── Your system instructions            │
+│  ├── First few messages                  │
+│  │                                       │
+│  │   LOW ATTENTION (the middle)          │
+│  │   ├── Large code dumps                │
+│  │   ├── Documentation pasted in         │
+│  │   ├── Repeated context                │
+│  │                                       │
+│  │   HIGH ATTENTION                      │
+│  └── Your most recent message            │
+│      "Now fix the bug in line 42"        │
+└─────────────────────────────────────────┘
+```
+
+### Senior Moves
+
+1. **Isolate the problem.** Don't upload your entire repository to debug a single React component.
+2. **Put critical context at the top and bottom.** Your instructions go first, your specific question goes last.
+3. **Use summaries for long codebases.** Instead of dumping 500 lines, give the AI a 2-line summary of what each file does, then paste only the relevant file.
+
+```
+
+---
+
+## 04. Embeddings & Vector Spaces
+
+How does a machine know that `div` and `section` are conceptually similar, but `div` and `MongoDB` are completely different? **Embeddings.**
+
+An embedding takes a string of text and converts it into a long list of numbers — a coordinate in high-dimensional space. Words with similar meaning end up close together in this space.
+
+```python
+from sentence_transformers import SentenceTransformer
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Compare semantic similarity
+texts = [
+    "React component for user login",
+    "Authentication form built with React",
+    "PostgreSQL connection pooling",
+]
+
+embeddings = model.encode(texts)
+
+# Calculate cosine similarity between each pair
+import numpy as np
+
+for i in range(len(texts)):
+    for j in range(i + 1, len(texts)):
+        similarity = np.dot(embeddings[i], embeddings[j]) / (
+            np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[j])
+        )
+        print(f"'{texts[i][:30]}...' vs '{texts[j][:30]}...'")
+        print(f"  Similarity: {similarity:.3f}\n")
+
+# Output:
+# 'React component for user login...' vs 'Authentication form built wi...'
+#   Similarity: 0.723  ← HIGH (semantically similar)
+#
+# 'React component for user login...' vs 'PostgreSQL connection pooling'
+#   Similarity: 0.089  ← LOW (completely different topics)
+```
+
+### Why This Matters
+
+When text is converted into these mathematical coordinates, we store them in a **Vector Database** (Pinecone, Chroma, Supabase pgvector, Weaviate). This allows instant search through millions of documents not by exact keyword matches, but by **semantic meaning**.
+
+A search for "user authentication flow" will find documents about "login form," "session management," and "JWT tokens" — even if none of those exact words appear in your query.
+
+### Senior Move: Embedding Quality = RAG Quality
+
+The embedding model you choose determines what your AI can "understand." A cheap, small embedding model might miss nuance. A larger one costs more but retrieves better results. This is a real architectural decision, not an afterthought.
+
+```
+
+---
+
+## 05. RAG (Retrieval-Augmented Generation)
+
+You want your AI assistant to build features using your company's private, proprietary codebase — but the public model wasn't trained on it. You can't afford to train a custom model. **RAG solves this.**
+
+RAG is a three-step pipeline:
+
+```
+User Query: "How do I connect to our internal payment gateway?"
+        │
+        ▼
+┌─────────────────┐
+│ 1. EMBED QUERY  │  Convert the question into a vector
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ 2. RETRIEVE     │  Search vector DB for semantically
+│                  │  similar documents
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────────────────────────────────┐
+│ 3. AUGMENT + GENERATE                       │
+│                                              │
+│  "You are a helpful assistant.               │
+│   Use the following documentation            │
+│   to answer the user's question.             │
+│                                              │
+│   [RETRIEVED DOCUMENTS PASTED HERE]          │
+│                                              │
+│   User question: How do I connect to         │
+│   our internal payment gateway?"             │
+└─────────────────────────────────────────────┘
+```
+
+The LLM never "learned" your internal docs. But by pasting the relevant pages directly into the prompt, you give it the context it needs to autocomplete a perfect answer.
+
+### The Part Most People Skip: Chunking
+
+Your documents are too large to paste into a prompt. RAG requires you to **chunk** your content into small pieces (typically 200-1000 tokens each) before embedding. Bad chunking = bad retrieval = bad answers.
+
+**Chunking strategies:**
+- **Fixed-size:** Split every N tokens. Simple but cuts sentences mid-thought.
+- **Recursive character splitting:** Split by paragraphs, then sentences, then characters. Preserves structure.
+- **Semantic chunking:** Use an LLM to determine natural breakpoints. Expensive but highest quality.
+- **Overlapping windows:** Include 50-100 token overlap between chunks so context isn't lost at boundaries.
+
+### Senior Moves
+
+1. **Chunk size matters more than you think.** Too small = lost context. Too large = diluted embeddings. Start with 500 tokens and tune.
+2. **Metadata is free accuracy.** Tag each chunk with file path, function name, or section title. Filter by metadata before or after vector search.
+3. **Reranking is the secret weapon.** After vector search returns 20 candidates, use a reranker model to re-score them. This alone can improve answer quality by 20-40%.
+
+```
+
+---
+
+## 06. MCP (Model Context Protocol)
+
+MCP, developed by Anthropic and now an open-source standard, is the biggest architectural shift in AI tooling since RAG.
+
+**The problem MCP solves:** AI models were trapped in a chat box. They couldn't touch your local machine, query your databases, or interact with your dev tools. Every integration was a custom, brittle integration.
+
+**MCP turns the AI into a client that connects to secure servers exposing tools and data.**
+
+```
+┌──────────────┐     JSON-RPC      ┌──────────────────┐
+│              │ ◄───────────────► │  MCP Server A     │
+│   AI Model   │                   │  (File System)    │
+│   (Client)   │                   │  - Read files     │
+│              │     JSON-RPC      │  - Write files    │
+│              │ ◄───────────────► │  - Search dirs    │
+│              │                   ├──────────────────┤
+│              │     JSON-RPC      │  MCP Server B     │
+│              │ ◄───────────────► │  (Database)       │
+│              │                   │  - Query schema   │
+│              │                   │  - Run SQL        │
+│              │                   │  - Check indexes  │
+└──────────────┘                   └──────────────────┘
+```
+
+### What MCP Enables for Full-Stack Devs
+
+| Capability | Without MCP | With MCP |
+|-----------|-------------|----------|
+| Read your code | Copy-paste files into chat | AI reads `/src` directly |
+| Check database | Copy-paste schema dumps | AI queries `information_schema` live |
+| Debug deployment | Copy-paste logs | AI reads logs via server connection |
+| Modify files | AI generates code, you paste it | AI writes files directly |
+| Run tests | You run `npm test`, paste results | AI runs tests, reads output, iterates |
+
+### A Concrete Example
+
+Imagine you ask your AI: *"Why is the login endpoint returning 500?"*
+
+Without MCP:
+1. You copy the error log
+2. You paste it into chat
+3. AI suggests a fix
+4. You paste the fix into your editor
+5. You run the server again
+6. If it still fails, repeat from step 1
+
+With MCP:
+1. AI reads the error log via MCP file server
+2. AI reads the relevant source file via MCP
+3. AI queries the database schema to check column mismatches
+4. AI writes the fix directly to the file
+5. AI runs the test suite via MCP
+6. AI confirms the fix works — or iterates automatically
+
+The feedback loop collapses from minutes to seconds.
+
+### MCP Architecture for a Full-Stack Project
+
+```typescript
+// Define an MCP tool that exposes your API health check
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+
+const server = new McpServer({
+  name: "my-fullstack-server",
+  version: "1.0.0",
+});
+
+// Tool: Check if a specific API endpoint is healthy
+server.tool(
+  "check-endpoint",
+  "Check if a given API endpoint is responding correctly",
+  {
+    url: z.string().describe("The endpoint URL to check"),
+    expectedStatus: z.number().default(200),
+  },
+  async ({ url, expectedStatus }) => {
+    const response = await fetch(url);
+    const isHealthy = response.status === expectedStatus;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            url,
+            status: response.status,
+            healthy: isHealthy,
+            headers: Object.fromEntries(response.headers),
+          }),
+        },
+      ],
+    };
+  }
+);
+
+// Tool: Query recent error logs from your application
+server.tool(
+  "get-error-logs",
+  "Retrieve recent error logs from the application",
+  {
+    lines: z.number().default(50).describe("Number of recent lines to fetch"),
+    level: z.enum(["error", "warn", "info"]).default("error"),
+  },
+  async ({ lines, level }) => {
+    // Your actual log reading logic here
+    const logs = await readApplicationLogs({ lines, level });
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: logs.join("\n"),
+        },
+      ],
+    };
+  }
+);
+```
+
+### Senior Moves
+
+1. **MCP is not "nice to have" — it's the new baseline.** Any serious AI-assisted development workflow will use MCP or something like it. Learn the protocol now.
+2. **Start with read-only servers.** Expose file reading, log reading, schema inspection. Add write operations only after you trust the workflow.
+3. **Scope permissions aggressively.** An MCP server that can read your entire filesystem is dangerous. Lock it to specific directories and operations.
+4. **The protocol is JSON-RPC over stdio or HTTP.** If you can build a REST API, you can build an MCP server. The barrier to entry is low.
+
+---
+
+## 07. Temperature & Top P (The Determinism Knobs)
+
+When you make an API call to a model, you aren't just sending a prompt — you are configuring a probability distribution. The two primary levers that control how the model selects its next token are **Temperature** and **Top P (Nucleus Sampling)**.
+
+> **Crucial Rule:** Never adjust both at the same time. Tweak one and keep the other at its default (`1.0`). Altering both simultaneously creates unpredictable outputs that are nearly impossible to debug.
+
+### The Probability Curve
+
+Every time the model predicts a token, it assigns a probability to every candidate in its vocabulary. These knobs reshape that probability distribution before the model makes its selection.
+
+```
+Low Temperature (0.1)                    High Temperature (1.0)
+One token dominates                       Probabilities spread flat
+
+████████████████████░░░░░                ████████░░░░░░░░░░░░░░░
+Token A: 92%                             Token A: 31%
+Token B:  5%                             Token B: 24%
+Token C:  2%                             Token C: 22%
+Token D:  1%                             Token D: 23%
+
+Predictable. Safe. Boring.               Creative. Risky. Surprising.
+```
+
+### Temperature: Reshaping the Curve
+
+Temperature scales the model's confidence before it chooses. Mathematically, it divides the logit scores by the temperature value before applying softmax.
+
+| Range | Behavior | Use Cases |
+|-------|----------|-----------|
+| `0.0 - 0.2` | Near-deterministic. Same input = same output almost every time. | Code generation, JSON output, data extraction, SQL queries |
+| `0.3 - 0.7` | Balanced. Some variety, but stays on track. | Technical writing, documentation, email drafts |
+| `0.8 - 1.2` | High creativity. Low-probability tokens get a fighting chance. | Brainstorming, creative copy, story writing, idea generation |
+| `> 1.2` | Near-random. Outputs become incoherent. | Almost never useful in production |
+
+### Top P: Nucleus Sampling
+
+Top P takes a different approach. Instead of reshaping probabilities, it **truncates the candidate pool**. If you set `Top P = 0.9`, the model:
+
+1. Sorts all possible next tokens from highest to lowest probability
+2. Adds tokens to the pool until their cumulative probability reaches 90%
+3. Discards everything else
+4. Samples only from the remaining pool
+
+**When Top P shines:** It adapts dynamically. When the model is confident (e.g., autocompleting `const [state, ` → `setState]`), one token holds 95% weight — Top P restricts to just that token. When uncertain, it widens to 50+ candidates automatically.
+
+```python
+import openai
+
+response = openai.chat.completions.create(
+    model="gpt-4o",
+    temperature=0.1,        # Low temperature for deterministic code
+    top_p=1.0,              # Leave Top P at default
+    messages=[
+        {"role": "system", "content": "You are a senior TypeScript engineer."},
+        {"role": "user", "content": "Write a function to debounce a callback."}
+    ]
+)
+
+# The output will be nearly identical every time.
+# Same function structure, same variable names, same approach.
+```
+
+### Senior Moves
+
+1. **Code generation: temperature 0.0 - 0.2.** You want the same correct output every time, not a creative reinterpretation of your algorithm.
+2. **Creative tasks: temperature 0.8 - 1.0.** Let the model explore. That's where unexpected, useful ideas come from.
+3. **Production APIs: pin your temperature.** If your product relies on consistent output quality, lock the temperature in your API calls and never leave it to the user.
+4. **Never set temperature to 0 and expect "perfect" output.** Temperature 0 means the model always picks the most probable token — but the most probable token isn't always correct. It's just the most *common*.
+
+---
+
+## 08. Function Calling & Tool Execution
+
+An LLM cannot natively run code, query a database, or check the weather. It is a text predictor. **Function Calling** is the interface pattern that bridges the gap between the model's text output and real-world execution.
+
+Instead of expecting the AI to magically execute an operation, you provide the model with a JSON schema describing a tool you have written in your backend. The model outputs structured JSON when it wants to use that tool. *Your code* executes it.
+
+### The Tool Definition
+
+```typescript
+// You define tools as JSON schemas in your API call
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "create_database_migration",
+      description: "Generates a new SQL migration file for schema changes",
+      parameters: {
+        type: "object",
+        properties: {
+          tableName: {
+            type: "string",
+            description: "Name of the database table to create or modify"
+          },
+          action: {
+            type: "string",
+            enum: ["create", "alter", "drop"],
+            description: "The schema operation to perform"
+          },
+          columns: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string" },
+                type: { type: "string" },
+                nullable: { type: "boolean" }
+              }
+            },
+            description: "Columns to add (for create/alter)"
+          }
+        },
+        required: ["tableName", "action"]
+      }
+    }
+  }
+];
+```
+
+### The Tool Execution Loop
+
+```
+User: "Create a reviews table with text and rating columns"
+        │
+        ▼
+┌───────────────────────────────────────────────┐
+│ STEP 1: LLM reads prompt + tool definitions   │
+│         Matches intent to tool                │
+└───────────────────┬───────────────────────────┘
+                    │
+                    ▼
+┌───────────────────────────────────────────────┐
+│ STEP 2: LLM outputs structured JSON           │
+│                                              │
+│ {                                            │
+│   "name": "create_database_migration",       │
+│   "arguments": {                             │
+│     "tableName": "reviews",                  │
+│     "action": "create",                      │
+│     "columns": [                             │
+│       { "name": "text", "type": "TEXT" },    │
+│       { "name": "rating", "type": "INTEGER" }│
+│     ]                                        │
+│   }                                          │
+│ }                                            │
+└───────────────────┬───────────────────────────┘
+                    │
+                    ▼
+┌───────────────────────────────────────────────┐
+│ STEP 3: YOUR backend intercepts the JSON      │
+│         Runs the actual migration code        │
+│         Returns result text to the LLM        │
+└───────────────────┬───────────────────────────┘
+                    │
+                    ▼
+┌───────────────────────────────────────────────┐
+│ STEP 4: LLM reads tool output, generates      │
+│         natural language response to user     │
+│                                              │
+│ "Done. Created the reviews table with        │
+│  text (TEXT, nullable) and rating             │
+│  (INTEGER, nullable) columns."               │
+└───────────────────────────────────────────────┘
+```
+
+### Parallel Tool Calls
+
+Modern models can request multiple tools in a single response. If you ask *"What's the weather in Tokyo and London?"*, the model outputs two tool calls simultaneously:
+
+```json
+[
+  {
+    "name": "get_weather",
+    "arguments": { "city": "Tokyo" }
+  },
+  {
+    "name": "get_weather",
+    "arguments": { "city": "London" }
+  }
+]
+```
+
+Your backend runs both in parallel, returns both results, and the model synthesizes a single answer. This is why function calling is dramatically faster than chaining single tool calls.
+
+### Senior Moves
+
+1. **Tool descriptions are prompts.** Write them with the same care as your system prompt. Vague descriptions = wrong tool selection.
+2. **Validate tool inputs on your backend.** The model can generate malformed arguments. Never trust the JSON — validate with Zod, Pydantic, or equivalent before execution.
+3. **Return structured errors.** If your tool fails, return a clear error message as the tool result. The LLM will read it and either retry with different arguments or explain the failure to the user.
+4. **Limit tool count.** Beyond 15-20 tools, model accuracy in tool selection drops noticeably. Group related tools or use an orchestrator pattern.
+
+---
+
+## 09. Agents vs. Multi-Agent Systems
+
+When you move past a simple chat interface, you enter the territory of autonomous execution: **Agents**.
+
+An agent is an LLM combined with memory, tools, and a loop. Instead of generating one response and stopping, it reasons about what it just observed, decides what to do next, executes, and repeats until the task is complete.
+
+### Single Agent: The ReAct Loop
+
+The most common agent pattern is **Reason + Act (ReAct)**:
+
+```
+User: "Find and fix the failing test in auth.test.ts"
+
+┌─────────────────────────────────────────────┐
+│ THOUGHT: I need to see the test file first  │
+│ ACTION:  read_file("auth.test.ts")          │
+│ OBSERVE: Test expects 200 but gets 401      │
+├─────────────────────────────────────────────┤
+│ THOUGHT: The auth middleware is rejecting    │
+│          valid tokens. Let me check it.     │
+│ ACTION:  read_file("middleware/auth.ts")    │
+│ OBSERVE: JWT verification uses wrong secret  │
+├─────────────────────────────────────────────┤
+│ THOUGHT: The env var JWT_SECRET is missing  │
+│          from the test config. I'll fix it. │
+│ ACTION:  edit_file(".env.test", ...)        │
+│ OBSERVE: File updated successfully          │
+├─────────────────────────────────────────────┤
+│ THOUGHT: Let me verify the fix works.        │
+│ ACTION:  run_command("npm test auth")       │
+│ OBSERVE: All 12 tests passing               │
+├─────────────────────────────────────────────┤
+│ FINAL: "Fixed. The test config was missing  │
+│         JWT_SECRET. All 12 tests pass now." │
+└─────────────────────────────────────────────┘
+```
+
+### Where Single Agents Break Down
+
+Single agents work well for focused tasks. But give one agent 15 tools and a complex multi-file refactor, and you'll see:
+
+- **Reasoning drift** — the agent forgets its original goal after 20+ tool calls
+- **Context pollution** — tool outputs pile up, pushing critical instructions out of the middle
+- **Tool confusion** — with many similar tools, the agent picks the wrong one
+- **Hallucinated actions** — the agent claims it ran a test it never actually ran
+
+### Multi-Agent Systems: Specialized Teams
+
+The solution is to decompose the monolithic agent into a network of specialized agents, each with its own system prompt, tool subset, and context window.
+
+```
+                    ┌─────────────────┐
+                    │  Orchestrator    │
+                    │  (Supervisor)    │
+                    │                  │
+                    │  Tools: delegate │
+                    │  to sub-agents   │
+                    └────────┬────────┘
+                             │
+            ┌────────────────┼────────────────┐
+            │                │                │
+            ▼                ▼                ▼
+    ┌───────────────┐ ┌───────────┐ ┌───────────────┐
+    │ Coder Agent   │ │ QA Agent  │ │ Deploy Agent  │
+    │               │ │           │ │               │
+    │ Tools:        │ │ Tools:    │ │ Tools:        │
+    │ - read file   │ │ - run test│ │ - run build   │
+    │ - edit file   │ │ - lint    │ │ - push git    │
+    │ - search code │ │ - inspect │ │ - check CI    │
+    └───────────────┘ └───────────┘ └───────────────┘
+```
+
+### Production Patterns
+
+**1. Orchestrator-Worker Pattern**
+
+A supervisor agent receives the master goal, breaks it into explicit sub-tasks, delegates each to a dedicated worker agent, and compiles the final result. Each worker only sees its own slice of the problem.
+
+**2. Critic-Refiner Pattern (Adversarial Collaboration)**
+
+One agent writes code. A completely separate agent — prompted to be critical and security-conscious — reviews it. The writer never sees the reviewer's feedback directly; the orchestrator mediates. Studies show this separation increases code accuracy by 20-30% compared to a single agent self-reviewing.
+
+**3. Pipeline Pattern**
+
+Agents are chained sequentially. Agent A's output becomes Agent B's input. Useful for linear workflows: research → outline → draft → edit → format.
+
+### Senior Moves
+
+1. **Start with one agent.** Multi-agent systems add coordination overhead. Only split when a single agent clearly can't handle the task.
+2. **Isolate context windows.** Each sub-agent should only see what it needs. Dumping the full conversation into every agent defeats the purpose.
+3. **Use structured handoffs.** When Agent A passes work to Agent B, use a defined schema — not free-form text. This prevents information loss.
+4. **Monitor token usage per agent.** In multi-agent systems, costs multiply. Track which agent burns the most tokens and optimize that one first.
+
+---
+
+## 10. Reasoning Models vs. Chat Models
+
+The model landscape splits into two classes: standard **Chat Models** (GPT-4o, Claude 3.5 Sonnet) and **Reasoning Models** (OpenAI o1/o3, DeepSeek-R1). Understanding when to use each controls your latency, cost, and output quality.
+
+### The Fundamental Difference
+
+| Metric | Chat Models | Reasoning Models |
+|--------|-------------|------------------|
+| **Execution** | Streaming autocomplete — tokens flow immediately | Hidden chain-of-thought — thinks before speaking |
+| **Latency** | Low (first token in ~200ms) | High (seconds of "thinking" before first token) |
+| **Cost** | Pay only for visible tokens | Pay for visible tokens + hidden reasoning tokens (often 3-10x more) |
+| **Strength** | Fast, conversational, UI-facing | Complex logic, multi-step reasoning, architectural decisions |
+| **Weakness** | Struggles with deep multi-step problems | Overkill for simple tasks, expensive for high-volume routes |
+
+### When to Use What
+
+```
+USE CHAT MODELS (GPT-4o, Claude 3.5)          USE REASONING MODELS (o1, R1)
+for these tasks:                                for these tasks:
+
+  UI text generation                            Complex algorithm design
+  API route handling                            Multi-file refactoring
+  Form validation messages                      Architecture planning
+  Quick code completions                        Debugging subtle race conditions
+  Email/draft generation                        Mathematical proofs
+  Data formatting                               Security audit analysis
+  Real-time chat responses                      Dependency migration planning
+```
+
+### The Production Insight
+
+Never use a reasoning model for standard UI generation, basic copywriting, or linear data formatting. It wastes budget and increases user latency for no quality gain.
+
+The optimal architecture uses **chat models for outward-facing execution layers** and calls **reasoning models behind the scenes** specifically when the system needs to map out structural logic, generate intricate algorithms, or run complex multi-file analysis.
+
+```typescript
+// Smart model routing in your backend
+async function handleUserRequest(prompt: string, complexity: "simple" | "complex") {
+  if (complexity === "simple") {
+    // Fast, cheap, good enough
+    return await chatModel.complete({
+      model: "gpt-4o",
+      temperature: 0.3,
+      messages: [{ role: "user", content: prompt }]
+    });
+  }
+
+  // Expensive but necessary for deep reasoning
+  return await reasoningModel.complete({
+    model: "o3",
+    messages: [{ role: "user", content: prompt }]
+  });
+}
+
+// Classify complexity based on prompt signals
+function classifyComplexity(prompt: string): "simple" | "complex" {
+  const complexSignals = [
+    /refactor/i,
+    /architecture/i,
+    /multiple files/i,
+    /optimize/i,
+    /debug.*race condition/i,
+    /security.*audit/i,
+  ];
+
+  return complexSignals.some(r => r.test(prompt)) ? "complex" : "simple";
+}
+```
+
+### Senior Moves
+
+1. **Classify before you route.** Build a simple classifier (even keyword-based) that determines which model handles which request. This alone can cut costs 40-60%.
+2. **Hide reasoning model latency.** If you use o1/o3 behind a chat interface, show a "thinking..." indicator. Users tolerate 5s of waiting if they know something is happening.
+3. **Cache reasoning model outputs.** If two users ask similar architectural questions, cache the reasoning model's response. Reasoning tokens are expensive — don't burn them twice.
+4. **Reasoning models aren't smarter — they're slower.** They spend more compute exploring possibilities. That's useful for hard problems, wasteful for easy ones.
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| LLM | Hyper-advanced autocomplete | Treat it like a junior dev with perfect recall — it needs your specs |
+| Tokens | The billing and processing unit | Be surgical with what you paste in; context pollution degrades quality |
+| Context Window | Short-term memory | Critical info goes top and bottom; middle gets forgotten |
+| Embeddings | Semantic coordinates in space | Better embedding model = better retrieval = better answers |
+| RAG | Paste relevant docs into the prompt | Chunking strategy and reranking matter more than the LLM itself |
+| MCP | AI connects to your tools directly | Closes the feedback loop from minutes to seconds |
+| Temperature | Reshapes probability distribution | Low for code, high for creativity — never change both knobs at once |
+| Top P | Truncates candidate token pool | Adapts dynamically; leave at 1.0 unless you have a specific reason |
+| Function Calling | LLM outputs JSON, your code executes | Tool descriptions are prompts — write them carefully |
+| Agents | LLM + tools + loop | Start with one agent; split only when complexity demands it |
+| Reasoning Models | Thinks before speaking | Use for hard problems only — chat models handle 80% of tasks faster and cheaper |

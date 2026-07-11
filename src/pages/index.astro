@@ -1,0 +1,636 @@
+---
+import PlaybookLayout from '../layouts/PlaybookLayout.astro';
+import CommandPalette from '../components/CommandPalette.astro';
+
+const phases = [
+  {
+    id: "phase-1",
+    number: "01",
+    title: "Global Infrastructure",
+    subtitle: "The Core Plumbing",
+    description: "Before touching a line of code or an LLM, understand how packets move across the planet. This stage lays down the undeniable realities of the internet.",
+    color: "#3ad29f",
+    chapters: [
+      { part: "I", section: "Global Foundations", title: "The Internet's Plumbing", slug: "part-1-global-foundations", desc: "DNS resolution chains, the HTTPS TLS cryptographic handshake, and demystifying browser CORS boundaries.", difficulty: "Foundational", readTime: "25 min", topics: 7 },
+      { part: "VII", section: "Authentication", title: "Guarding the Application Gate", slug: "part-7-authentication", desc: "Stateful server sessions vs stateless JWTs, XSS containment, and mitigating CSRF cross-origin exploits.", difficulty: "Senior", readTime: "30 min", topics: 8 },
+      { part: "XI", section: "Deployment", title: "Global Network Distribution", slug: "part-11-deployment", desc: "Anycast routing parameters, Content Delivery Networks (CDNs), and fine-tuning HTTP cache-control headers.", difficulty: "Senior", readTime: "25 min", topics: 9 },
+    ]
+  },
+  {
+    id: "phase-2",
+    number: "02",
+    title: "Data & Framework Architecture",
+    subtitle: "The Structural Layer",
+    description: "Once the network pipes are clear, this phase dictates where data lives and how it gets transformed into user interfaces without melting the device's CPU.",
+    color: "#8b5cf6",
+    chapters: [
+      { part: "VI", section: "Databases", title: "Architectural Storage Systems", slug: "part-6-databases", desc: "ACID guarantees, SQL table joins vs NoSQL nesting paradigms, and active Redis cache invalidation strategies.", difficulty: "Senior", readTime: "35 min", topics: 6 },
+      { part: "III", section: "Framework Thinking", title: "Decoupling the Rendering Matrix", slug: "part-3-framework-thinking", desc: "The real price of the JavaScript Tax, isolating hydration layers via Astro Islands, and PPR topologies.", difficulty: "Senior", readTime: "30 min", topics: 6 },
+      { part: "X", section: "Design & Motion", title: "The Senior Editorial Aesthetic", slug: "part-10-design-systems", desc: "Managing intentional whitespace, layout grids, skeleton shimmer UI states, and cohesive Three.js wireframes.", difficulty: "Senior", readTime: "30 min", topics: 7 },
+    ]
+  },
+  {
+    id: "phase-3",
+    number: "03",
+    title: "AI Engineering & Automation",
+    subtitle: "The Intelligence Layer",
+    description: "With a standard full-stack baseline established, this phase injects artificial intelligence—not as a gimmick, but as a core architectural module and workflow force multiplier.",
+    color: "#f59e0b",
+    chapters: [
+      { part: "II", section: "AI Foundations", title: "The Autocomplete Engine", slug: "part-2-ai-foundations", desc: "Token mathematics, attention economics, vector embeddings, semantic Retrieval-Augmented Generation (RAG), and the Model Context Protocol (MCP).", difficulty: "Foundational", readTime: "35 min", topics: 10 },
+      { part: "XIV", section: "AI Prompting", title: "The Deterministic Contract", slug: "part-14-ai-prompting", desc: "Structuring rigid XML parsing boundaries, few-shot golden example sets, and leveraging prompt caching savings.", difficulty: "Senior", readTime: "30 min", topics: 9 },
+      { part: "IV", section: "AI Workflow", title: "The Senior Orchestration Engine", slug: "part-4-ai-workflow", desc: "Orchestrating AI tools across a project's lifecycle, separating rapid prototype scaffolding from grounded production engineering.", difficulty: "Senior", readTime: "25 min", topics: 6 },
+    ]
+  },
+  {
+    id: "phase-4",
+    number: "04",
+    title: "Production & Hardened Operations",
+    subtitle: "The Containment Layer",
+    description: "The final phase wraps the entire ecosystem in iron containment walls. This is where an app is fortified against traffic spikes, security exploits, and runtime crashes.",
+    color: "#ef4444",
+    chapters: [
+      { part: "XII & XIII", section: "SEO & Security", title: "Visibility and Fortification", slug: "part-12-13-seo-security", desc: "Optimizing Core Web Vitals, schema metadata maps, parameterized SQL query mitigation, and Redis rate limiting.", difficulty: "Senior", readTime: "35 min", topics: 9 },
+      { part: "V", section: "Production & Ops", title: "Architecting for the Wild", slug: "part-5-production-and-ops", desc: "Runtime schema validation of secrets (Zod), strict Git-flow branch protection, automated GitHub Actions, and Docker isolation.", difficulty: "Senior", readTime: "30 min", topics: 8 },
+      { part: "XV", section: "Production Thinking", title: "Telemetry and Crash Recovery", slug: "part-15-production-thinking", desc: "The three pillars of telemetry (Metrics, Logs, Traces), health checks, and graceful shutdown patterns.", difficulty: "Senior", readTime: "30 min", topics: 9 },
+    ]
+  }
+];
+
+const totalModules = phases.reduce((sum, p) => sum + p.chapters.length, 0);
+const totalTopics = phases.reduce((sum, p) => sum + p.chapters.reduce((s, ch) => s + ch.topics, 0), 0);
+---
+
+<PlaybookLayout title="The Master Curriculum Dashboard">
+  <div class="page-wrapper">
+
+    <!-- Hero Section -->
+    <header class="hero">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>THE SENIOR FULL-STACK COMPENDIUM</span>
+      </div>
+      <h1 class="hero-title">The Full-Stack Blueprint for<br/><span class="accent">Independent Engineers</span></h1>
+      <p class="hero-desc">
+        A systematic operational guide to building premium, robust, highly-optimized software
+        by pairing core architectural models with advanced AI workflow execution.
+      </p>
+
+      <!-- Stats Bar -->
+      <div class="stats-bar">
+        <div class="stat">
+          <span class="stat-value">4</span>
+          <span class="stat-label">Phases</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">{totalModules}</span>
+          <span class="stat-label">Modules</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">{totalTopics}</span>
+          <span class="stat-label">Topics</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-value">6+</span>
+          <span class="stat-label">Hours</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Search -->
+    <div class="search-section">
+      <button class="search-trigger" id="searchTrigger" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>Search topics, concepts, keywords...</span>
+        <kbd>⌘K</kbd>
+      </button>
+    </div>
+
+    <!-- Learning Path -->
+    <div class="learning-path">
+      {phases.map((phase, phaseIndex) => (
+        <section class="phase" data-phase={phase.id} style={`--phase-color: ${phase.color}`}>
+          <!-- Phase Header -->
+          <div class="phase-header">
+            <div class="phase-number-badge">
+              <span class="phase-num">{phase.number}</span>
+            </div>
+            <div class="phase-info">
+              <div class="phase-label">PHASE {phase.number}</div>
+              <h2 class="phase-title">{phase.title}</h2>
+              <p class="phase-subtitle">{phase.subtitle}</p>
+            </div>
+          </div>
+          <p class="phase-desc">{phase.description}</p>
+
+          <!-- Phase Progress -->
+          <div class="phase-progress">
+            <div class="progress-track">
+              <div class="progress-fill" style={`width: 0%`} data-phase={phase.id}></div>
+            </div>
+            <span class="progress-text">{phase.chapters.length} modules</span>
+          </div>
+
+          <!-- Chapter Cards -->
+          <div class="phase-grid">
+            {phase.chapters.map((ch, i) => (
+              <a href={`/content/${ch.slug}`} class="curriculum-card" style={`animation-delay: ${(phaseIndex * 3 + i) * 80}ms`}>
+                <div class="card-number">{String(i + 1).padStart(2, '0')}</div>
+                <div class="card-header">
+                  <span class="card-part">PART {ch.part}</span>
+                  <span class={`card-difficulty ${ch.difficulty.toLowerCase()}`}>{ch.difficulty}</span>
+                </div>
+                <div class="card-section">{ch.section}</div>
+                <h3 class="card-title">{ch.title}</h3>
+                <p class="card-desc">{ch.desc}</p>
+                <div class="card-footer">
+                  <div class="card-meta">
+                    <span>{ch.topics} topics</span>
+                    <span class="meta-dot">·</span>
+                    <span>{ch.readTime}</span>
+                  </div>
+                  <span class="card-arrow">→</span>
+                </div>
+              </a>
+            ))}
+          </div>
+
+          <!-- Phase Connector (except last) -->
+          {phaseIndex < phases.length - 1 && (
+            <div class="phase-connector">
+              <div class="connector-line"></div>
+              <div class="connector-dot"></div>
+              <div class="connector-line"></div>
+            </div>
+          )}
+        </section>
+      ))}
+    </div>
+
+    <!-- Footer CTA -->
+    <footer class="page-footer">
+      <div class="footer-content">
+        <p class="footer-brand">CyderCoder<span class="accent">.playbook</span></p>
+        <p class="footer-text">Built for builders. Deployed with purpose.</p>
+      </div>
+    </footer>
+  </div>
+
+  <CommandPalette />
+</PlaybookLayout>
+
+<style>
+  /* ========================================
+     PAGE WRAPPER
+  ======================================== */
+  .page-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+
+  /* ========================================
+     HERO
+  ======================================== */
+  .hero { margin-bottom: 3rem; }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--brand-accent);
+    letter-spacing: 0.06em;
+    margin-bottom: 1.5rem;
+  }
+
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--brand-accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--brand-accent-glow);
+  }
+
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .accent { color: var(--brand-accent); }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+  }
+
+  /* Stats Bar */
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 1.25rem 1.5rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    max-width: fit-content;
+  }
+
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  .stat-value { font-size: 1.3rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-divider { width: 1px; height: 28px; background: var(--border-default); }
+
+  /* ========================================
+     SEARCH TRIGGER
+  ======================================== */
+  .search-section { margin-bottom: 3rem; }
+
+  .search-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 560px;
+    padding: 0.7rem 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .search-trigger:hover { border-color: var(--border-strong); }
+  .search-trigger:focus-visible {
+    outline: none; border-color: var(--brand-accent);
+    box-shadow: 0 0 0 2px var(--brand-accent-dim);
+  }
+
+  .search-trigger span { flex: 1; text-align: left; }
+
+  .search-trigger kbd {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    background: var(--bg-base);
+    border: 1px solid var(--border-default);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: var(--text-faint);
+  }
+
+  /* ========================================
+     LEARNING PATH
+  ======================================== */
+  .learning-path {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ========================================
+     PHASE
+  ======================================== */
+  .phase {
+    position: relative;
+    padding-bottom: 2rem;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .phase-number-badge {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--phase-color) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--phase-color) 30%, transparent);
+    border-radius: 12px;
+  }
+
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--phase-color);
+  }
+
+  .phase-info { flex: 1; }
+
+  .phase-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--phase-color);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+    opacity: 0.8;
+  }
+
+  .phase-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 0.15rem;
+  }
+
+  .phase-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .phase-desc {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.25rem;
+    max-width: 700px;
+    padding-left: calc(48px + 1.25rem);
+  }
+
+  /* Phase Progress */
+  .phase-progress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-left: calc(48px + 1.25rem);
+  }
+
+  .progress-track {
+    flex: 1;
+    max-width: 200px;
+    height: 3px;
+    background: var(--border-default);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--phase-color);
+    border-radius: 2px;
+    transition: width 0.6s var(--ease-out);
+  }
+
+  .progress-text {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+  }
+
+  /* ========================================
+     PHASE GRID
+  ======================================== */
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+    padding-left: calc(48px + 1.25rem);
+  }
+
+  /* ========================================
+     CURRICULUM CARD
+  ======================================== */
+  .curriculum-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    position: relative;
+    transition: border-color 0.2s, transform 0.2s var(--ease-out), box-shadow 0.2s;
+    animation: cardIn 0.5s var(--ease-out) both;
+  }
+
+  .curriculum-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-number {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--border-subtle);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+  }
+
+  .card-part {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--text-faint);
+    letter-spacing: 0.04em;
+  }
+
+  .card-difficulty {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .card-difficulty.foundational {
+    background: rgba(58, 210, 159, 0.1);
+    color: var(--brand-accent);
+  }
+
+  .card-difficulty.senior {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+  }
+
+  .card-section {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+
+  .card-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--text-faint);
+  }
+
+  .meta-dot { opacity: 0.4; }
+
+  .card-arrow {
+    color: var(--phase-color, var(--brand-accent));
+    font-size: 1rem;
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .curriculum-card:hover .card-arrow { transform: translateX(4px); }
+
+  /* ========================================
+     PHASE CONNECTOR
+  ======================================== */
+  .phase-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 1.5rem 0;
+    padding-left: calc(48px / 2 + 1.25rem / 2);
+  }
+
+  .connector-line {
+    width: 1px;
+    height: 24px;
+    background: var(--border-default);
+  }
+
+  .connector-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--border-strong);
+    border-radius: 50%;
+    margin: 0 4px;
+  }
+
+  /* ========================================
+     FOOTER
+  ======================================== */
+  .page-footer {
+    margin-top: 5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+
+  .footer-brand {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+  }
+
+  .footer-text {
+    font-size: 0.8rem;
+    color: var(--text-faint);
+  }
+
+  /* ========================================
+     RESPONSIVE
+  ======================================== */
+  @media (max-width: 768px) {
+    .page-wrapper { padding: 2rem 1.25rem 4rem; }
+    .hero-title { font-size: 1.8rem; }
+    .stats-bar { gap: 1rem; padding: 1rem; flex-wrap: wrap; justify-content: center; }
+    .stat-divider { display: none; }
+    .phase-desc, .phase-progress, .phase-grid { padding-left: 0; }
+    .phase-grid { grid-template-columns: 1fr; }
+    .phase-connector { padding-left: 0; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-title { font-size: 1.5rem; }
+    .hero-desc { font-size: 0.95rem; }
+    .stat-value { font-size: 1.1rem; }
+    .phase-title { font-size: 1.25rem; }
+  }
+</style>
+
+<script>
+  // Animate progress fills on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const fill = entry.target.querySelector('.progress-fill') as HTMLElement;
+        if (fill) {
+          const phase = fill.getAttribute('data-phase');
+          // All modules complete for demo — set to 100%
+          fill.style.width = '100%';
+        }
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.3 });
+
+  document.querySelectorAll('.phase-progress').forEach(el => observer.observe(el));
+
+  // Search trigger — dispatch custom event that CommandPalette listens for
+  document.getElementById('searchTrigger')?.addEventListener('click', () => {
+    // Try direct call first
+    if (typeof (window as any).openPlaybookSearch === 'function') {
+      (window as any).openPlaybookSearch();
+    } else {
+      // Fallback: dispatch event
+      document.dispatchEvent(new CustomEvent('open-search'));
+    }
+  });
+</script>

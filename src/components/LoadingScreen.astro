@@ -1,0 +1,176 @@
+---
+// LoadingScreen.astro — Animated loading overlay
+---
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-content">
+    <div class="loading-logo">
+      <div class="logo-ring">
+        <svg viewBox="0 0 100 100" class="ring-svg">
+          <circle cx="50" cy="50" r="42" class="ring-track" />
+          <circle cx="50" cy="50" r="42" class="ring-progress" />
+        </svg>
+        <span class="logo-text">C</span>
+      </div>
+    </div>
+    <div class="loading-bar">
+      <div class="loading-bar-fill"></div>
+    </div>
+    <p class="loading-label">Loading playbook...</p>
+  </div>
+</div>
+
+<style is:global>
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #070a09;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+
+  .loading-screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .loading-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .loading-logo {
+    position: relative;
+  }
+
+  .logo-ring {
+    position: relative;
+    width: 80px;
+    height: 80px;
+  }
+
+  .ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 3;
+  }
+
+  .ring-progress {
+    fill: none;
+    stroke: #3ad29f;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 264;
+    stroke-dashoffset: 264;
+    animation: ringDraw 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+
+  @keyframes ringDraw {
+    0% {
+      stroke-dashoffset: 264;
+      transform: rotate(0deg);
+    }
+    50% {
+      stroke-dashoffset: 66;
+    }
+    100% {
+      stroke-dashoffset: 264;
+      transform: rotate(360deg);
+    }
+  }
+
+  .logo-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #3ad29f;
+    letter-spacing: -0.05em;
+    animation: logoPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes logoPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+  }
+
+  .loading-bar {
+    width: 120px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+
+  .loading-bar-fill {
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #3ad29f, transparent);
+    border-radius: 1px;
+    animation: barSlide 1.2s ease-in-out infinite;
+  }
+
+  @keyframes barSlide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+  }
+
+  .loading-label {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    color: #3d564c;
+    letter-spacing: 0.05em;
+    animation: labelFade 2s ease-in-out infinite;
+  }
+
+  @keyframes labelFade {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+  }
+</style>
+
+<script>
+  function initLoadingScreen() {
+    const screen = document.getElementById('loadingScreen');
+    if (!screen) return;
+
+    // Hide after page loads
+    function hideLoader() {
+      screen.classList.add('hidden');
+      setTimeout(() => {
+        screen.style.display = 'none';
+      }, 500);
+    }
+
+    // Hide on window load
+    if (document.readyState === 'complete') {
+      hideLoader();
+    } else {
+      window.addEventListener('load', hideLoader);
+    }
+
+    // Safety: hide after 4 seconds max
+    setTimeout(hideLoader, 4000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLoadingScreen);
+  } else {
+    initLoadingScreen();
+  }
+</script>

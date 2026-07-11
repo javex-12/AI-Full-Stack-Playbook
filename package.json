@@ -1,0 +1,21 @@
+{
+  "name": "ai-fullstack-playbook",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "The AI Builder's Handbook — A senior-engineered guide to full-stack development with AI",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build && pagefind --site dist",
+    "preview": "astro preview",
+    "search:dev": "pagefind --site dist --serve",
+    "lint": "astro check"
+  },
+  "dependencies": {
+    "astro": "^4.16.0"
+  },
+  "devDependencies": {
+    "pagefind": "^1.1.0",
+    "@astrojs/mdx": "^3.0.0"
+  }
+}

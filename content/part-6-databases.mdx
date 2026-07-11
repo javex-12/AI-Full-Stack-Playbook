@@ -1,0 +1,585 @@
+---
+title: "Databases & Data Modeling: Architectural Storage"
+part: 6
+section: "Databases"
+keywords: ["SQL", "NoSQL", "PostgreSQL", "MongoDB", "Redis", "ACID", "Caching", "Indexing", "Schema Design", "Query Optimization"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Architectural Split: SQL vs. NoSQL
+
+Choosing a database is not a matter of picking what is trendy. It is an engineering calculation based on your system's data relationships, consistency requirements, and access patterns.
+
+### Relational Databases (SQL — PostgreSQL, MySQL)
+
+Data lives in rigid, pre-defined tables with rows and columns. Different entities are linked through **foreign keys** and queried via **joins**.
+
+```
+users                          orders
+┌────┬────────┬────────┐      ┌────┬─────────┬────────┬─────────┐
+│ id │ email  │ name   │      │ id │ user_id │ amount │ status  │
+├────┼────────┼────────┤      ├────┼─────────┼────────┼─────────┤
+│  1 │ a@x.com│ Alice  │      │  1 │    1    │  49.99 │ paid    │
+│  2 │ b@x.com│ Bob    │      │  2 │    1    │  29.99 │ pending │
+│  3 │ c@x.com│ Carol  │      │  3 │    2    │  99.99 │ paid    │
+└────┴────────┴────────┘      └────┴─────────┴────────┴─────────┘
+
+Query: SELECT users.name, orders.amount
+       FROM users
+       JOIN orders ON users.id = orders.user_id
+       WHERE users.id = 1;
+
+Result: Alice, 49.99
+        Alice, 29.99
+```
+
+**ACID Compliance — The Mathematical Guarantee:**
+
+| Property | Meaning | Why It Matters |
+|----------|---------|----------------|
+| **Atomicity** | All operations succeed or all fail — no partial writes | A transfer debits AND credits, never just one |
+| **Consistency** | Every transaction leaves the database in a valid state | No orphaned records, no broken foreign keys |
+| **Isolation** | Concurrent transactions don't interfere with each other | Two users buying the last item don't both succeed |
+| **Durability** | Committed data survives power crashes and restarts | Once the server says "saved," it's on disk permanently |
+
+### Document Databases (NoSQL — MongoDB, DynamoDB)
+
+Data lives as independent, flexible JSON-like documents. No rigid schema — each document can have different fields.
+
+```
+users collection
+┌──────────────────────────────────────────────────────┐
+│ {                                                    │
+│   "_id": "abc123",                                   │
+│   "name": "Alice",                                   │
+│   "email": "a@x.com",                                │
+│   "orders": [                    ← Embedded array    │
+│     { "amount": 49.99, "status": "paid" },           │
+│     { "amount": 29.99, "status": "pending" }         │
+│   ],                                                 │
+│   "preferences": {               ← Nested object     │
+│     "theme": "dark",                                 │
+│     "notifications": true                            │
+│   }                                                  │
+│ }                                                    │
+└──────────────────────────────────────────────────────┘
+
+Query: db.users.findOne({ _id: "abc123" })
+Result: Entire document in one read — no JOIN needed
+```
+
+**The Mindset:** Data that is read together should live together. If a user and their orders are always fetched together, embed the orders inside the user document.
+
+### The Decision Matrix
+
+| Factor | SQL (PostgreSQL) | NoSQL (MongoDB) |
+|--------|------------------|-----------------|
+| **Schema** | Rigid, defined upfront | Flexible, evolves per document |
+| **Relationships** | Natural via JOINs | Complex — requires embedding or manual references |
+| **Consistency** | Strong (ACID) | Eventual (BASE) — may read stale data briefly |
+| **Query Language** | SQL — standardized for 40+ years | MongoDB Query API — vendor-specific |
+| **Scaling** | Vertical (bigger server) | Horizontal (more servers) |
+| **Best For** | Financial, healthcare, SaaS with complex relations | Content management, real-time logs, rapid prototyping |
+
+### When to Use What
+
+```
+Is your data highly relational with strict consistency requirements?
+├── YES → PostgreSQL
+│         (e-commerce, banking, user management, inventory)
+│
+├── NO → Does your data structure vary between documents?
+│        ├── YES → MongoDB
+│        │         (product catalogs, user profiles with optional fields, CMS)
+│        │
+│        └── NO → Do you need sub-millisecond reads for hot data?
+│                 ├── YES → Redis
+│                 │         (sessions, caching, real-time leaderboards)
+│                 │
+│                 └── NO → PostgreSQL (default choice for most apps)
+```
+
+---
+
+## 02. The Core Engines: PostgreSQL, MongoDB, Redis
+
+A production architecture often uses **multiple database types** together — each specialized for a different access pattern.
+
+| Database | Type | Latency | Best For | Watch Out For |
+|----------|------|---------|----------|---------------|
+| **PostgreSQL** | Relational | 1-50ms | Transactional data, complex queries, analytics | Vertical scaling limits, connection pool exhaustion |
+| **MongoDB** | Document | 1-20ms | Flexible schemas, nested reads, high write throughput | No JOINs, eventual consistency, data duplication |
+| **Redis** | In-Memory | 0.1-2ms | Caching, sessions, rate limiting, pub/sub | Volatile (data lost on crash without persistence config) |
+| **SQLite** | Embedded | <1ms | Local dev, mobile apps, single-user tools | No concurrent writes, no network access |
+
+### The Multi-Database Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    APPLICATION LAYER                      │
+├─────────────────────────────────────────────────────────┤
+│                                                          │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐          │
+│  │  Redis    │    │ PostgreSQL│    │ MongoDB  │          │
+│  │  Cache    │    │ Primary   │    │ Events   │          │
+│  │          │    │ Database  │    │ Store    │          │
+│  │ Sessions │    │ Users     │    │ Logs     │          │
+│  │ Cache    │    │ Orders    │    │ Analytics│          │
+│  │ Rate Lim │    │ Products  │    │ Events   │          │
+│  └──────────┘    └──────────┘    └──────────┘          │
+│                                                          │
+│  Hot data       Transactional     Write-heavy            │
+│  (fast reads)   (ACID guarantees) (flexible schema)     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Connection Pooling
+
+Every database connection has overhead — TCP handshake, authentication, memory allocation. Opening a new connection per request is catastrophically slow. **Connection pooling** maintains a warm pool of reusable connections.
+
+```typescript
+// PostgreSQL connection pool with pg-pool
+import { Pool } from 'pg';
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 20,              // Maximum connections in pool
+  idleTimeoutMillis: 30000,  // Close idle connections after 30s
+  connectionTimeoutMillis: 5000,  // Fail if can't connect in 5s
+});
+
+// Use pool, not individual client
+async function query(text: string, params?: any[]) {
+  const start = Date.now();
+  const result = await pool.query(text, params);
+  const duration = Date.now() - start;
+
+  if (duration > 100) {
+    logger.warn('Slow query detected', { text, duration, rows: result.rowCount });
+  }
+
+  return result;
+}
+```
+
+### Senior Moves for Database Selection
+
+1. **Start with PostgreSQL.** It handles 90% of use cases. Only reach for MongoDB or Redis when you have a specific reason.
+2. **Use Redis for caching, not as primary storage.** Redis is fast but volatile. Use it to accelerate reads from PostgreSQL, not to replace it.
+3. **MongoDB for write-heavy, read-heavy, or schema-unstable workloads.** If your data structure changes weekly (A/B testing features, evolving product attributes), MongoDB avoids migration headaches.
+4. **SQLite for local dev and single-user tools.** Don't spin up PostgreSQL for a CLI tool or a local prototype.
+
+---
+
+## 03. Schema Design: Normalization vs. Denormalization
+
+How you structure your tables determines query performance, data integrity, and maintenance burden.
+
+### Normalization (SQL Default)
+
+Split data into separate tables to eliminate duplication. Each fact lives in exactly one place.
+
+```sql
+-- Normalized: 3NF (Third Normal Form)
+-- User data lives in ONE place
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL
+);
+
+-- Order data references user, doesn't duplicate user info
+CREATE TABLE orders (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  amount INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Product data lives in ONE place
+CREATE TABLE products (
+  id UUID PRIMARY KEY,
+  name TEXT NOT NULL,
+  price INTEGER NOT NULL
+);
+
+-- Order items reference both order and product
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY,
+  order_id UUID REFERENCES orders(id),
+  product_id UUID REFERENCES products(id),
+  quantity INTEGER NOT NULL
+);
+```
+
+**Pros:** No data duplication, update one place and it's consistent everywhere, enforced relationships.
+**Cons:** Complex JOINs for reads, more tables to manage, slower queries for deeply nested data.
+
+### Denormalization (Performance Optimization)
+
+Duplicate data strategically to avoid expensive JOINs. Trade storage for read speed.
+
+```sql
+-- Denormalized: orders table includes user name directly
+CREATE TABLE orders (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  user_name TEXT NOT NULL,      -- Duplicated from users table
+  user_email TEXT NOT NULL,     -- Duplicated from users table
+  amount INTEGER NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Query is now a simple single-table read — no JOIN
+SELECT id, user_name, amount FROM orders WHERE user_id = $1;
+```
+
+**Pros:** Fast reads, simple queries, no JOINs.
+**Cons:** Data duplication, must update multiple places when user changes name, risk of inconsistency.
+
+### The Hybrid Pattern
+
+Normalize for write-heavy tables (orders, transactions). Denormalize for read-heavy tables (dashboards, analytics, search results).
+
+```sql
+-- The orders table stays normalized for writes
+-- A materialized view handles read-heavy dashboards
+CREATE MATERIALIZED VIEW order_summary AS
+SELECT
+  o.id,
+  o.user_id,
+  u.name AS user_name,
+  u.email AS user_email,
+  o.amount,
+  o.created_at
+FROM orders o
+JOIN users u ON o.user_id = u.id;
+
+-- Refresh periodically (not real-time — that's what the normalized table is for)
+REFRESH MATERIALIZED VIEW CONCURRENTLY order_summary;
+```
+
+---
+
+## 04. High-Performance Caching with Redis
+
+When PostgreSQL handles thousands of complex queries per second, CPU spikes and page loads slow down. Redis sits in front as an ultra-fast in-memory cache.
+
+### The Cache-Aside Pattern
+
+```
+Client requests: GET /users/cydercoder
+        │
+        ▼
+┌───────────────────────────────────────────────┐
+│ 1. Check Redis cache                          │
+│    GET user:cydercoder                        │
+└───────────┬───────────────────────────────────┘
+            │
+     ┌──────┴──────┐
+     │             │
+  HIT (2ms)    MISS (50ms+)
+     │             │
+     ▼             ▼
+  Return       Query PostgreSQL
+  cached       SELECT * FROM users
+  data         WHERE id = 'cydercoder'
+     │             │
+     │             ▼
+     │         Save to Redis with TTL
+     │         SET user:cydercoder '{...}' EX 3600
+     │             │
+     ▼             ▼
+  Return data to client
+```
+
+### Redis Implementation
+
+```typescript
+import Redis from 'ioredis';
+
+const redis = new Redis(process.env.REDIS_URL);
+
+// Cache-aside pattern
+async function getUser(userId: string) {
+  const cacheKey = `user:${userId}`;
+
+  // Step 1: Check cache
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    logger.info('Cache hit', { userId });
+    return JSON.parse(cached);
+  }
+
+  // Step 2: Cache miss — query database
+  logger.info('Cache miss', { userId });
+  const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const user = result.rows[0];
+
+  // Step 3: Save to cache with 1 hour TTL
+  await redis.setex(cacheKey, 3600, JSON.stringify(user));
+
+  return user;
+}
+
+// Active invalidation — purge cache on write
+async function updateUser(userId: string, data: Partial<User>) {
+  await query('UPDATE users SET name = $1 WHERE id = $2', [data.name, userId]);
+
+  // Immediately invalidate stale cache
+  await redis.del(`user:${userId}`);
+  // Next request will fetch fresh data from PostgreSQL
+}
+```
+
+### Cache Invalidation Strategies
+
+| Strategy | When to Use | Implementation |
+|----------|-------------|----------------|
+| **TTL Expiration** | Data changes infrequently | `SET key value EX 3600` (expires in 1 hour) |
+| **Active Invalidation** | Data changes on write | `DEL key` immediately after UPDATE |
+| **Write-Through** | Write-heavy with consistent reads | Write to cache AND database simultaneously |
+| **Write-Behind** | Write-heavy with eventual consistency | Write to cache first, sync to DB asynchronously |
+
+### Eviction Policies
+
+When Redis runs out of memory, it evicts keys based on the configured policy:
+
+| Policy | Behavior | Best For |
+|--------|----------|----------|
+| `noeviction` | Reject writes when full | Critical data that must not be lost |
+| `allkeys-lru` | Evict least recently used key | General caching (most common) |
+| `volatile-lru` | Evict LRU key with TTL set | When some keys must persist |
+| `allkeys-lfu` | Evict least frequently used | When access patterns are stable |
+| `volatile-ttl` | Evict key with shortest TTL | When TTL reflects importance |
+
+```bash
+# Configure eviction policy
+redis-cli CONFIG SET maxmemory 256mb
+redis-cli CONFIG SET maxmemory-policy allkeys-lru
+```
+
+### Cache Stampede Prevention
+
+When a popular cache key expires, hundreds of requests simultaneously hit the database. This is a **cache stampede** (or thundering herd).
+
+```typescript
+// Solution: Singleflight pattern
+// Only one request computes the value; others wait for it
+const inflight = new Map<string, Promise<any>>();
+
+async function getUserWithStampedeProtection(userId: string) {
+  const key = `user:${userId}`;
+
+  // Check cache first
+  const cached = await redis.get(key);
+  if (cached) return JSON.parse(cached);
+
+  // If another request is already fetching, wait for it
+  if (inflight.has(key)) {
+    return inflight.get(key);
+  }
+
+  // Only ONE request fetches from database
+  const promise = (async () => {
+    const user = await query('SELECT * FROM users WHERE id = $1', [userId]);
+    await redis.setex(key, 3600, JSON.stringify(user.rows[0]));
+    inflight.delete(key);
+    return user.rows[0];
+  })();
+
+  inflight.set(key, promise);
+  return promise;
+}
+```
+
+---
+
+## 05. Database Indexing: The Query Accelerator
+
+Without an index, a query on 5 million rows performs a **full table scan** — reading every single row until it finds a match. This is the #1 cause of slow database queries.
+
+### B-Tree Index (Default)
+
+The most common index type. Creates a balanced tree structure for fast lookups.
+
+```sql
+-- Without index: Full table scan (reads all 5,000,000 rows)
+EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'alice@example.com';
+-- Seq Scan on users  (cost=0.00..173210.00 rows=1 width=96)
+--   Filter: (email = 'alice@example.com')
+-- Planning Time: 0.1ms
+-- Execution Time: 45.2ms  ← SLOW
+
+-- Create index
+CREATE INDEX idx_users_email ON users(email);
+
+-- With index: Index scan (reads ~4 levels of the tree)
+EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'alice@example.com';
+-- Index Scan using idx_users_email on users  (cost=0.42..8.44 rows=1 width=96)
+--   Index Cond: (email = 'alice@example.com')
+-- Planning Time: 0.1ms
+-- Execution Time: 0.05ms  ← 900x FASTER
+```
+
+### Index Types
+
+| Type | Best For | Example |
+|------|----------|---------|
+| **B-Tree** | Equality and range queries | `WHERE email = 'x'`, `WHERE created_at > '2026-01-01'` |
+| **Hash** | Equality only (faster than B-Tree for exact match) | `WHERE id = 'abc123'` |
+| **GIN** | Full-text search, JSONB containment, array contains | `WHERE tags @> ARRAY['javascript']` |
+| **GiST** | Geospatial queries, range types | `WHERE location @> POINT(40.7, -74.0)` |
+| **Partial** | Index only rows matching a condition | `CREATE INDEX ... WHERE status = 'active'` |
+| **Composite** | Multi-column queries | `CREATE INDEX ... ON orders(user_id, created_at)` |
+
+### Composite Indexes
+
+When you frequently query by multiple columns together, create a composite index:
+
+```sql
+-- Common query pattern
+SELECT * FROM orders
+WHERE user_id = 'abc123'
+  AND created_at > '2026-01-01'
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Composite index (column order matters!)
+CREATE INDEX idx_orders_user_date ON orders(user_id, created_at DESC);
+
+-- Why order matters:
+-- This index helps: WHERE user_id = X AND created_at > Y ✓
+-- This index helps: WHERE user_id = X                   ✓ (first column)
+-- This index does NOT help: WHERE created_at > Y         ✗ (skips first column)
+```
+
+### Partial Indexes
+
+Index only the rows you actually query — saves space and speeds up writes:
+
+```sql
+-- Only index active orders (not completed/cancelled)
+CREATE INDEX idx_orders_active ON orders(user_id, created_at)
+WHERE status = 'active';
+
+-- Query uses the partial index automatically
+SELECT * FROM orders
+WHERE user_id = 'abc123' AND status = 'active'
+ORDER BY created_at DESC;
+```
+
+### The Index Trade-off
+
+```
+Read Performance:  Indexes make SELECT queries 100-1000x faster
+Write Performance: Indexes slow down INSERT/UPDATE/DELETE by 5-20%
+Storage:           Each index consumes additional disk space
+```
+
+**The Rule:** Index columns that appear in WHERE, JOIN ON, and ORDER BY clauses. Don't index columns with low cardinality (like `gender` with only 3 values) — the index won't help much.
+
+### EXPLAIN ANALYZE: Read Your Query Plans
+
+```sql
+-- Always analyze before creating an index
+EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+SELECT * FROM orders WHERE user_id = 'abc123';
+
+-- Look for:
+-- "Seq Scan" → Missing index (reads entire table)
+-- "Index Scan" → Index is being used ✓
+-- "Bitmap Index Scan" → Multiple indexes combined
+-- "Sort" → Missing index on ORDER BY column
+```
+
+---
+
+## 06. Query Optimization: The Performance Playbook
+
+### The N+1 Problem
+
+The most common performance killer in ORMs:
+
+```typescript
+// BAD: N+1 query — 1 query for users + N queries for their orders
+const users = await db.query('SELECT * FROM users LIMIT 100');
+for (const user of users.rows) {
+  user.orders = await db.query('SELECT * FROM orders WHERE user_id = $1', [user.id]);
+}
+// Total: 101 queries (1 + 100)
+
+// GOOD: Single JOIN query
+const usersWithOrders = await db.query(`
+  SELECT u.*, json_agg(o.*) as orders
+  FROM users u
+  LEFT JOIN orders o ON u.id = o.user_id
+  GROUP BY u.id
+  LIMIT 100
+`);
+// Total: 1 query
+```
+
+### Pagination Patterns
+
+```sql
+-- OFFSET pagination (simple but slow for large offsets)
+SELECT * FROM posts ORDER BY created_at DESC OFFSET 1000 LIMIT 20;
+-- Database must scan and skip 1000 rows before returning 20
+
+-- Cursor pagination (consistent performance regardless of position)
+SELECT * FROM posts
+WHERE created_at < '2026-07-10T12:00:00Z'  -- Cursor from last page
+ORDER BY created_at DESC
+LIMIT 20;
+-- Database uses the index to jump directly to the right position
+```
+
+### Batch Operations
+
+```typescript
+// BAD: Individual inserts (round-trip per row)
+for (const item of items) {
+  await db.query('INSERT INTO items (name, price) VALUES ($1, $2)', [item.name, item.price]);
+}
+// 1000 items = 1000 round trips = ~5 seconds
+
+// GOOD: Batch insert (single round trip)
+await db.query(
+  'INSERT INTO items (name, price) VALUES ' +
+  items.map((_, i) => `($${i*2+1}, $${i*2+2})`).join(', '),
+  items.flatMap(item => [item.name, item.price])
+);
+// 1000 items = 1 round trip = ~50ms
+```
+
+### Senior Moves for Database Performance
+
+1. **Always run EXPLAIN ANALYZE before optimizing.** You can't fix what you can't see. The query plan tells you exactly where time is spent.
+2. **Add indexes for queries that run >100ms.** Below that, the optimization isn't worth the write overhead.
+3. **Use connection pooling.** Opening a new connection per request is 10x slower than reusing pooled connections.
+4. **Batch your writes.** 100 individual inserts are 100x slower than 1 batch insert.
+5. **Cache aggressively, invalidate carefully.** A stale cache is worse than no cache — users see wrong data and lose trust.
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| SQL vs NoSQL | Rigid tables vs flexible documents | Default to PostgreSQL; reach for MongoDB only when schema flexibility is required |
+| ACID | Mathematical guarantees for transactions | Atomicity prevents partial writes — critical for financial operations |
+| Redis Caching | Ultra-fast memory layer in front of PostgreSQL | Cache-aside pattern + active invalidation = fast AND consistent |
+| Cache Stampede | Thundering herd when a popular key expires | Singleflight pattern — only one request fetches, others wait |
+| Normalization | One fact, one place | Trade write complexity for read simplicity in transactional systems |
+| Denormalization | Duplicate data for read speed | Use for dashboards and analytics — not for source-of-truth tables |
+| B-Tree Index | Balanced tree for fast lookups | 100-1000x faster reads, 5-20% slower writes — index WHERE/JOIN/ORDER BY columns |
+| Composite Index | Multi-column index | Column order matters — put equality columns first, range columns second |
+| EXPLAIN ANALYZE | Read the query plan before optimizing | Seq Scan = missing index; Index Scan = good |
+| N+1 Problem | One query becomes 100+ | Always JOIN or batch — never loop individual queries |

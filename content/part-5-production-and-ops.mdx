@@ -1,0 +1,674 @@
+---
+title: "Production & Operations: Architecting for the Wild"
+part: 5
+section: "Production & Ops"
+keywords: ["CI/CD", "GitHub Actions", "Docker", "Environment Variables", "Logging", "Security", "Rate Limiting", "Monitoring"]
+difficulty: "Senior"
+lastUpdated: "2026-07-11"
+---
+
+## 01. The Production Mindset
+
+The ultimate test of an application isn't how smoothly it runs on your local machine — it is how it handles thousands of parallel users, hostile network drops, and malicious traffic scripts without crashing.
+
+> **The Operational Reality:** If a bug crashes your local server, you refresh the page. If a bug crashes your production server at 3:00 AM, your business stops, alerts fire, and costs spike. Seniors spend just as much time engineering the containment walls around code as they do writing the code itself.
+
+### What Changes Between Local and Production
+
+| Concern | Local Development | Production |
+|---------|------------------|------------|
+| **Errors** | Stack trace in terminal, refresh and retry | Error must be caught, logged, and reported without crashing |
+| **Data** | SQLite or local Postgres, throwaway data | Managed database with backups, migrations, and point-in-time recovery |
+| **Secrets** | `.env` file in root, committed to git | Injected at runtime, encrypted at rest, never in version control |
+| **Traffic** | You, maybe 2-3 tabs | Hundreds to thousands of concurrent connections |
+| **Uptime** | Server crashes, you restart it | Server crashes, an orchestrator restarts it automatically |
+| **Logs** | `console.log` in terminal | Structured JSON streamed to a log aggregator |
+| **Deployments** | `npm start` in terminal | CI/CD pipeline validates, builds, and deploys on merge |
+
+### The Pre-Deployment Checklist
+
+Before any code touches production, verify:
+
+```
+□ Environment variables validated at startup (not at first use)
+□ No secrets in client bundles (grep for NEXT_PUBLIC_ with secret values)
+□ Database migrations tested against a staging database
+□ Error boundaries catch all rendering failures
+□ Rate limiting active on public API endpoints
+□ Health check endpoint returns 200 under normal conditions
+□ Logging outputs structured JSON, not console.log strings
+□ Build succeeds in a clean environment (no node_modules cached)
+```
+
+---
+
+## 02. Environment Variables & Secret Isolation
+
+The quickest way to get your server exploited or your database drained is letting API keys leak into public files or client bundles.
+
+### The Client-Side Leak
+
+When using frameworks like Next.js or Astro, any environment variable prefixed with `NEXT_PUBLIC_` or `PUBLIC_` is baked directly into the JavaScript bundle sent to the user's browser. Anyone can open DevTools → Network → find your bundle → search for your key.
+
+```bash
+# !! CRITICAL SECURITY FAILURE !!
+NEXT_PUBLIC_STRIPE_SECRET_KEY="sk_live_..."  # Visible to anyone with Inspect Element
+NEXT_PUBLIC_DATABASE_URL="postgresql://..."  # Database credentials exposed
+
+# Secure Server Isolation
+STRIPE_SECRET_KEY="sk_live_..."              # Only accessible in server runtime
+DATABASE_URL="postgresql://..."              # Never reaches the client bundle
+```
+
+### The Rule: Client vs. Server Secrets
+
+| Prefix | Where It Lives | Accessible From | Use Case |
+|--------|---------------|-----------------|----------|
+| `NEXT_PUBLIC_*` | JavaScript bundle | Browser (anyone) | Public URLs, published IDs, feature flags |
+| `*_SECRET_KEY` | Server runtime | Your server only | API keys, database credentials, JWT secrets |
+| `*_URL` (no prefix) | Server runtime | Your server only | Database connections, internal API endpoints |
+
+**The test:** Open your deployed app, open DevTools, search the page source and network tab for the variable name. If you find it, it's leaking.
+
+### Runtime Validation at Boot
+
+Do not wait for your server to crash halfway through a user's checkout because an environment variable was missing. Validate every secret at startup using a schema library:
+
+```typescript
+// env.ts — Validate keys at application boot
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  STRIPE_SECRET_KEY: z.string().startsWith('sk_'),
+  JWT_SECRET: z.string().min(32),
+  NODE_ENV: z.enum(['development', 'production', 'test']),
+  PORT: z.coerce.number().default(3000),
+});
+
+// If ANY variable is missing or malformed, the server refuses to start.
+// This is intentional — a broken startup is better than a broken production request.
+export const env = envSchema.parse(process.env);
+```
+
+### Secret Rotation
+
+Secrets should be rotated periodically. The pattern:
+
+1. Generate a new key in the provider dashboard (Stripe, Supabase, etc.)
+2. Add the new key as a new environment variable in your hosting platform
+3. Deploy with the new key
+4. Verify the deployment works
+5. Delete the old key from the hosting platform
+6. Only then delete the old key from the provider dashboard
+
+**Never delete the old key before verifying the new one works.** This is the most common deployment outage for teams new to secret rotation.
+
+---
+
+## 03. CI/CD: The Automated Pipeline
+
+Seniors do not manually drag files to servers or run `git push production` from their terminals. Every change is validated through automated **Continuous Integration / Continuous Deployment**.
+
+### The Git Flow Pattern
+
+```
+main (locked — no direct commits)
+  │
+  ├── feature/auth-refresh-tokens
+  │     └── PR → CI validates → merge to main
+  │
+  ├── fix/payment-timeout-handling
+  │     └── PR → CI validates → merge to main
+  │
+  └── main merge → CD deploys to production
+```
+
+**Rules:**
+1. `main` is locked. No direct commits. All changes go through Pull Requests.
+2. Every PR triggers a full validation suite (lint, test, build).
+3. Merging to `main` triggers deployment to production automatically.
+
+### The Validation Pipeline
+
+```yaml
+# .github/workflows/validate.yml
+name: Production Validation
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Cache node_modules for faster runs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci  # Clean install — respects lockfile exactly
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Unit Tests
+        run: npm test -- --coverage
+
+      - name: Build
+        run: npm run build
+
+      # Upload build artifact for deployment job
+      - name: Upload Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+```
+
+### The Deployment Pipeline
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: validate  # Only runs if validation passed
+    environment: production  # GitHub Environment protection rules
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Build
+        uses: actions/download-artifact@v4
+        with:
+          name: production-build
+          path: dist/
+
+      - name: Deploy to Vercel
+        run: npx vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      # Or deploy to your infrastructure
+      # - name: Deploy to AWS
+      #   run: aws s3 sync dist/ s3://my-bucket --delete
+```
+
+### Branch Protection Rules
+
+In your GitHub repository settings, configure:
+
+| Rule | Setting |
+|------|---------|
+| Require pull request before merging | ✅ |
+| Require approvals (at least 1) | ✅ |
+| Require status checks to pass | ✅ (lint, test, build) |
+| Require branches to be up to date | ✅ |
+| Require conversation resolution | ✅ |
+| Do not allow bypassing above settings | ✅ (even for admins) |
+
+This means **no one** can push broken code to production — not even the repository owner.
+
+---
+
+## 04. Docker: Immutable Environments
+
+The phrase *"But it worked perfectly on my local machine"* has no place in senior engineering. Different OS versions, mismatched Node.js versions, and conflicting global packages break apps instantly. Docker solves this by packaging your code, runtime, and dependencies into a single immutable container.
+
+### The Production Dockerfile
+
+```dockerfile
+# Stage 1: Build
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy dependency files first (cache layer)
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy source and build
+COPY . .
+RUN pnpm build
+
+# Stage 2: Production runtime (no dev dependencies)
+FROM node:20-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+# Copy only what's needed
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+
+# Health check — tells the orchestrator if the container is alive
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+
+EXPOSE 3000
+CMD ["node", "dist/server.js"]
+```
+
+### Why Multi-Stage Builds Matter
+
+The `builder` stage installs dev dependencies (TypeScript, ESLint, testing libraries) and compiles your code. The `runner` stage copies *only* the compiled output and production dependencies. This reduces your final image from ~800MB to ~150MB.
+
+### The .dockerignore File
+
+Without this, Docker copies your `node_modules`, `.git`, and other unnecessary files into the build context, slowing everything down.
+
+```
+# .dockerignore
+node_modules
+.git
+.env
+.env.*
+dist
+coverage
+*.md
+.vscode
+.github
+```
+
+### Docker Compose for Local Development
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/myapp
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: myapp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+```
+
+### Senior Moves for Docker
+
+1. **Never run as root.** Add `USER node` before `CMD` in your Dockerfile. Running as root inside a container is a security risk if the container is compromised.
+2. **Pin your base image versions.** `node:20-alpine` is fine. `node:latest` is a disaster waiting to happen — the base image changes and your app breaks silently.
+3. **Use .dockerignore religiously.** Every file you exclude makes the build faster and the image smaller.
+4. **Health checks are non-negotiable.** Without them, orchestrators (Kubernetes, Docker Swarm, ECS) can't tell if your container is alive or stuck.
+
+---
+
+## 05. Rate Limiting & API Protection
+
+An unprotected API is an invitation for abuse. Without rate limiting, a single malicious script can exhaust your database connections, burn your API budget, or crash your server.
+
+### The Rate Limiting Stack
+
+```
+┌─────────────────────────────────────────────────┐
+│ CDN / Edge Layer (Cloudflare, Vercel Edge)       │
+│ └── Blocks DDoS, filters known bad IPs          │
+├─────────────────────────────────────────────────┤
+│ API Gateway / Load Balancer                      │
+│ └── Global rate limits (1000 req/min per IP)    │
+├─────────────────────────────────────────────────┤
+│ Application Middleware                           │
+│ └── Per-user rate limits (100 req/min per user) │
+├─────────────────────────────────────────────────┤
+│ Database                                         │
+│ └── Connection pooling, query timeouts          │
+└─────────────────────────────────────────────────┘
+```
+
+### Implementation: Express Middleware
+
+```typescript
+import rateLimit from 'express-rate-limit';
+import RedisStore from 'rate-limit-redis';
+import { createClient } from 'redis';
+
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
+
+// Global API rate limiter
+export const apiLimiter = rateLimit({
+  windowMs: 60 * 1000,        // 1 minute window
+  max: 100,                   // 100 requests per window per IP
+  standardHeaders: true,      // Return rate limit info in headers
+  legacyHeaders: false,
+  store: new RedisStore({     // Shared across server instances
+    sendCommand: (...args) => redis.sendCommand(args),
+  }),
+  message: {
+    error: 'Too many requests',
+    retryAfter: '60 seconds',
+  },
+});
+
+// Stricter limiter for auth endpoints (login, signup, password reset)
+export const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minute window
+  max: 5,                     // 5 attempts per 15 minutes
+  message: {
+    error: 'Too many authentication attempts',
+    retryAfter: '15 minutes',
+  },
+});
+
+// Usage in routes
+app.use('/api/', apiLimiter);
+app.use('/api/auth/', authLimiter);
+```
+
+### What Rate Limiting Headers Look Like
+
+```
+HTTP/1.1 200 OK
+RateLimit-Limit: 100
+RateLimit-Remaining: 67
+RateLimit-Reset: 1710000060
+```
+
+The client can read these headers and show the user how many requests they have left — or proactively slow down before hitting the limit.
+
+---
+
+## 06. Production Telemetry: Logging & Monitoring
+
+Once your application is live, you need clear eyes on how it behaves under load. You cannot fix what you cannot measure.
+
+### Structured Logging over console.log
+
+Standard `console.log()` outputs unformatted strings that are impossible to parse or query when thousands of operations happen simultaneously. Structured JSON logging lets monitoring tools index, filter, and alert on specific events.
+
+```typescript
+// logger.ts — Production structured logger
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface LogEntry {
+  timestamp: string;
+  level: LogLevel;
+  message: string;
+  [key: string]: unknown;
+}
+
+function log(level: LogLevel, message: string, context?: Record<string, unknown>) {
+  const entry: LogEntry = {
+    timestamp: new Date().toISOString(),
+    level,
+    message,
+    ...context,
+  };
+
+  // In production, this goes to stdout → log aggregator
+  // In development, pretty-print for readability
+  if (process.env.NODE_ENV === 'production') {
+    console.log(JSON.stringify(entry));
+  } else {
+    console.log(`[${level.toUpperCase()}] ${message}`, context || '');
+  }
+}
+
+export const logger = {
+  debug: (msg: string, ctx?: Record<string, unknown>) => log('debug', msg, ctx),
+  info: (msg: string, ctx?: Record<string, unknown>) => log('info', msg, ctx),
+  warn: (msg: string, ctx?: Record<string, unknown>) => log('warn', msg, ctx),
+  error: (msg: string, ctx?: Record<string, unknown>) => log('error', msg, ctx),
+};
+```
+
+### Usage in Practice
+
+```typescript
+// Good: structured, queryable, contextual
+try {
+  const result = await processPayment(userPayload);
+  logger.info('Payment processed', {
+    userId: userPayload.id,
+    amount: userPayload.amount,
+    currency: userPayload.currency,
+    paymentId: result.id,
+  });
+} catch (err) {
+  logger.error('Payment failed', {
+    userId: userPayload.id,
+    errorCode: err.code,
+    errorMessage: err.message,
+    stack: err.stack,
+  });
+}
+
+// Bad: unstructured, impossible to query
+console.log('payment failed for user ' + userPayload.id);
+```
+
+### Log Levels: When to Use Each
+
+| Level | When | Example |
+|-------|------|---------|
+| `debug` | Development only, verbose troubleshooting | "Query returned 42 rows" |
+| `info` | Normal operations worth recording | "User signed up", "Payment processed" |
+| `warn` | Unexpected but non-fatal events | "Rate limit approaching", "Deprecated API called" |
+| `error` | Failures that need attention | "Payment failed", "Database connection lost" |
+
+**The rule:** In production, `debug` logs are typically disabled. `info` is your baseline. `warn` and `error` trigger alerts.
+
+### Global Error Handlers
+
+Implement global exception barriers to catch unhandled errors gracefully — your service stays running for other users while your team gets notified immediately.
+
+```typescript
+// process.ts — Global error boundaries
+
+// Catch unhandled promise rejections (async errors without try/catch)
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection', {
+    reason: String(reason),
+    stack: reason instanceof Error ? reason.stack : undefined,
+  });
+  // In production: send to Sentry, Datadog, or your alerting system
+});
+
+// Catch uncaught synchronous exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception', {
+    message: error.message,
+    stack: error.stack,
+  });
+  // Graceful shutdown — let in-flight requests finish, then exit
+  process.exit(1);
+});
+
+// Graceful shutdown on SIGTERM (sent by orchestrators like Kubernetes)
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    process.exit(0);
+  });
+});
+```
+
+### External Monitoring Services
+
+| Service | Purpose | Free Tier |
+|---------|---------|-----------|
+| **Sentry** | Error tracking, stack traces, release tracking | 5k errors/month |
+| **Logflare** | Structured log aggregation | 1GB/month |
+| **BetterStack** | Uptime monitoring + incident management | 20 monitors |
+| **Grafana Cloud** | Metrics, logs, traces, dashboards | 10k metrics |
+
+### The Monitoring Dashboard
+
+At minimum, track these metrics:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  SYSTEM HEALTH                                           │
+│  ├── Request Rate:        342 req/min                   │
+│  ├── Error Rate:          0.3% (2xx: 99.7%)            │
+│  ├── P50 Response Time:   120ms                         │
+│  ├── P95 Response Time:   450ms                         │
+│  ├── P99 Response Time:   1.2s                          │
+│  └── Active Connections:  89                            │
+├─────────────────────────────────────────────────────────┤
+│  RESOURCES                                               │
+│  ├── CPU Usage:           34%                           │
+│  ├── Memory Usage:        62% (3.1GB / 5GB)            │
+│  ├── Disk Usage:          28%                           │
+│  └── Database Connections: 12 / 50 pool limit          │
+├─────────────────────────────────────────────────────────┤
+│  ALERTS (last 24h)                                      │
+│  ├── ⚠️  P99 latency exceeded 1s at 03:14 UTC          │
+│  ├── ✅ Resolved: database connection pool exhaustion   │
+│  └── ℹ️  Deployment v2.4.1 completed successfully       │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 07. Database Migrations in Production
+
+Running `prisma migrate dev` or `drizzle push` from your local machine against a production database is a ticking time bomb. Migrations in production need a controlled, reversible process.
+
+### The Migration Pipeline
+
+```
+1. Write migration file locally
+        │
+        ▼
+2. Test against staging database (copy of production schema)
+        │
+        ▼
+3. Commit migration file to git
+        │
+        ▼
+4. CI/CD pipeline runs migration against production
+   (only AFTER deployment succeeds)
+        │
+        ▼
+5. Verify migration completed (check logs, run smoke tests)
+```
+
+### The Safe Migration Pattern
+
+```typescript
+// migrations/003_add_contributions_table.ts
+import { sql } from 'drizzle-orm';
+
+export async function up(db: Database) {
+  // Forward migration — creates the new table
+  await db.execute(sql`
+    CREATE TABLE contributions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES users(id),
+      amount INTEGER NOT NULL CHECK (amount > 0),
+      cycle_id UUID NOT NULL REFERENCES cycles(id),
+      created_at TIMESTAMPTZ DEFAULT now()
+    )
+  `);
+}
+
+export async function down(db: Database) {
+  // Rollback — reverses the migration if something goes wrong
+  await db.execute(sql`DROP TABLE IF EXISTS contributions`);
+}
+```
+
+### Senior Moves for Migrations
+
+1. **Never drop a column in the same migration that adds its replacement.** Deploy the new column first, update all code to use it, then drop the old column in a separate migration.
+2. **Always write a `down` function.** If a migration fails mid-way, you need a clean rollback path.
+3. **Test migrations against a copy of production data.** Schema-only tests miss constraint violations, foreign key issues, and data type mismatches.
+4. **Use lock timeouts.** A migration that locks a table for 10 minutes will block every user request. Set `lock_timeout = '5s'` on PostgreSQL migrations.
+
+---
+
+## 08. Incident Response: When Things Break
+
+Things will break. The difference between a junior and a senior is how fast they detect, respond, and recover.
+
+### The Incident Response Playbook
+
+```
+DETECT (automated)
+│  Monitoring alerts fire (error rate spike, latency spike, uptime check fails)
+│
+├──▶ ASSESS (human, < 5 minutes)
+│    Is it user-facing? How many users affected? Is data at risk?
+│
+├──▶ COMMUNICATE (if user-facing)
+│    Status page update: "Investigating reports of [issue]"
+│
+├──▶ MITIGATE (fastest path to recovery)
+│    ├── Rollback the last deployment? (most common fix)
+│    ├── Scale up resources? (traffic spike)
+│    ├── Feature flag off the broken feature?
+│    └── Failover to backup region? (infrastructure failure)
+│
+├──▶ RESOLVE
+│    Service restored. Confirm via monitoring dashboards.
+│
+└──▶ RETROSPECTIVE (within 48 hours)
+     What caused it? Why didn't CI catch it? How do we prevent it next time?
+```
+
+### The Rollback Pattern
+
+The fastest recovery is almost always rolling back to the last known good state:
+
+```bash
+# Vercel — instant rollback to previous deployment
+npx vercel rollback
+
+# Docker — roll back to previous image tag
+docker pull myapp:v2.3.0  # Previous version
+docker-compose up -d      # Restart with old image
+
+# Database — if migration caused the issue
+npx drizzle-kit migrate:rollback
+```
+
+**The rule:** If you can't rollback within 5 minutes, your deployment process is too complex.
+
+---
+
+## Key Takeaways
+
+| Concept | Mental Model | Senior Insight |
+|---------|-------------|----------------|
+| Production Mindset | Containment walls around code | Pre-deployment checklist catches 90% of outages before they happen |
+| Environment Variables | Secrets in server only, never client | Validate at boot, rotate periodically, never delete old before verifying new |
+| CI/CD | Automated validation before every merge | Lint → Type Check → Test → Build — all must pass, no exceptions |
+| Docker | Immutable, reproducible environments | Multi-stage builds, .dockerignore, health checks, never run as root |
+| Rate Limiting | Protect your API from abuse | Three layers: edge, gateway, application — each with different limits |
+| Structured Logging | JSON over console.log | Timestamp + level + message + context — queryable, alertable, indexable |
+| Migrations | Test against staging, deploy via CI | Never drop columns in the same migration that adds replacements |
+| Incident Response | Detect → Assess → Mitigate → Retrospective | The fastest fix is almost always a rollback |
