@@ -111,7 +111,7 @@ A production architecture often uses **multiple database types** together — ea
 | **PostgreSQL** | Relational | 1-50ms | Transactional data, complex queries, analytics | Vertical scaling limits, connection pool exhaustion |
 | **MongoDB** | Document | 1-20ms | Flexible schemas, nested reads, high write throughput | No JOINs, eventual consistency, data duplication |
 | **Redis** | In-Memory | 0.1-2ms | Caching, sessions, rate limiting, pub/sub | Volatile (data lost on crash without persistence config) |
-| **SQLite** | Embedded | <1ms | Local dev, mobile apps, single-user tools | No concurrent writes, no network access |
+| **SQLite** | Embedded | &lt;1ms | Local dev, mobile apps, single-user tools | No concurrent writes, no network access |
 
 ### The Multi-Database Architecture
 
