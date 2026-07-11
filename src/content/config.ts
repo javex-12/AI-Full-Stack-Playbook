@@ -5,7 +5,7 @@ const contentCollection = defineCollection({
   loader: glob({ pattern: '**/*.mdx', base: './content' }),
   schema: z.object({
     title: z.string(),
-    part: z.string().optional(),
+    part: z.union([z.string(), z.number()]).optional(),
     section: z.string().optional(),
     guide: z.boolean().optional(),
     keywords: z.array(z.string()).optional(),
