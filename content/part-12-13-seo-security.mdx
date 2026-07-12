@@ -23,129 +23,44 @@ SEO is no longer about stuffing hidden keywords into footer text. Modern search 
 
 LCP is almost always caused by one of three things: a slow server, render-blocking resources, or large images.
 
-```html
-<!-- 1. Preload critical assets — browser fetches them first -->
-<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
-<link rel="preload" href="/hero-image.webp" as="image" />
-
-<!-- 2. Fetch important resources early -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="dns-prefetch" href="https://api.yourapp.com" />
-
-<!-- 3. Hero image — never let the browser guess dimensions -->
-<img
-  src="/hero-image.webp"
-  width="1200"
-  height="675"
-  alt="Dashboard preview"
-  fetchpriority="high"
-  decoding="async"
-/>
-```
-
-```css
-/* 4. Self-host fonts to avoid third-party render blocking */
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/inter-latin.woff2') format('woff2');
-  font-display: swap;  /* Show fallback text immediately, swap when loaded */
-  font-weight: 400 700;
-}
-
-/* 5. Critical CSS inline — above-the-fold styles in <head> */
-<style>
-  /* Paste your above-the-fold CSS here (hero, nav, first section) */
-  body { margin: 0; font-family: system-ui; background: #0a0f0d; }
-  .hero { min-height: 100vh; display: grid; place-items: center; }
-</style>
-```
+**Tell your AI tool:**
+"Optimize LCP by:
+1. Adding preload tags for critical fonts and hero images
+2. Adding preconnect for third-party domains (Google Fonts, API endpoints)
+3. Setting explicit width and height on hero images to prevent layout shift
+4. Using fetchpriority='high' on the hero image
+5. Self-hosting fonts with font-display: swap to avoid render blocking
+6. Inlining critical CSS for above-the-fold content"
 
 ### Fixing INP: The Responsiveness Bottleneck
 
 INP measures the delay between a user interaction (click, tap, keypress) and the next visual update. High INP happens when the main thread is blocked by long JavaScript execution.
 
 ```javascript
-// BAD: Long task blocks the main thread for 300ms
-function processLargeDataset(data) {
-  const results = data.map(item => heavyComputation(item)); // Blocks main thread
-  renderResults(results);
-}
-
-// GOOD: Break into chunks using requestIdleCallback or scheduler.yield
-async function processLargeDataset(data) {
-  const batchSize = 50;
-  for (let i = 0; i < data.length; i += batchSize) {
-    const batch = data.slice(i, i + batchSize);
-    const results = batch.map(item => heavyComputation(item));
-
-    renderResults(results);
-
-    // Yield to the browser — lets it handle user interactions
-    await new Promise(resolve => setTimeout(resolve, 0));
-  }
-}
-
-// BETTER: Use the Scheduler API (Chrome 94+)
-async function processLargeDataset(data) {
-  for (const item of data) {
-    await scheduler.yield(); // Cooperative scheduling
-    const result = heavyComputation(item);
-    renderSingleResult(result);
-  }
-}
-```
+**Tell your AI tool:**
+"Optimize INP by breaking long tasks into smaller chunks. Use scheduler.yield() or setTimeout(0) between batches to let the browser handle user interactions. Process data in batches of 50 items instead of all at once."
 
 ### Fixing CLS: The Visual Stability Bottleneck
 
 CLS happens when elements shift after the page loads — usually because images or ads don't have reserved dimensions.
 
-```css
-/* Always reserve space for dynamic content */
-.hero-image {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 16 / 9;  /* Reserves space before image loads */
-  background: var(--bg-surface);  /* Skeleton color while loading */
-}
-
-.ad-banner {
-  min-height: 250px;  /* Reserve space even if ad hasn't loaded yet */
-}
-
-/* Animated content that expands — reserve max space */
-.accordion-content {
-  max-height: 500px;  /* Reserves space, prevents shift */
-  transition: max-height 0.3s ease;
-}
-```
+**Tell your AI tool:**
+"Fix CLS by:
+1. Setting explicit width and height (or aspect-ratio) on all images
+2. Using skeleton placeholders for dynamic content
+3. Setting min-height on ad banners and lazy-loaded sections
+4. Using CSS max-height for accordion-style expanding content"
 
 ### Testing with Lighthouse
 
-```bash
-# Run Lighthouse CLI
-npx lighthouse https://yourapp.com --output=json --output-path=./report.json
+**Tell your AI tool:**
+"Run Lighthouse to check performance scores. In CI/CD, fail the build if performance drops below 90, accessibility below 95, or SEO below 95."
 
-# Or use the Chrome DevTools tab
-# F12 → Lighthouse → Generate Report
-
-# CI/CD integration — fail build if score drops below threshold
-npx lighthouse-ci autorun --config=lighthouserc.json
-```
-
-```json
-// lighthouserc.json
-{
-  "ci": {
-    "assert": {
-      "assertions": {
-        "categories:performance": ["error", { "minScore": 0.9 }],
-        "categories:accessibility": ["error", { "minScore": 0.95 }],
-        "categories:seo": ["error", { "minScore": 0.95 }]
-      }
-    }
-  }
-}
-```
+**How to test:**
+1. Open Chrome DevTools (F12)
+2. Go to Lighthouse tab
+3. Click "Analyze page load"
+4. Check Performance, Accessibility, and SEO scores
 
 ---
 
@@ -233,55 +148,17 @@ Schema.org gives search engines explicit semantic meaning about your content. Th
 
 ### Article Schema
 
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "TechArticle",
-  "headline": "Framework Thinking: Decoupling the Rendering Matrix",
-  "description": "An architectural breakdown of SSR, CSR, and Island hydration models.",
-  "author": {
-    "@type": "Person",
-    "name": "Michael Dosunmu",
-    "alternateName": "CyderCoder"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "CyderCoder",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://playbook.cydercoder.com/logo.png"
-    }
-  },
-  "datePublished": "2026-07-11",
-  "dateModified": "2026-07-11",
-  "inLanguage": "en-US",
-  "mainEntityOfPage": {
-    "@type": "WebPage",
-    "@id": "https://playbook.cydercoder.com/part-3-framework-thinking/"
-  }
-}
-</script>
-```
+**Tell your AI tool:**
+"Add Article Schema.org structured data to every content page. Include: headline, description, author name, publisher name, datePublished, dateModified, and mainEntityOfPage URL."
+
+**What this does:** Helps Google understand your content is an article, enabling rich snippets in search results.
 
 ### FAQ Schema (Unlocks FAQ Dropdowns in Search)
 
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "mainEntity": [
-    {
-      "@type": "Question",
-      "name": "What is the difference between SSR and SSG?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "SSG (Static Site Generation) builds HTML once at build time. SSR (Server-Side Rendering) generates HTML on every request. SSG is faster but static; SSR is slower but dynamic."
-      }
-    },
-    {
-      "@type": "Question",
+**Tell your AI tool:**
+"Add FAQ Schema.org structured data to pages with frequently asked questions. Each question should have a clear answer in the acceptedAnswer field."
+
+**What this does:** Google can display your FAQ directly in search results as expandable dropdowns, increasing click-through rate.
       "name": "When should I use Redis for caching?",
       "acceptedAnswer": {
         "@type": "Answer",
@@ -317,42 +194,20 @@ SQL injection happens when user input is concatenated directly into a database q
 
 ### The Vulnerability
 
-```typescript
-// !! CRITICAL VULNERABILITY — NEVER DO THIS !!
-const email = req.body.email;
-const query = `SELECT * FROM users WHERE email = '${email}'`;
+**Never do this:** If you put user input directly into a SQL query string, an attacker can inject malicious SQL code that bypasses authentication or steals data.
 
-// If attacker submits: email = "' OR '1'='1' --"
-// The query becomes:
-// SELECT * FROM users WHERE email = '' OR '1'='1' --'
-// This returns ALL users — authentication bypassed completely
-```
+**The attack:** If an attacker submits `' OR '1'='1' --` as their email, the query returns ALL users instead of just one — completely bypassing login.
 
 ### The Fix: Parameterized Queries
 
-```typescript
-// SAFE — database treats input as a literal value, never as code
-const query = 'SELECT * FROM users WHERE email = $1';
-const result = await db.query(query, [email]);
+**Tell your AI tool:**
+"Use parameterized queries for ALL database operations. Never concatenate user input into SQL strings. Use $1, $2 placeholders for PostgreSQL or ? for MySQL."
 
-// Even if email = "' OR '1'='1' --"
-// The database looks for a user whose email literally equals that string
-// No user found → login fails → attack fails
-```
+**What parameterized queries do:** The database treats user input as a literal value, never as executable SQL code. Even if the input contains malicious SQL, it's just a string to search for — not code to execute.
 
 ### ORM Safety
 
-Modern ORMs (Prisma, Drizzle, SQLAlchemy) use parameterized queries by default:
-
-```typescript
-// Prisma — automatically parameterized
-const user = await prisma.user.findUnique({
-  where: { email: userInput }
-});
-
-// Drizzle — automatically parameterized
-const user = await db.select().from(users).where(eq(users.email, userInput));
-```
+Modern ORMs (Prisma, Drizzle, SQLAlchemy) use parameterized queries by default. If you're using an ORM, you're already protected.
 
 **The rule:** Never use raw SQL string concatenation with user input. Always use parameterized queries or an ORM.
 
@@ -372,45 +227,20 @@ XSS happens when user-controlled content is rendered as executable HTML/JavaScri
 
 ### The Defense: Output Encoding
 
-```typescript
-import DOMPurify from 'dompurify';
+**Tell your AI tool:**
+"Sanitize all user input before rendering it as HTML. Use DOMPurify to strip dangerous tags and attributes. On the client side, use textContent instead of innerHTML for user-generated content."
 
-// Server-side: Sanitize before storing
-function sanitizeInput(input: string): string {
-  return DOMPurify.sanitize(input, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p'],
-    ALLOWED_ATTR: ['href'],
-  });
-}
-
-// Client-side: Never use innerHTML with user data
-// BAD:
-element.innerHTML = userComment;  // XSS if comment contains <script>
-
-// GOOD:
-element.textContent = userComment;  // Safe — renders as text, not HTML
-
-// GOOD (if you need HTML):
-element.innerHTML = DOMPurify.sanitize(userComment);
-```
+**What to do:**
+- Server-side: Use DOMPurify.sanitize() before storing user input
+- Client-side: Use `element.textContent = userInput` (renders as text, not HTML)
+- If you need HTML: Use `DOMPurify.sanitize(userInput)` before setting innerHTML
 
 ### Content Security Policy (CSP)
 
 CSP is the last line of defense. Even if XSS slips through, CSP blocks the browser from executing unauthorized scripts.
 
-```http
-Content-Security-Policy:
-  default-src 'self';
-  script-src 'self' https://trusted-cdn.com;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: https:;
-  connect-src 'self' https://api.yourapp.com;
-  font-src 'self' https://fonts.gstatic.com;
-  frame-ancestors 'none';
-  base-uri 'self';
-  form-action 'self';
-  report-uri /csp-violations;
-```
+**Tell your AI tool:**
+"Add Content Security Policy headers. Allow scripts only from your domain. Block inline scripts. Block frames embedding your site. Report violations to /csp-violations."
 
 ---
 
@@ -418,50 +248,21 @@ Content-Security-Policy:
 
 ### Path Traversal
 
-An attacker manipulates file paths to access files outside your intended directory:
+An attacker manipulates file paths to access files outside your intended directory.
 
-```typescript
-// VULNERABLE — attacker can read /etc/passwd
-app.get('/files/:filename', (req, res) => {
-  const path = `/uploads/${req.params.filename}`;
-  // If filename = "../../../etc/passwd", attacker reads system files
-  res.sendFile(path);
-});
+**Tell your AI tool:**
+"Validate all file path inputs. Use path.basename() to strip directory traversal characters. Verify the resolved path is still inside the intended directory before serving the file."
 
-// SAFE — validate and sanitize the path
-import path from 'path';
-
-app.get('/files/:filename', (req, res) => {
-  const filename = path.basename(req.params.filename);  // Strips directory traversal
-  const safePath = path.join('/uploads', filename);
-
-  // Ensure the resolved path is still inside the uploads directory
-  const resolved = path.resolve(safePath);
-  if (!resolved.startsWith('/uploads')) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-
-  res.sendFile(resolved);
-});
-```
+**The attack:** If a user submits `../../../etc/passwd` as a filename, they can read system files outside your uploads directory.
 
 ### Command Injection
 
-If your app passes user input to a shell command, an attacker can execute arbitrary system commands:
+If your app passes user input to a shell command, an attacker can execute arbitrary system commands.
 
-```typescript
-// VULNERABLE — attacker can execute any system command
-const filename = req.body.filename;
-exec(`convert ${filename} output.png`);
-// If filename = "image.png; rm -rf /", the server deletes everything
+**Tell your AI tool:**
+"Never use exec() with user input. Use execFile() with array arguments instead. The array format prevents shell interpretation of special characters."
 
-// SAFE — use execFile with array arguments (no shell interpretation)
-import { execFile } from 'child_process';
-
-execFile('convert', [filename, 'output.png'], (err, stdout) => {
-  // filename is treated as a single argument, never parsed by shell
-});
-```
+**The attack:** If a user submits `image.png; rm -rf /` as a filename, the shell executes both commands — the image conversion AND the delete command.
 
 ---
 
