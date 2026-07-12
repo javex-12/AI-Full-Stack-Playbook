@@ -36,7 +36,6 @@ LCP is almost always caused by one of three things: a slow server, render-blocki
 
 INP measures the delay between a user interaction (click, tap, keypress) and the next visual update. High INP happens when the main thread is blocked by long JavaScript execution.
 
-```javascript
 **Tell your AI tool:**
 "Optimize INP by breaking long tasks into smaller chunks. Use scheduler.yield() or setTimeout(0) between batches to let the browser handle user interactions. Process data in batches of 50 items instead of all at once."
 
@@ -49,6 +48,7 @@ CLS happens when elements shift after the page loads — usually because images 
 1. Setting explicit width and height (or aspect-ratio) on all images
 2. Using skeleton placeholders for dynamic content
 3. Setting min-height on ad banners and lazy-loaded sections
+4. Using CSS max-height for accordion-style expanding content"
 4. Using CSS max-height for accordion-style expanding content"
 
 ### Testing with Lighthouse
@@ -70,37 +70,14 @@ Search engines and social platforms read your meta tags to understand what your 
 
 ### The Complete Meta Tag Template
 
-```html
-<head>
-  <!-- Primary SEO -->
-  <title>The AI Full-Stack Playbook — CyderCoder</title>
-  <meta name="description" content="A senior-engineered guide to full-stack development with AI. Covers LLMs, frameworks, security, and production operations." />
-  <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://playbook.cydercoder.com/part-2-ai-foundations/" />
+**Tell your AI tool:**
+"Add complete meta tags to every page:
+- Primary SEO: title, description, robots, canonical URL
+- Open Graph: type, title, description, image (1200x630px), url, site_name
+- Twitter Card: card type, title, description, image, creator handle
+- Favicon: SVG icon and apple-touch-icon
 
-  <!-- Open Graph (Facebook, LinkedIn, Slack) -->
-  <meta property="og:type" content="article" />
-  <meta property="og:title" content="AI Foundations: The Autocomplete Engine under the Hood" />
-  <meta property="og:description" content="Strip away the academic jargon. Understand LLMs, tokens, embeddings, and MCP through clean senior-engineered mental models." />
-  <meta property="og:image" content="https://playbook.cydercoder.com/og/ai-foundations.png" />
-  <meta property="og:url" content="https://playbook.cydercoder.com/part-2-ai-foundations/" />
-  <meta property="og:site_name" content="The AI Full-Stack Playbook" />
-
-  <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="AI Foundations: The Autocomplete Engine under the Hood" />
-  <meta name="twitter:description" content="Strip away the academic jargon. Understand LLMs, tokens, embeddings, and MCP." />
-  <meta name="twitter:image" content="https://playbook.cydercoder.com/og/ai-foundations.png" />
-  <meta name="twitter:creator" content="@cydercoder" />
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-
-  <!-- Canonical & Language -->
-  <link rel="alternate" hreflang="en" href="https://playbook.cydercoder.com/" />
-</head>
-```
+Use the page title for og:title and twitter:title. Use a 1200x630px image for social previews."
 
 ### OG Image Generation
 
@@ -274,57 +251,15 @@ Without rate limiting, your API is vulnerable to brute-force attacks, credential
 
 Simple but has a burst problem — 100 requests at 11:59:59 + 100 requests at 12:00:00 = 200 requests in 2 seconds.
 
-```typescript
-import Redis from 'ioredis';
-const redis = new Redis(process.env.REDIS_URL);
-
-async function fixedWindowLimiter(req, res, next) {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const key = `rate:${ip}`;
-
-  const count = await redis.incr(key);
-  if (count === 1) {
-    await redis.expire(key, 60);  // 60-second window
-  }
-
-  if (count > 100) {
-    return res.status(429).json({
-      error: 'Too many requests',
-      retryAfter: await redis.ttl(key),
-    });
-  }
-
-  res.setHeader('X-RateLimit-Limit', '100');
-  res.setHeader('X-RateLimit-Remaining', Math.max(0, 100 - count));
-  next();
-}
-```
+**Tell your AI tool:**
+"Implement fixed window rate limiting using Redis. Track requests per IP in 60-second windows. If count exceeds 100, return 429 with retry-after header. Include X-RateLimit-Limit and X-RateLimit-Remaining headers in responses."
 
 ### Sliding Window Log Algorithm
 
 More accurate — tracks individual request timestamps, not just a counter.
 
-```typescript
-async function slidingWindowLimiter(req, res, next) {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const now = Date.now();
-  const windowMs = 60 * 1000;  // 1-minute window
-  const maxRequests = 100;
-
-  const key = `ratelimit:${ip}`;
-
-  // Remove expired entries, add current request
-  await redis.zremrangebyscore(key, 0, now - windowMs);
-  await redis.zadd(key, now, `${now}`);
-  await redis.expire(key, Math.ceil(windowMs / 1000));
-
-  // Count requests in current window
-  const count = await redis.zcard(key);
-
-  if (count > maxRequests) {
-    const oldest = await redis.zrange(key, 0, 0, 'WITHSCORES');
-    const retryAfter = oldest.length > 0
-      ? Math.ceil((parseInt(oldest[1]) + windowMs - now) / 1000)
+**Tell your AI tool:**
+"Implement sliding window rate limiting using Redis sorted sets. Track individual request timestamps. Remove expired entries, count current window requests. Return 429 with calculated retry-after time if limit exceeded."
       : 60;
 
     return res.status(429).json({
