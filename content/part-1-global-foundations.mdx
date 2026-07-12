@@ -195,33 +195,25 @@ When a user types `cydemy.com` into their browser:
 
 Every DNS record has a **TTL** — how long (in seconds) resolvers should cache the answer before asking again.
 
-```
-TTL = 300    → Cache for 5 minutes (good for migrations)
-TTL = 3600   → Cache for 1 hour (standard)
-TTL = 86400  → Cache for 24 hours (stable records)
-```
+| TTL Value | Cache Duration | When to Use |
+|-----------|---------------|-------------|
+| 300 (5 min) | Short cache | Before changing IP addresses |
+| 3600 (1 hour) | Standard | Normal operations |
+| 86400 (24 hours) | Long cache | Stable records that rarely change |
 
 **The Senior Move:** Before changing your server's IP address, lower the TTL to 300 (5 minutes) 24-48 hours in advance. This ensures the old IP expires from caches quickly when you make the switch. Changing IP with a high TTL means some users hit the old server for hours.
 
-### Practical DNS Tools
+### How to Check DNS
 
-```bash
-# See the full resolution chain
-dig cydemy.com +trace
+You can check DNS resolution using online tools or command line:
 
-# Quick IP lookup
-dig cydemy.com +short
+**Online tools:**
+- **dnschecker.org** — Shows resolution from 100+ global locations
+- **whatsmydns.net** — Visual map of DNS propagation worldwide
 
-# Check specific record type
-dig cydemy.com MX
-dig cydemy.com TXT
-
-# nslookup (simpler alternative)
-nslookup cydemy.com
-
-# Test from multiple locations (online)
-# https://dnschecker.org — shows resolution from 100+ global locations
-```
+**Command line (if you're comfortable):**
+- `dig domain.com` — Shows the full DNS resolution chain
+- `nslookup domain.com` — Simpler alternative for quick lookups
 
 ---
 
@@ -306,12 +298,11 @@ Without CORS, any malicious website could make requests to your bank's API using
 
 A **same-origin** request means the protocol, hostname, and port all match:
 
-```
-Frontend: https://cydemy.com
-API:      https://api.cydemy.com     ← Different hostname = CORS applies
-API:      https://cydemy.com:3001    ← Different port = CORS applies
-API:      http://cydemy.com          ← Different protocol = CORS applies
-```
+| Frontend | API | Result |
+|----------|-----|--------|
+| https://cydemy.com | https://api.cydemy.com | Different hostname = CORS applies |
+| https://cydemy.com | https://cydemy.com:3001 | Different port = CORS applies |
+| https://cydemy.com | http://cydemy.com | Different protocol = CORS applies |
 
 ### The Preflight Handshake
 
@@ -357,34 +348,13 @@ For "complex" requests (POST with JSON body, custom headers, PUT, DELETE), the b
 
 ### Solutions When You Control the Server
 
-```javascript
-// Express.js — Add CORS middleware
-import cors from 'cors';
-
-app.use(cors({
-  origin: 'https://cydemy.com',           // Only allow this origin
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true,                       // Allow cookies
-  maxAge: 86400,                           // Cache preflight for 24h
-}));
-```
+**Tell your AI tool:**
+"Add CORS middleware that only allows requests from my frontend URL. Allow GET, POST, PUT, DELETE methods. Allow credentials (cookies). Cache preflight for 24 hours."
 
 ### Solutions When You Don't Control the Server
 
-```javascript
-// Proxy through your own backend (Next.js example)
-// next.config.js
-module.exports = {
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: 'https://external-api.com/:path*',
-      },
-    ];
-  },
-};
-```
+**Tell your AI tool:**
+"Set up a proxy route that forwards requests from /api/* to the external API URL. This avoids CORS issues by making requests from the same origin."
 
 **The Senior Rule:** CORS errors in development are almost always because you're running frontend on `localhost:3000` and API on `localhost:4000` — different ports = different origins. Add your dev origin to the CORS whitelist.
 
@@ -482,65 +452,19 @@ ws.onclose = () => {
 };
 ```
 
-```javascript
-// Server (Node.js + ws library)
-import { WebSocketServer } from 'ws';
-
-const wss = new WebSocketServer({ port: 8080 });
-
-wss.on('connection', (ws) => {
-  ws.on('message', (msg) => {
-    const data = JSON.parse(msg);
-
-    if (data.type === 'subscribe') {
-      // Send live data to this client
-      setInterval(() => {
-        ws.send(JSON.stringify({
-          type: 'price_update',
-          symbol: 'BTC',
-          price: 67500 + Math.random() * 100,
-        }));
-      }, 1000);
-    }
-  });
-});
-```
-
 **Use WebSockets when:** Both sides need to push data frequently (chat, multiplayer games, live collaboration, real-time trading).
+
+**To build a WebSocket server, tell your AI tool:**
+"Create a WebSocket server that allows clients to subscribe to channels. When a client subscribes, send them live data every second. Use the ws library."
 
 ### Server-Sent Events (SSE)
 
 A one-way persistent connection where the server pushes events to the client. Simpler than WebSockets, works over standard HTTP, and auto-reconnects.
 
-```javascript
-// Client — Listen to server events
-const events = new EventSource('/api/events');
+**Use SSE when:** Only the server needs to push data (live feeds, notifications, progress updates).
 
-events.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  updateUI(data);
-};
-
-events.onerror = () => {
-  console.log('Connection lost — browser will auto-reconnect');
-};
-```
-
-```javascript
-// Server (Express)
-app.get('/api/events', (req, res) => {
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-
-  const sendEvent = (data) => {
-    res.write(`data: ${JSON.stringify(data)}\n\n`);
-  };
-
-  // Send events every second
-  const interval = setInterval(() => {
-    sendEvent({ timestamp: Date.now(), status: 'alive' });
-  }, 1000);
+**To build SSE, tell your AI tool:**
+"Create an SSE endpoint at /api/events that sends a heartbeat every second. Set the correct headers for event streaming."
 
   req.on('close', () => clearInterval(interval));
 });
@@ -621,15 +545,12 @@ Sensitive Data (tokens, medical records)
 
 A **Content Delivery Network** (Cloudflare, Vercel Edge, AWS CloudFront) caches your static assets at edge locations worldwide. A user in Tokyo gets assets from the Tokyo edge node, not your server in Virginia.
 
-```
-Without CDN:
-  Tokyo User ──[200ms]──▶ Virginia Server ──[200ms]──▶ Tokyo User
-  Total: 400ms round trip
+| Scenario | Distance | Latency |
+|----------|----------|---------|
+| Without CDN | Tokyo → Virginia → Tokyo | ~400ms round trip |
+| With CDN | Tokyo → Tokyo Edge Node | ~40ms round trip (10x faster) |
 
-With CDN:
-  Tokyo User ──[20ms]──▶ Tokyo Edge Node ──[20ms]──▶ Tokyo User
-  Total: 40ms round trip (10x faster)
-```
+CDNs are free with Cloudflare and Vercel. There's no reason not to use one.
 
 ---
 
