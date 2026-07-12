@@ -107,32 +107,11 @@ Schema.org gives search engines explicit semantic meaning about your content. Th
 "Add FAQ Schema.org structured data to pages with frequently asked questions. Each question should have a clear answer in the acceptedAnswer field."
 
 **What this does:** Google can display your FAQ directly in search results as expandable dropdowns, increasing click-through rate.
-      "name": "When should I use Redis for caching?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Use Redis when your database queries exceed 100ms or when you need sub-millisecond reads for frequently accessed data like sessions, user profiles, or product listings."
-      }
-    }
-  ]
-}
-</script>
-```
 
 ### BreadcrumbList Schema
 
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://playbook.cydercoder.com/" },
-    { "@type": "ListItem", "position": 2, "name": "Part II", "item": "https://playbook.cydercoder.com/part-2/" },
-    { "@type": "ListItem", "position": 3, "name": "AI Foundations" }
-  ]
-}
-</script>
-```
+**Tell your AI tool:**
+"Add BreadcrumbList Schema.org structured data showing the page hierarchy: Home → Part → Section. This helps Google display breadcrumb navigation in search results."
 
 ---
 
