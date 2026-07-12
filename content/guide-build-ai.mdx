@@ -1,572 +1,296 @@
 ---
-title: "Build AI Applications: From API to Production"
+title: "Build AI Apps: From Idea to Live (Using AI)"
 guide: true
 section: "Workshop"
-keywords: ["Groq", "OpenAI", "Claude API", "System Prompts", "Streaming", "Function Calling", "RAG"]
-difficulty: "Hands-On"
+keywords: ["Groq", "OpenAI", "AI App", "System Prompt", "No Code"]
+difficulty: "Beginner"
 lastUpdated: "2026-07-11"
 ---
 
-## The AI Application Stack
+## Who This Guide Is For
 
-Building an AI app isn't just calling an API. It's architecting a system that handles prompts, manages context, streams responses, handles errors, and scales under load.
-
-```
-Frontend (React) → Backend (Node) → AI API (Groq/OpenAI)
-                        │
-                        ▼
-                  Database (history)
-```
+You want to build an AI app — like a chatbot, content generator, or AI assistant — but you don't know how to code. That's fine. AI tools can build the entire thing for you. You just need to understand **what to tell them** and **how to connect the pieces**.
 
 ---
 
-## Step 1: Choose Your AI Provider
+## What You'll Build
 
-| Provider | Speed | Cost | Best For |
-|----------|-------|------|----------|
-| **Groq** | Fastest (300+ tok/s) | Free tier available | Real-time chat, low latency |
-| **OpenAI** | Fast | $2.50-10/1M tokens | GPT-4o for complex tasks |
-| **Anthropic** | Fast | $3-15/1M tokens | Long context, safety-focused |
-| **Google Gemini** | Fast | Free tier generous | Multimodal (images + text) |
-| **DeepSeek** | Fast | Very cheap | Cost-sensitive production |
-
-### For This Guide: Groq (Free, Fastest)
-
-```
-1. Go to console.groq.com
-2. Sign up with GitHub or Google
-3. Create an API key
-4. Copy the key — you'll only see it once
-5. Store it as an environment variable:
-   GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxx
-```
+By the end, you'll have a working AI chatbot that:
+- Answers questions about your business
+- Uses a custom system prompt (the AI's personality)
+- Works on a live website anyone can visit
 
 ---
 
-## Step 2: System Prompt Architecture
+## The Complete Workflow
 
-The system prompt is the most important part of your AI app. It defines the model's behavior, constraints, and output format.
-
-### The Anatomy
-
-<div class="arch">
-  <div class="arch-title">System Prompt Structure</div>
-  <div class="arch-layers">
-    <div class="arch-layer">
-      <div class="arch-label">1. Role</div>
-      <div class="arch-items"><div class="arch-item">Who the model is acting as</div></div>
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 1</span>
+      <span class="flow-label">Get API Key</span>
+      <span class="flow-sub">Groq (free, fast)</span>
     </div>
-    <div class="arch-layer">
-      <div class="arch-label">2. Context</div>
-      <div class="arch-items"><div class="arch-item">Background information</div></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 2</span>
+      <span class="flow-label">Write System Prompt</span>
+      <span class="flow-sub">Tell the AI who to be</span>
     </div>
-    <div class="arch-layer">
-      <div class="arch-label">3. Instructions</div>
-      <div class="arch-items"><div class="arch-item">Rules and constraints</div></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 3</span>
+      <span class="flow-label">Build with AI</span>
+      <span class="flow-sub">Lovable builds the app</span>
     </div>
-    <div class="arch-layer">
-      <div class="arch-label">4. Output</div>
-      <div class="arch-items"><div class="arch-item">How to structure the response</div></div>
-    </div>
-    <div class="arch-layer">
-      <div class="arch-label">5. Examples</div>
-      <div class="arch-items"><div class="arch-item">Input/output demonstrations (optional)</div></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Step 4</span>
+      <span class="flow-label">Deploy</span>
+      <span class="flow-sub">GitHub → Vercel → Live</span>
     </div>
   </div>
 </div>
 
+---
+
+## Step 1: Get Your Free API Key
+
+An API key is like a password that lets your app talk to the AI. Without it, the app can't generate responses.
+
+### Get a Groq API Key (Fastest & Free)
+
+1. Go to **console.groq.com**
+2. Click "Sign up" (use Google or GitHub)
+3. Once logged in, click "API Keys" in the left menu
+4. Click "Create API Key"
+5. Copy the key (it starts with `gsk_`)
+6. **Save it somewhere safe** — you'll only see it once
+
+### Why Groq?
+
+| Provider | Speed | Free Tier | Cost After Free |
+|----------|-------|-----------|-----------------|
+| **Groq** | Fastest | 14,400 tokens/day | Very cheap |
+| OpenAI | Fast | $5 credit | ~$0.01 per message |
+| Claude | Fast | Limited free | ~$0.01 per message |
+
+Groq is free, fast, and perfect for learning. You can switch to OpenAI or Claude later if you need more power.
+
+---
+
+## Step 2: Write Your System Prompt
+
+A system prompt is a set of instructions that tells the AI who to be and how to behave. This is the most important part of your AI app.
+
+### What Is a System Prompt?
+
+Think of it like training a new employee. You tell them:
+- **Who they are** (role)
+- **What they know** (context)
+- **What they should do** (instructions)
+- **How to respond** (output format)
+
 ### Example: Customer Support Bot
 
-```typescript
-const SYSTEM_PROMPT = `
-<role>
-You are a customer support agent for "TechStore", an online electronics retailer.
-You are helpful, professional, and solution-oriented.
-</role>
+```
+You are a customer support agent for "TechStore", an online electronics store.
 
-<context>
-TechStore sells laptops, phones, tablets, and accessories.
-Orders can be tracked at track.techstore.com.
-Return policy: 30 days from delivery, item must be in original packaging.
-Refunds process within 5-7 business days.
-</context>
+You are helpful, friendly, and solution-oriented.
 
-<instructions>
-- Always greet the customer by name if provided
-- If the issue is about order status, direct them to track.techstore.com
-- If the issue is about returns, confirm the order is within 30 days
-- If you cannot resolve the issue, offer to connect them with a human agent
-- Never make up information about products, prices, or policies
+RULES:
+- Always greet the customer by name if they share it
+- Keep responses under 100 words
+- If you don't know the answer, say "Let me connect you with a human agent"
+- Never make up information about products or prices
 - Never share other customers' information
-- Keep responses under 150 words
-</instructions>
 
-<output_format>
-Respond in a friendly, professional tone.
-Use bullet points for multiple steps.
-Always end with: "Is there anything else I can help with?"
-</output_format>
-`;
+HOW TO RESPOND:
+- Use bullet points for multiple steps
+- Always end with "Is there anything else I can help with?"
 ```
 
-### Example: Code Reviewer
+### Example: Personal AI Assistant
 
-```typescript
-const SYSTEM_PROMPT = `
-<role>
-You are a senior code reviewer with 15 years of experience.
-You review code for security, performance, and maintainability.
-</role>
+```
+You are a personal productivity assistant named "Atlas".
 
-<instructions>
-Review the provided code and output:
+You help users:
+- Break down big tasks into small steps
+- Prioritize their to-do list
+- Stay focused and motivated
 
-1. SEVERITY: P1 (Critical) / P2 (Important) / P3 (Minor)
-2. ISSUE: What's wrong
-3. LINE: Which line(s) are affected
-4. FIX: The exact code change needed
+RULES:
+- Be encouraging but not fake
+- Ask clarifying questions when the task is vague
+- Suggest time estimates for each step
+- If a task seems overwhelming, help them break it down further
 
-Focus on:
-- Security vulnerabilities (SQL injection, XSS, hardcoded secrets)
-- Performance bottlenecks
-- TypeScript type safety
-- Error handling gaps
+TONE: Professional but warm. Like a smart friend who always has a plan.
+```
 
-Never flag style preferences (tabs vs spaces, naming conventions)
-unless they impact readability significantly.
-</instructions>
+### How to Test Your Prompt
 
-<output_format>
-Return a JSON array of issues:
-[
-  {
-    "severity": "P1",
-    "issue": "SQL injection vulnerability",
-    "line": 42,
-    "fix": "Use parameterized query instead of string concatenation"
-  }
-]
-</output_format>
-`;
+Before building the app, test your prompt in ChatGPT or Claude:
+
+1. Copy your system prompt
+2. Paste it into ChatGPT as a custom instruction
+3. Send test messages like a real user would
+4. See if the AI responds the way you want
+5. Adjust the prompt until it's perfect
+
+---
+
+## Step 3: Build with AI (Lovable)
+
+Now that you have your system prompt and API key, tell Lovable to build the app.
+
+### Your Lovable Prompt
+
+```
+Build me an AI chatbot web app.
+
+Features:
+1. A clean chat interface (message bubbles, input field at bottom)
+2. When the user sends a message, it calls the Groq API
+3. The AI responds using the system prompt I'll provide
+4. Conversation history is shown (user messages and AI responses)
+5. Loading indicator while AI is thinking
+
+Design:
+- Dark theme, modern, clean
+- Chat bubbles: user messages on right (green accent), AI messages on left (gray)
+- Mobile responsive
+
+Technical details:
+- Use Groq API with model "llama-3.3-70b-versatile"
+- The API key should be stored in environment variables (not in the code)
+- Use React for the frontend
+```
+
+### What Lovable Generates
+
+Lovable will create:
+- A complete chat interface
+- API connection to Groq
+- Environment variable configuration
+- Responsive design
+
+### Add Your System Prompt
+
+After Lovable generates the app, tell it:
+
+```
+Update the system prompt in the code to use this exact prompt:
+
+"You are a customer support agent for TechStore. Be helpful and friendly."
+
+Make sure the system prompt is passed to the Groq API in every request.
 ```
 
 ---
 
-## Step 3: API Integration
+## Step 4: Connect Your API Key
 
-### Groq Integration (Fastest)
+Your API key should NEVER be in the code. It goes in an **environment variable** — a secret file that only the server can read.
 
-```typescript
-// Using the Groq SDK
-import Groq from 'groq-sdk';
+### What Is an Environment Variable?
 
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+Think of it like a safe behind the counter. Your code can access it, but nobody looking at your website can see it. If you put the API key directly in the code, anyone can steal it.
 
-// Basic completion
-async function chat(userMessage: string, history: Message[]) {
-  const response = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history,
-      { role: 'user', content: userMessage },
-    ],
-    temperature: 0.7,
-    max_tokens: 1024,
-  });
+### How to Set It Up
 
-  return response.choices[0].message.content;
-}
+**In Lovable:**
+1. Click the Settings gear icon
+2. Go to "Environment Variables"
+3. Add: `GROQ_API_KEY` = `gsk_your_actual_key_here`
+4. Save
+
+**In Vercel (after deployment):**
+1. Go to your project in Vercel
+2. Settings → Environment Variables
+3. Add: `GROG_API_KEY` = `gsk_your_actual_key_here`
+4. Click "Save"
+
+**The rule:** Never put API keys in your code. Always use environment variables.
+
+---
+
+## Step 5: Deploy to GitHub and Vercel
+
+Same process as the website guide:
+
+1. **Push to GitHub:** Click the GitHub icon in Lovable → Push to GitHub
+2. **Deploy to Vercel:** Go to vercel.com → Import your repository → Deploy
+3. **Add your API key:** Settings → Environment Variables → Add your Groq key
+4. **Done:** Your AI app is live
+
+---
+
+## How It All Connects
+
 ```
-
-### Streaming Response
-
-```typescript
-// Streaming — tokens arrive as they're generated
-async function chatStream(userMessage: string, history: Message[]) {
-  const stream = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history,
-      { role: 'user', content: userMessage },
-    ],
-    stream: true,  // Enable streaming
-  });
-
-  // Process tokens as they arrive
-  for await (const chunk of stream) {
-    const token = chunk.choices[0]?.delta?.content || '';
-    process.stdout.write(token);  // Send to client immediately
-  }
-}
-```
-
-### OpenAI Integration
-
-```typescript
-import OpenAI from 'openai';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Streaming with OpenAI
-async function chatStream(userMessage: string) {
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: userMessage },
-    ],
-    stream: true,
-  });
-
-  for await (const chunk of stream) {
-    const token = chunk.choices[0]?.delta?.content || '';
-    // Send token to client via SSE or WebSocket
-  }
-}
+User types message
+        │
+        ▼
+Your app (on Vercel)
+        │
+        ├──► Sends message + system prompt to Groq API
+        │    (using your API key from environment variable)
+        │
+        ▼
+Groq API (AI brain)
+        │
+        ├──► Generates response using your system prompt
+        │
+        ▼
+Your app shows the response to the user
 ```
 
 ---
 
-## Step 4: Frontend Integration
+## Common Questions
 
-### React Chat Component
+**"What is React?"**
+React is a tool that helps build user interfaces (what people see and click on). Lovable uses it behind the scenes. You don't need to learn React — just describe what you want.
 
-```tsx
-// components/Chat.tsx
-import { useState, useRef, useEffect } from 'react';
+**"What is an API key?"**
+A password that lets your app talk to the AI service. Without it, the AI can't respond. Never share it or put it in your code.
 
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+**"What is an environment variable?"**
+A secret file that stores sensitive information (like API keys). Your code reads it, but nobody visiting your website can see it. This is how you keep secrets safe.
 
-export function Chat() {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+**"How much does this cost?"**
+- Groq free tier: ~200 messages/day
+- Vercel free tier: Enough for most projects
+- **Total: $0 for learning and prototyping**
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = { role: 'user' as const, content: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: input,
-          history: messages,
-        }),
-      });
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      // Add empty assistant message
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      // Stream tokens into the message
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-
-        const token = decoder.decode(value);
-        setMessages(prev => {
-          const last = prev[prev.length - 1];
-          return [...prev.slice(0, -1), { ...last, content: last.content + token }];
-        });
-      }
-    } catch (err) {
-      console.error('Chat error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <div className="chat-container">
-      <div className="messages">
-        {messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.role}`}>
-            {msg.content}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoading}
-        />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Thinking...' : 'Send'}
-        </button>
-      </form>
-    </div>
-  );
-}
-```
+**"Can I make money with this?"**
+Yes. You can:
+- Sell AI chatbots to businesses ($500-5000 per project)
+- Add it to your portfolio to get hired
+- Build AI tools and charge for access
 
 ---
 
-## Step 5: Backend API Route
+## What You Learned
 
-### Next.js API Route
+- What an API key is and why you need one
+- How to write a system prompt that makes the AI behave correctly
+- How to use Lovable to build an AI app without coding
+- How environment variables keep your secrets safe
+- How to deploy an AI app to the internet
 
-```typescript
-// app/api/chat/route.ts
-import { Groq } from 'groq-sdk';
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-const SYSTEM_PROMPT = `Your system prompt here`;
-
-export async function POST(req: Request) {
-  const { message, history } = await req.json();
-
-  // Validate input
-  if (!message || typeof message !== 'string') {
-    return new Response('Invalid message', { status: 400 });
-  }
-
-  // Rate limiting check
-  // (implement with Redis or in-memory store)
-
-  const stream = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
-      ...history.slice(-10),  // Keep last 10 messages for context
-      { role: 'user', content: message },
-    ],
-    stream: true,
-    temperature: 0.7,
-    max_tokens: 1024,
-  });
-
-  // Convert to ReadableStream for client
-  const encoder = new TextEncoder();
-  const readable = new ReadableStream({
-    async start(controller) {
-      for await (const chunk of stream) {
-        const token = chunk.choices[0]?.delta?.content || '';
-        controller.enqueue(encoder.encode(token));
-      }
-      controller.close();
-    },
-  });
-
-  return new Response(readable, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': 'no-cache',
-    },
-  });
-}
-```
-
----
-
-## Step 6: Add Conversation History
-
-Store chat history so users can continue conversations.
-
-```typescript
-// Using a simple database (PostgreSQL)
-CREATE TABLE chat_sessions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id),
-  title TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE chat_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  session_id UUID REFERENCES chat_sessions(id),
-  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
-  content TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Load last 20 messages for a session
-SELECT role, content
-FROM chat_messages
-WHERE session_id = $1
-ORDER BY created_at DESC
-LIMIT 20;
-```
-
----
-
-## Step 7: Add Function Calling
-
-Let the AI call your functions when needed.
-
-```typescript
-const tools = [
-  {
-    type: 'function',
-    function: {
-      name: 'get_order_status',
-      description: 'Check the status of a customer order',
-      parameters: {
-        type: 'object',
-        properties: {
-          orderId: { type: 'string', description: 'The order ID' },
-        },
-        required: ['orderId'],
-      },
-    },
-  },
-];
-
-// In your API route
-const response = await groq.chat.completions.create({
-  model: 'llama-3.3-70b-versatile',
-  messages: [...],
-  tools,
-  tool_choice: 'auto',
-});
-
-// Handle tool calls
-if (response.choices[0].message.tool_calls) {
-  const toolCall = response.choices[0].message.tool_calls[0];
-  const args = JSON.parse(toolCall.function.arguments);
-
-  // Execute the function
-  const result = await getOrderStatus(args.orderId);
-
-  // Send result back to the model
-  messages.push(response.choices[0].message);
-  messages.push({
-    role: 'tool',
-    tool_call_id: toolCall.id,
-    content: JSON.stringify(result),
-  });
-
-  // Get final response with the tool result
-  const finalResponse = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages,
-  });
-}
-```
-
----
-
-## Step 8: Deploy
-
-```bash
-# Push to GitHub
-git add -A
-git commit -m "feat: AI chat application with Groq streaming"
-git push origin main
-
-# Deploy to Vercel
-# 1. Import repo in Vercel dashboard
-# 2. Add environment variable: GROQ_API_KEY
-# 3. Deploy
-```
-
----
-
-## The Complete Checklist
-
-```
-SETUP
-□ Created Groq/OpenAI account
-□ Generated API key
-□ Stored key as environment variable
-
-SYSTEM PROMPT
-□ Defined role
-□ Added context
-□ Set instructions
-□ Defined output format
-□ Tested with sample inputs
-
-BACKEND
-□ Created API route
-□ Added streaming support
-□ Added error handling
-□ Added rate limiting
-□ Added conversation history
-
-FRONTEND
-□ Built chat UI component
-□ Added streaming display
-□ Added loading states
-□ Added error handling
-□ Mobile responsive
-
-FEATURES
-□ Conversation history
-□ Function calling (if needed)
-□ Message persistence
-□ Session management
-
-DEPLOY
-□ Pushed to GitHub
-□ Deployed to Vercel
-□ Environment variables configured
-□ Tested in production
-```
-
----
-
-## Cost Estimation
-
-```
-Groq (Free Tier):
-  - 30 tokens/second
-  - 14,400 tokens/day
-  - ~200 messages/day
-  - Perfect for prototyping
-
-Groq (Paid):
-  - $0.59/1M input tokens
-  - $0.79/1M output tokens
-  - ~$0.001 per message
-  - 10,000 messages ≈ $10
-
-OpenAI GPT-4o:
-  - $2.50/1M input tokens
-  - $10.00/1M output tokens
-  - ~$0.01 per message
-  - 10,000 messages ≈ $100
-```
-
----
-
-## Common Pitfalls
-
-| Pitfall | Why It Happens | Fix |
-|---------|---------------|-----|
-| **Model hallucinates facts** | No context provided | Add RAG with your own data |
-| **Response is too long** | No token limit | Set `max_tokens` |
-| **Model ignores instructions** | System prompt is vague | Use XML delimiters, be specific |
-| **API calls are slow** | Using wrong model | Use Groq for speed, GPT-4o for quality |
-| **Costs spiral** | No caching | Cache common responses in Redis |
-| **Rate limiting** | No protection | Add rate limiting on your API |
+This is the foundation for building any AI-powered product.
