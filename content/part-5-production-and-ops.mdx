@@ -94,17 +94,11 @@ Seniors do not manually drag files to servers or run `git push production` from 
 
 ### The Git Flow Pattern
 
-```
-main (locked — no direct commits)
-  │
-  ├── feature/auth-refresh-tokens
-  │     └── PR → CI validates → merge to main
-  │
-  ├── fix/payment-timeout-handling
-  │     └── PR → CI validates → merge to main
-  │
-  └── main merge → CD deploys to production
-```
+**The flow:**
+1. `main` branch is locked — no direct commits allowed
+2. Create a feature branch (e.g., `feature/auth-refresh-tokens`)
+3. Open a Pull Request — CI automatically validates (lint, test, build)
+4. Merge to `main` — triggers deployment to production
 
 **Rules:**
 1. `main` is locked. No direct commits. All changes go through Pull Requests.
@@ -234,12 +228,12 @@ An unprotected API is an invitation for abuse. Without rate limiting, a single m
 
 ### What Rate Limiting Headers Look Like
 
-```
-HTTP/1.1 200 OK
-RateLimit-Limit: 100
-RateLimit-Remaining: 67
-RateLimit-Reset: 1710000060
-```
+**What rate limiting headers look like:**
+
+Your API responses should include these headers:
+- `RateLimit-Limit: 100` — Maximum requests allowed per window
+- `RateLimit-Remaining: 67` — Requests left in current window
+- `RateLimit-Reset: 1710000060` — Unix timestamp when the window resets
 
 The client can read these headers and show the user how many requests they have left — or proactively slow down before hitting the limit.
 
@@ -360,28 +354,10 @@ Running `prisma migrate dev` or `drizzle push` from your local machine against a
 
 ### The Safe Migration Pattern
 
-```typescript
-// migrations/003_add_contributions_table.ts
-import { sql } from 'drizzle-orm';
+**Tell your AI tool:**
+"Create a migration that adds a contributions table with columns: id (UUID primary key), user_id (foreign key to users), amount (integer, must be positive), cycle_id (foreign key to cycles), created_at (timestamp with default). Also create a rollback function that drops the table if needed."
 
-export async function up(db: Database) {
-  // Forward migration — creates the new table
-  await db.execute(sql`
-    CREATE TABLE contributions (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      user_id UUID NOT NULL REFERENCES users(id),
-      amount INTEGER NOT NULL CHECK (amount > 0),
-      cycle_id UUID NOT NULL REFERENCES cycles(id),
-      created_at TIMESTAMPTZ DEFAULT now()
-    )
-  `);
-}
-
-export async function down(db: Database) {
-  // Rollback — reverses the migration if something goes wrong
-  await db.execute(sql`DROP TABLE IF EXISTS contributions`);
-}
-```
+**Why this matters:** Every migration needs a rollback path. If something goes wrong mid-deployment, you need to undo the change cleanly.
 
 ### Senior Moves for Migrations
 
