@@ -167,30 +167,10 @@ A production architecture often uses **multiple database types** together — ea
 
 Every database connection has overhead — TCP handshake, authentication, memory allocation. Opening a new connection per request is catastrophically slow. **Connection pooling** maintains a warm pool of reusable connections.
 
-```typescript
-// PostgreSQL connection pool with pg-pool
-import { Pool } from 'pg';
+**Tell your AI tool:**
+"Set up a PostgreSQL connection pool with these settings: maximum 20 connections, idle timeout 30 seconds, connection timeout 5 seconds. Log any queries that take longer than 100ms as warnings."
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  max: 20,              // Maximum connections in pool
-  idleTimeoutMillis: 30000,  // Close idle connections after 30s
-  connectionTimeoutMillis: 5000,  // Fail if can't connect in 5s
-});
-
-// Use pool, not individual client
-async function query(text: string, params?: any[]) {
-  const start = Date.now();
-  const result = await pool.query(text, params);
-  const duration = Date.now() - start;
-
-  if (duration > 100) {
-    logger.warn('Slow query detected', { text, duration, rows: result.rowCount });
-  }
-
-  return result;
-}
-```
+**Why this matters:** Without connection pooling, each user request opens a new database connection. At 100 concurrent users, you'd need 100 simultaneous connections — exhausting your database's limits. Pooling reuses connections, keeping performance stable.
 
 ### Senior Moves for Database Selection
 
@@ -249,20 +229,8 @@ CREATE TABLE order_items (
 
 Duplicate data strategically to avoid expensive JOINs. Trade storage for read speed.
 
-```sql
--- Denormalized: orders table includes user name directly
-CREATE TABLE orders (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  user_name TEXT NOT NULL,      -- Duplicated from users table
-  user_email TEXT NOT NULL,     -- Duplicated from users table
-  amount INTEGER NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Query is now a simple single-table read — no JOIN
-SELECT id, user_name, amount FROM orders WHERE user_id = $1;
-```
+**Tell your AI tool:**
+"Create an orders table that includes user_name and user_email directly (duplicated from the users table). This avoids JOINs for read-heavy queries."
 
 **Pros:** Fast reads, simple queries, no JOINs.
 **Cons:** Data duplication, must update multiple places when user changes name, risk of inconsistency.
@@ -271,7 +239,8 @@ SELECT id, user_name, amount FROM orders WHERE user_id = $1;
 
 Normalize for write-heavy tables (orders, transactions). Denormalize for read-heavy tables (dashboards, analytics, search results).
 
-```sql
+**Tell your AI tool:**
+"Create a materialized view called order_summary that JOINs orders and users tables. Refresh it periodically for dashboard reads."
 -- The orders table stays normalized for writes
 -- A materialized view handles read-heavy dashboards
 CREATE MATERIALIZED VIEW order_summary AS
@@ -339,47 +308,14 @@ When PostgreSQL handles thousands of complex queries per second, CPU spikes and 
 
 ### Redis Implementation
 
-```typescript
-import Redis from 'ioredis';
+**Tell your AI tool:**
+"Implement the cache-aside pattern with Redis:
+1. When reading data, check Redis first
+2. If found (cache hit), return it immediately
+3. If not found (cache miss), query PostgreSQL, then save to Redis with 1 hour TTL
+4. When writing data, update PostgreSQL AND delete the Redis cache entry immediately"
 
-const redis = new Redis(process.env.REDIS_URL);
-
-// Cache-aside pattern
-async function getUser(userId: string) {
-  const cacheKey = `user:${userId}`;
-
-  // Step 1: Check cache
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    logger.info('Cache hit', { userId });
-    return JSON.parse(cached);
-  }
-
-  // Step 2: Cache miss — query database
-  logger.info('Cache miss', { userId });
-  const result = await query('SELECT * FROM users WHERE id = $1', [userId]);
-
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  const user = result.rows[0];
-
-  // Step 3: Save to cache with 1 hour TTL
-  await redis.setex(cacheKey, 3600, JSON.stringify(user));
-
-  return user;
-}
-
-// Active invalidation — purge cache on write
-async function updateUser(userId: string, data: Partial<User>) {
-  await query('UPDATE users SET name = $1 WHERE id = $2', [data.name, userId]);
-
-  // Immediately invalidate stale cache
-  await redis.del(`user:${userId}`);
-  // Next request will fetch fresh data from PostgreSQL
-}
-```
+**What this does:** The first request hits the database (slow). Every subsequent request for the same data hits Redis (100x faster). When data changes, the cache is invalidated so the next request gets fresh data.
 
 ### Cache Invalidation Strategies
 
@@ -412,35 +348,12 @@ redis-cli CONFIG SET maxmemory-policy allkeys-lru
 
 When a popular cache key expires, hundreds of requests simultaneously hit the database. This is a **cache stampede** (or thundering herd).
 
-```typescript
-// Solution: Singleflight pattern
-// Only one request computes the value; others wait for it
-const inflight = new Map<string, Promise<any>>();
+**The Singleflight Pattern:**
 
-async function getUserWithStampedeProtection(userId: string) {
-  const key = `user:${userId}`;
+When a cache miss occurs, only ONE request fetches from the database. All other requests for the same key wait for that single fetch to complete. This prevents 100 simultaneous database queries for the same data.
 
-  // Check cache first
-  const cached = await redis.get(key);
-  if (cached) return JSON.parse(cached);
-
-  // If another request is already fetching, wait for it
-  if (inflight.has(key)) {
-    return inflight.get(key);
-  }
-
-  // Only ONE request fetches from database
-  const promise = (async () => {
-    const user = await query('SELECT * FROM users WHERE id = $1', [userId]);
-    await redis.setex(key, 3600, JSON.stringify(user.rows[0]));
-    inflight.delete(key);
-    return user.rows[0];
-  })();
-
-  inflight.set(key, promise);
-  return promise;
-}
-```
+**Tell your AI tool:**
+"Implement singleflight pattern for cache misses. When a cache key is missing, only one request should query the database. Other requests for the same key should wait for the first request to complete and return the cached result."
 
 ---
 
@@ -484,63 +397,39 @@ EXPLAIN ANALYZE SELECT * FROM users WHERE email = 'alice@example.com';
 
 ### Composite Indexes
 
-When you frequently query by multiple columns together, create a composite index:
+When you frequently query by multiple columns together, create a composite index.
 
-```sql
--- Common query pattern
-SELECT * FROM orders
-WHERE user_id = 'abc123'
-  AND created_at > '2026-01-01'
-ORDER BY created_at DESC
-LIMIT 10;
+**Tell your AI tool:**
+"Create a composite index on the orders table for (user_id, created_at DESC). This optimizes queries that filter by user_id and sort by date."
 
--- Composite index (column order matters!)
-CREATE INDEX idx_orders_user_date ON orders(user_id, created_at DESC);
-
--- Why order matters:
--- This index helps: WHERE user_id = X AND created_at > Y ✓
--- This index helps: WHERE user_id = X                   ✓ (first column)
--- This index does NOT help: WHERE created_at > Y         ✗ (skips first column)
-```
+**Why column order matters:** An index on (user_id, created_at) helps queries that filter by user_id first. It does NOT help queries that only filter by created_at — the database can't skip the first column.
 
 ### Partial Indexes
 
-Index only the rows you actually query — saves space and speeds up writes:
+Index only the rows you actually query — saves space and speeds up writes.
 
-```sql
--- Only index active orders (not completed/cancelled)
-CREATE INDEX idx_orders_active ON orders(user_id, created_at)
-WHERE status = 'active';
-
--- Query uses the partial index automatically
-SELECT * FROM orders
-WHERE user_id = 'abc123' AND status = 'active'
-ORDER BY created_at DESC;
-```
+**Tell your AI tool:**
+"Create a partial index on orders where status = 'active'. Only index active orders, not completed or cancelled ones."
 
 ### The Index Trade-off
 
-```
-Read Performance:  Indexes make SELECT queries 100-1000x faster
-Write Performance: Indexes slow down INSERT/UPDATE/DELETE by 5-20%
-Storage:           Each index consumes additional disk space
-```
+| Factor | Impact |
+|--------|--------|
+| Read Performance | Indexes make SELECT queries 100-1000x faster |
+| Write Performance | Indexes slow down INSERT/UPDATE/DELETE by 5-20% |
+| Storage | Each index consumes additional disk space |
 
 **The Rule:** Index columns that appear in WHERE, JOIN ON, and ORDER BY clauses. Don't index columns with low cardinality (like `gender` with only 3 values) — the index won't help much.
 
 ### EXPLAIN ANALYZE: Read Your Query Plans
 
-```sql
--- Always analyze before creating an index
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM orders WHERE user_id = 'abc123';
+**Tell your AI tool:**
+"Run EXPLAIN ANALYZE on this query and tell me if an index is being used or if it's doing a full table scan."
 
--- Look for:
--- "Seq Scan" → Missing index (reads entire table)
--- "Index Scan" → Index is being used ✓
--- "Bitmap Index Scan" → Multiple indexes combined
--- "Sort" → Missing index on ORDER BY column
-```
+**What to look for:**
+- "Seq Scan" → Missing index (reads entire table) — BAD
+- "Index Scan" → Index is being used — GOOD
+- "Sort" → Missing index on ORDER BY column
 
 ---
 
@@ -548,59 +437,32 @@ SELECT * FROM orders WHERE user_id = 'abc123';
 
 ### The N+1 Problem
 
-The most common performance killer in ORMs:
+The most common performance killer in databases:
 
-```typescript
-// BAD: N+1 query — 1 query for users + N queries for their orders
-const users = await db.query('SELECT * FROM users LIMIT 100');
-for (const user of users.rows) {
-  user.orders = await db.query('SELECT * FROM orders WHERE user_id = $1', [user.id]);
-}
-// Total: 101 queries (1 + 100)
+**The Problem:** You fetch 100 users, then for each user, you fetch their orders. That's 101 database queries (1 for users + 100 for orders).
 
-// GOOD: Single JOIN query
-const usersWithOrders = await db.query(`
-  SELECT u.*, json_agg(o.*) as orders
-  FROM users u
-  LEFT JOIN orders o ON u.id = o.user_id
-  GROUP BY u.id
-  LIMIT 100
-`);
-// Total: 1 query
-```
+**The Solution:** Use a JOIN to fetch everything in a single query. Instead of 101 queries, you run 1 query that returns users with their orders attached.
+
+**Tell your AI tool:**
+"Optimize this query to avoid the N+1 problem. Use a JOIN to fetch users with their orders in a single query instead of looping through users individually."
 
 ### Pagination Patterns
 
-```sql
--- OFFSET pagination (simple but slow for large offsets)
-SELECT * FROM posts ORDER BY created_at DESC OFFSET 1000 LIMIT 20;
--- Database must scan and skip 1000 rows before returning 20
+**Offset pagination** (simple but slow for large pages): The database skips 1000 rows before returning 20. This gets slower as you go deeper.
 
--- Cursor pagination (consistent performance regardless of position)
-SELECT * FROM posts
-WHERE created_at < '2026-07-10T12:00:00Z'  -- Cursor from last page
-ORDER BY created_at DESC
-LIMIT 20;
--- Database uses the index to jump directly to the right position
-```
+**Cursor pagination** (consistent performance): Use a cursor (like the last item's ID or timestamp) to jump directly to the right position. Performance stays constant regardless of page number.
+
+**Tell your AI tool:**
+"Implement cursor-based pagination for the posts table. Use the created_at timestamp as the cursor. Return 20 posts per page."
 
 ### Batch Operations
 
-```typescript
-// BAD: Individual inserts (round-trip per row)
-for (const item of items) {
-  await db.query('INSERT INTO items (name, price) VALUES ($1, $2)', [item.name, item.price]);
-}
-// 1000 items = 1000 round trips = ~5 seconds
+**The Problem:** Inserting 1000 items one at a time = 1000 round trips to the database = ~5 seconds.
 
-// GOOD: Batch insert (single round trip)
-await db.query(
-  'INSERT INTO items (name, price) VALUES ' +
-  items.map((_, i) => `($${i*2+1}, $${i*2+2})`).join(', '),
-  items.flatMap(item => [item.name, item.price])
-);
-// 1000 items = 1 round trip = ~50ms
-```
+**The Solution:** Insert all 1000 items in a single query = 1 round trip = ~50ms.
+
+**Tell your AI tool:**
+"Batch insert multiple records in a single query instead of inserting one at a time. This reduces database round trips from N to 1."
 
 ### Senior Moves for Database Performance
 
