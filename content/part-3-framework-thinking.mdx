@@ -191,35 +191,16 @@ Total: ~1.6 seconds of blank screen
 
 Stop asking "React or Next.js?" — that's the wrong question. The right question is: "What rendering pattern does my content require?"
 
-### The Flowchart
+### The Decision Table
 
-```
-START: What are you building?
-│
-├─── Marketing page / Landing page / Portfolio
-│    └──▶ SSG (Astro)
-│         Zero JS, instant load, perfect SEO
-│
-├─── Blog / Documentation / Content site
-│    └──▶ SSG + Islands (Astro)
-│         Static content, minimal interactive widgets
-│
-├─── E-commerce product pages
-│    └──▶ ISR (Next.js)
-│         Static shell, prices refresh hourly
-│
-├─── SaaS dashboard with user-specific data
-│    └──▶ PPR or SSR (Next.js App Router)
-│         Static layout, dynamic user content
-│
-├─── Real-time collaborative app (Figma-like)
-│    └──▶ CSR + WebSocket (React/Vue)
-│         Heavy JS is unavoidable here
-│
-└─── Hybrid (marketing + app behind auth)
-     └──▶ Astro for public pages + Next.js for app
-          Or Next.js with PPR for everything
-```
+| What You're Building | Rendering Pattern | Framework | Why |
+|---------------------|-------------------|-----------|-----|
+| Marketing / Landing / Portfolio | SSG | Astro | Zero JS, instant load, perfect SEO |
+| Blog / Documentation / Content | SSG + Islands | Astro | Static content, minimal interactive widgets |
+| E-commerce product pages | ISR | Next.js | Static shell, prices refresh hourly |
+| SaaS dashboard with user data | PPR or SSR | Next.js App Router | Static layout, dynamic user content |
+| Real-time collaborative app | CSR + WebSocket | React/Vue | Heavy JS is unavoidable here |
+| Hybrid (marketing + app) | Astro + Next.js | Both | Astro for public, Next.js for app behind auth |
 
 ### The Framework Comparison
 

@@ -27,19 +27,31 @@ Seniors treat prompts like software contracts. You define input parameters, enfo
 
 Every production prompt has five layers:
 
-```
-┌─────────────────────────────────────────────────────┐
-│ 1. ROLE          Who the model is acting as          │
-├─────────────────────────────────────────────────────┤
-│ 2. CONTEXT       Background information              │
-├─────────────────────────────────────────────────────┤
-│ 3. INSTRUCTIONS  Rules and constraints               │
-├─────────────────────────────────────────────────────┤
-│ 4. EXAMPLES      Concrete input/output demonstrations│
-├─────────────────────────────────────────────────────┤
-│ 5. INPUT         The actual user request/data        │
-└─────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Prompt Anatomy</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">1. Role</div>
+      <div class="arch-items"><div class="arch-item">Who the model is acting as</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">2. Context</div>
+      <div class="arch-items"><div class="arch-item">Background information</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">3. Instructions</div>
+      <div class="arch-items"><div class="arch-item">Rules and constraints</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">4. Examples</div>
+      <div class="arch-items"><div class="arch-item">Concrete input/output demonstrations</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">5. Input</div>
+      <div class="arch-items"><div class="arch-item">The actual user request/data</div></div>
+    </div>
+  </div>
+</div>
 
 ---
 
@@ -419,23 +431,27 @@ Prompt Caching keeps your static system instructions, few-shot examples, and too
 
 ### The Cache-Friendly Layout
 
-```
-┌─────────────────────────────────────────────────────┐
-│ STATIC (Cached — pay once, reuse forever)            │
-│                                                     │
-│ 1. System prompt + role instructions                │
-│ 2. Few-shot examples (golden set)                   │
-│ 3. Tool/function schemas                            │
-│ 4. Context documents (RAG results)                  │
-│                                                     │
-├─────────────────────────────────────────────────────┤
-│ DYNAMIC (Re-evaluated per request)                  │
-│                                                     │
-│ 5. User's actual message/query                      │
-│ 6. Conversation history (if applicable)             │
-│                                                     │
-└─────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Prompt Caching Structure</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Static</div>
+      <div class="arch-items">
+        <div class="arch-item">System prompt</div>
+        <div class="arch-item">Few-shot examples</div>
+        <div class="arch-item">Tool schemas</div>
+        <div class="arch-item">RAG documents</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Dynamic</div>
+      <div class="arch-items">
+        <div class="arch-item">User message</div>
+        <div class="arch-item">Conversation history</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **The rule:** Static content at the top, dynamic content at the bottom. The model reads cached content from fast memory and only processes the dynamic portion fresh.
 

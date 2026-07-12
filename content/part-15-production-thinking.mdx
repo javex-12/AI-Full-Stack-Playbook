@@ -671,35 +671,48 @@ Traffic spike exhausted the Redis connection pool (max: 50). All subsequent requ
 
 At minimum, track these metrics:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  SYSTEM HEALTH                                                   │
-│  ├── Request Rate:           342 req/min                       │
-│  ├── Error Rate:             0.3% (2xx: 99.7%)                 │
-│  ├── P50 Response Time:      120ms                             │
-│  ├── P95 Response Time:      450ms                             │
-│  ├── P99 Response Time:      1.2s                              │
-│  └── Active Connections:     89                                │
-├─────────────────────────────────────────────────────────────────┤
-│  RESOURCES                                                        │
-│  ├── CPU Usage:              34%                               │
-│  ├── Memory Usage:           62% (3.1GB / 5GB)                │
-│  ├── Disk Usage:             28%                               │
-│  ├── DB Connections:         12 / 50 pool limit               │
-│  └── Redis Memory:           45% (1.2GB / 2.5GB)              │
-├─────────────────────────────────────────────────────────────────┤
-│  DEPENDENCIES                                                     │
-│  ├── PostgreSQL:             ✅ Healthy (3ms)                  │
-│  ├── Redis:                  ✅ Healthy (1ms)                  │
-│  ├── Stripe API:             ✅ Healthy (142ms)                │
-│  └── Email Service:          ⚠️ Degraded (890ms)               │
-├─────────────────────────────────────────────────────────────────┤
-│  ALERTS (last 24h)                                               │
-│  ├── ⚠️  P99 latency exceeded 1s at 03:14 UTC                  │
-│  ├── ✅ Resolved: database connection pool exhaustion           │
-│  └── ℹ️  Deployment v2.4.1 completed successfully               │
-└─────────────────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Monitoring Dashboard</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Health</div>
+      <div class="arch-items">
+        <div class="arch-item">Request Rate: 342/min</div>
+        <div class="arch-item">Error Rate: 0.3%</div>
+        <div class="arch-item">P50: 120ms</div>
+        <div class="arch-item">P95: 450ms</div>
+        <div class="arch-item">P99: 1.2s</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Resources</div>
+      <div class="arch-items">
+        <div class="arch-item">CPU: 34%</div>
+        <div class="arch-item">RAM: 62%</div>
+        <div class="arch-item">Disk: 28%</div>
+        <div class="arch-item">DB: 12/50</div>
+        <div class="arch-item">Redis: 45%</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Services</div>
+      <div class="arch-items">
+        <div class="arch-item">PostgreSQL: OK (3ms)</div>
+        <div class="arch-item">Redis: OK (1ms)</div>
+        <div class="arch-item">Stripe: OK (142ms)</div>
+        <div class="arch-item">Email: Degraded (890ms)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Alerts</div>
+      <div class="arch-items">
+        <div class="arch-item">P99 latency spike</div>
+        <div class="arch-item">DB pool exhaustion (resolved)</div>
+        <div class="arch-item">Deployment v2.4.1 (success)</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ---
 

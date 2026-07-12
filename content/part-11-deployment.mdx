@@ -138,24 +138,37 @@ Caching headers control how long CDNs and browsers remember your files. Getting 
 
 ### Stale-While-Revalidate Explained
 
-```
-Request arrives at edge node
-        │
-        ▼
-┌───────────────────────────────────────────────┐
-│ Is cached copy under 60s old (s-maxage)?      │
-│                                               │
-│   YES ──▶ Serve stale copy instantly (15ms)   │
-│           │                                   │
-│           └──▶ Meanwhile, fetch fresh copy    │
-│                from origin in background      │
-│                Update cache for next user     │
-│                                               │
-│   NO ───▶ Fetch fresh copy from origin        │
-│           (120ms round trip)                  │
-│           Serve to user + cache for 60s       │
-└───────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Stale-While-Revalidate Flow</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Request</div>
+      <div class="arch-items">
+        <div class="arch-item">User requests page</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Cache Check</div>
+      <div class="arch-items">
+        <div class="arch-item">Is cached copy under 60s old?</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">HIT</div>
+      <div class="arch-items">
+        <div class="arch-item">Serve stale instantly (~15ms)</div>
+        <div class="arch-item">Fetch fresh copy in background</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">MISS</div>
+      <div class="arch-items">
+        <div class="arch-item">Fetch from origin (~120ms)</div>
+        <div class="arch-item">Serve + cache for 60s</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 **The result:** Users almost always get a cached response (~15ms). The cache refreshes transparently in the background. No flash of stale content, no waiting for origin.
 
@@ -196,31 +209,29 @@ When deploying, you must separate variables needed during compilation from varia
 
 ### The Two Environments
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    BUILD TIME                            │
-│  Runs once inside the deployment pipeline                │
-│                                                         │
-│  • Access to PUBLIC_* variables (bundled into client JS) │
-│  • CMS API tokens (to fetch content at build)           │
-│  • Build-time analytics IDs                             │
-│  • Variables set in Vercel/Netlify dashboard            │
-│                                                         │
-│  Output: Static HTML + JS bundles                       │
-└─────────────────────────────────────────────────────────┘
-                         │
-                         ▼
-┌─────────────────────────────────────────────────────────┐
-│                    RUNTIME                               │
-│  Runs continuously inside server containers             │
-│                                                         │
-│  • DATABASE_URL (server-side only)                      │
-│  • STRIPE_SECRET_KEY (never in client bundle)           │
-│  • JWT_SECRET (used to sign tokens)                     │
-│  • REDIS_URL (for caching layer)                        │
-│  • Variables updated WITHOUT rebuild                    │
-└─────────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Build vs Runtime Variables</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Build</div>
+      <div class="arch-items">
+        <div class="arch-item">PUBLIC_* variables</div>
+        <div class="arch-item">CMS API tokens</div>
+        <div class="arch-item">Analytics IDs</div>
+        <div class="arch-item">Output: Static HTML + JS</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Runtime</div>
+      <div class="arch-items">
+        <div class="arch-item">DATABASE_URL</div>
+        <div class="arch-item">STRIPE_SECRET_KEY</div>
+        <div class="arch-item">JWT_SECRET</div>
+        <div class="arch-item">REDIS_URL</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Platform Configuration
 

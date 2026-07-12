@@ -599,32 +599,40 @@ An agent is an LLM combined with memory, tools, and a loop. Instead of generatin
 
 The most common agent pattern is **Reason + Act (ReAct)**:
 
-```
-User: "Find and fix the failing test in auth.test.ts"
-
-┌─────────────────────────────────────────────┐
-│ THOUGHT: I need to see the test file first  │
-│ ACTION:  read_file("auth.test.ts")          │
-│ OBSERVE: Test expects 200 but gets 401      │
-├─────────────────────────────────────────────┤
-│ THOUGHT: The auth middleware is rejecting    │
-│          valid tokens. Let me check it.     │
-│ ACTION:  read_file("middleware/auth.ts")    │
-│ OBSERVE: JWT verification uses wrong secret  │
-├─────────────────────────────────────────────┤
-│ THOUGHT: The env var JWT_SECRET is missing  │
-│          from the test config. I'll fix it. │
-│ ACTION:  edit_file(".env.test", ...)        │
-│ OBSERVE: File updated successfully          │
-├─────────────────────────────────────────────┤
-│ THOUGHT: Let me verify the fix works.        │
-│ ACTION:  run_command("npm test auth")       │
-│ OBSERVE: All 12 tests passing               │
-├─────────────────────────────────────────────┤
-│ FINAL: "Fixed. The test config was missing  │
-│         JWT_SECRET. All 12 tests pass now." │
-└─────────────────────────────────────────────┘
-```
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Iteration 1</span></div>
+      <div class="tl-title">THOUGHT: I need to see the test file first</div>
+      <div class="tl-desc">ACTION: read_file("auth.test.ts") → OBSERVE: Test expects 200 but gets 401</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Iteration 2</span></div>
+      <div class="tl-title">THOUGHT: Auth middleware is rejecting valid tokens</div>
+      <div class="tl-desc">ACTION: read_file("middleware/auth.ts") → OBSERVE: JWT verification uses wrong secret</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div><div class="tl-line"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Iteration 3</span></div>
+      <div class="tl-title">THOUGHT: JWT_SECRET is missing from test config</div>
+      <div class="tl-desc">ACTION: edit_file(".env.test", ...) → OBSERVE: File updated successfully</div>
+    </div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-marker"><div class="tl-dot"></div></div>
+    <div class="tl-content">
+      <div class="tl-header"><span class="tl-step">Iteration 4</span></div>
+      <div class="tl-title">THOUGHT: Let me verify the fix works</div>
+      <div class="tl-desc">ACTION: run_command("npm test auth") → OBSERVE: All 12 tests passing ✓</div>
+    </div>
+  </div>
+</div>
 
 ### Where Single Agents Break Down
 
@@ -639,27 +647,45 @@ Single agents work well for focused tasks. But give one agent 15 tools and a com
 
 The solution is to decompose the monolithic agent into a network of specialized agents, each with its own system prompt, tool subset, and context window.
 
-```
-                    ┌─────────────────┐
-                    │  Orchestrator    │
-                    │  (Supervisor)    │
-                    │                  │
-                    │  Tools: delegate │
-                    │  to sub-agents   │
-                    └────────┬────────┘
-                             │
-            ┌────────────────┼────────────────┐
-            │                │                │
-            ▼                ▼                ▼
-    ┌───────────────┐ ┌───────────┐ ┌───────────────┐
-    │ Coder Agent   │ │ QA Agent  │ │ Deploy Agent  │
-    │               │ │           │ │               │
-    │ Tools:        │ │ Tools:    │ │ Tools:        │
-    │ - read file   │ │ - run test│ │ - run build   │
-    │ - edit file   │ │ - lint    │ │ - push git    │
-    │ - search code │ │ - inspect │ │ - check CI    │
-    └───────────────┘ └───────────┘ └───────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Multi-Agent Architecture</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Orchestrator</div>
+      <div class="arch-items">
+        <div class="arch-item">Supervisor Agent</div>
+        <div class="arch-item">Delegates tasks</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Worker A</div>
+      <div class="arch-items">
+        <div class="arch-item">Coder Agent</div>
+        <div class="arch-item">read file</div>
+        <div class="arch-item">edit file</div>
+        <div class="arch-item">search code</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Worker B</div>
+      <div class="arch-items">
+        <div class="arch-item">QA Agent</div>
+        <div class="arch-item">run test</div>
+        <div class="arch-item">lint</div>
+        <div class="arch-item">inspect</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">Worker C</div>
+      <div class="arch-items">
+        <div class="arch-item">Deploy Agent</div>
+        <div class="arch-item">run build</div>
+        <div class="arch-item">push git</div>
+        <div class="arch-item">check CI</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Production Patterns
 

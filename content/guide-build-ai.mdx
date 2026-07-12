@@ -49,24 +49,31 @@ The system prompt is the most important part of your AI app. It defines the mode
 
 ### The Anatomy
 
-```
-┌─────────────────────────────────────────┐
-│ 1. ROLE                                  │
-│    Who the model is acting as            │
-├─────────────────────────────────────────┤
-│ 2. CONTEXT                               │
-│    Background information                │
-├─────────────────────────────────────────┤
-│ 3. INSTRUCTIONS                          │
-│    Rules and constraints                 │
-├─────────────────────────────────────────┤
-│ 4. OUTPUT FORMAT                         │
-│    How to structure the response         │
-├─────────────────────────────────────────┤
-│ 5. EXAMPLES (optional)                   │
-│    Input/output demonstrations           │
-└─────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">System Prompt Structure</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">1. Role</div>
+      <div class="arch-items"><div class="arch-item">Who the model is acting as</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">2. Context</div>
+      <div class="arch-items"><div class="arch-item">Background information</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">3. Instructions</div>
+      <div class="arch-items"><div class="arch-item">Rules and constraints</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">4. Output</div>
+      <div class="arch-items"><div class="arch-item">How to structure the response</div></div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">5. Examples</div>
+      <div class="arch-items"><div class="arch-item">Input/output demonstrations (optional)</div></div>
+    </div>
+  </div>
+</div>
 
 ### Example: Customer Support Bot
 

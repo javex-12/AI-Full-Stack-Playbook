@@ -133,24 +133,35 @@ A production architecture often uses **multiple database types** together — ea
 
 ### The Multi-Database Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    APPLICATION LAYER                      │
-├─────────────────────────────────────────────────────────┤
-│                                                          │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐          │
-│  │  Redis    │    │ PostgreSQL│    │ MongoDB  │          │
-│  │  Cache    │    │ Primary   │    │ Events   │          │
-│  │          │    │ Database  │    │ Store    │          │
-│  │ Sessions │    │ Users     │    │ Logs     │          │
-│  │ Cache    │    │ Orders    │    │ Analytics│          │
-│  │ Rate Lim │    │ Products  │    │ Events   │          │
-│  └──────────┘    └──────────┘    └──────────┘          │
-│                                                          │
-│  Hot data       Transactional     Write-heavy            │
-│  (fast reads)   (ACID guarantees) (flexible schema)     │
-└─────────────────────────────────────────────────────────┘
-```
+<div class="arch">
+  <div class="arch-title">Application Layer</div>
+  <div class="arch-layers">
+    <div class="arch-layer">
+      <div class="arch-label">Redis</div>
+      <div class="arch-items">
+        <div class="arch-item">Cache</div>
+        <div class="arch-item">Sessions</div>
+        <div class="arch-item">Rate Limiting</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">PostgreSQL</div>
+      <div class="arch-items">
+        <div class="arch-item">Users</div>
+        <div class="arch-item">Orders</div>
+        <div class="arch-item">Products</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-label">MongoDB</div>
+      <div class="arch-items">
+        <div class="arch-item">Logs</div>
+        <div class="arch-item">Analytics</div>
+        <div class="arch-item">Events</div>
+      </div>
+    </div>
+  </div>
+</div>
 
 ### Connection Pooling
 
@@ -286,31 +297,45 @@ When PostgreSQL handles thousands of complex queries per second, CPU spikes and 
 
 ### The Cache-Aside Pattern
 
-```
-Client requests: GET /users/cydercoder
-        │
-        ▼
-┌───────────────────────────────────────────────┐
-│ 1. Check Redis cache                          │
-│    GET user:cydercoder                        │
-└───────────┬───────────────────────────────────┘
-            │
-     ┌──────┴──────┐
-     │             │
-  HIT (2ms)    MISS (50ms+)
-     │             │
-     ▼             ▼
-  Return       Query PostgreSQL
-  cached       SELECT * FROM users
-  data         WHERE id = 'cydercoder'
-     │             │
-     │             ▼
-     │         Save to Redis with TTL
-     │         SET user:cydercoder '{...}' EX 3600
-     │             │
-     ▼             ▼
-  Return data to client
-```
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">1</span>
+      <span class="flow-label">Check Redis</span>
+      <span class="flow-sub">GET user:cydercoder</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">HIT</span>
+      <span class="flow-label">Return cached</span>
+      <span class="flow-sub">~2ms</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">MISS</span>
+      <span class="flow-label">Query PostgreSQL</span>
+      <span class="flow-sub">~50ms</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">2</span>
+      <span class="flow-label">Save to Redis</span>
+      <span class="flow-sub">SET with TTL 3600</span>
+    </div>
+  </div>
+</div>
 
 ### Redis Implementation
 

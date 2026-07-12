@@ -311,6 +311,9 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     border-collapse: collapse;
     font-size: 0.85rem;
     min-width: 500px;
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .article-content :global(th) {
