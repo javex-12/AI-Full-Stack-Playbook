@@ -307,33 +307,46 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
 
   .article-content :global(table) {
-    width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: 0.85rem;
-    min-width: 500px;
+    width: 100%;
+    margin: 1.5rem 0;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 8px;
+    overflow: hidden;
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
+  .article-content :global(table)::after {
+    content: '';
+    display: inline-block;
+    width: 1px;
+  }
+
+  .article-content :global(th),
+  .article-content :global(td) {
+    padding: 0.65rem 1rem;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
   .article-content :global(th) {
     background: var(--bg-elevated);
-    padding: 0.75rem 1rem;
-    text-align: left;
     font-weight: 600;
     color: var(--text-primary);
     border-bottom: 1px solid var(--border-default);
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
-    white-space: nowrap;
   }
 
   .article-content :global(td) {
-    padding: 0.6rem 1rem;
-    border-bottom: 1px solid var(--border-subtle);
     color: var(--text-secondary);
-    white-space: nowrap;
   }
 
   .article-content :global(tr:last-child td) {
