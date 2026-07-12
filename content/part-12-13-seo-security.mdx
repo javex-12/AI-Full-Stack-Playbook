@@ -210,54 +210,13 @@ More accurate — tracks individual request timestamps, not just a counter.
 
 **Tell your AI tool:**
 "Implement sliding window rate limiting using Redis sorted sets. Track individual request timestamps. Remove expired entries, count current window requests. Return 429 with calculated retry-after time if limit exceeded."
-      : 60;
-
-    return res.status(429).json({
-      error: 'Too many requests',
-      retryAfter,
-    });
-  }
-
-  res.setHeader('X-RateLimit-Limit', String(maxRequests));
-  res.setHeader('X-RateLimit-Remaining', String(maxRequests - count));
-  next();
-}
-```
 
 ### Token Bucket Algorithm
 
 Allows controlled bursts — a bucket fills with tokens at a steady rate, each request consumes one token.
 
-```typescript
-async function tokenBucketLimiter(req, res, next) {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const key = `bucket:${ip}`;
-
-  const bucket = await redis.hgetall(key);
-  const now = Date.now();
-
-  let tokens = parseFloat(bucket.tokens) || 10;  // Max 10 tokens
-  const lastRefill = parseInt(bucket.lastRefill) || now;
-
-  // Refill tokens based on time elapsed
-  const refillRate = 0.1;  // 1 token per 10 seconds
-  const elapsed = (now - lastRefill) / 1000;
-  tokens = Math.min(10, tokens + elapsed * refillRate);
-
-  if (tokens < 1) {
-    return res.status(429).json({ error: 'Rate limit exceeded' });
-  }
-
-  // Consume one token
-  await redis.hset(key, {
-    tokens: String(tokens - 1),
-    lastRefill: String(now),
-  });
-  await redis.expire(key, 120);
-
-  next();
-}
-```
+**Tell your AI tool:**
+"Implement token bucket rate limiting using Redis. Maintain a token count per IP that refills at 0.1 tokens per second (max 10). Each request consumes one token. If tokens < 1, return 429. Store bucket state with 120-second expiry."
 
 ### Rate Limiting Strategy
 
