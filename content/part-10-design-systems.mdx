@@ -46,18 +46,8 @@ Use a modular scale based on a root size. The golden ratio for screen design is 
 
 **2. Line height scales with font size.** Smaller text needs more breathing room; larger text needs tighter spacing.
 
-```css
-/* Line Height Scale */
-.text-xs   { line-height: 1.6; }  /* More room for tiny text */
-.text-sm   { line-height: 1.5; }
-.text-base { line-height: 1.7; }  /* Standard reading rhythm */
-.text-lg   { line-height: 1.6; }
-.text-xl   { line-height: 1.4; }
-.text-2xl  { line-height: 1.3; }
-.text-3xl  { line-height: 1.2; }
-.text-4xl  { line-height: 1.1; }
-.text-5xl  { line-height: 1.05; } /* Tight for impact */
-```
+**Tell your AI tool:**
+"Set line heights: xs (1.6), sm (1.5), base (1.7), lg (1.6), xl (1.4), 2xl (1.3), 3xl (1.2), 4xl (1.1), 5xl (1.05). Smaller text gets more room; larger text gets tighter."
 
 **3. Measure (line length) matters.** The optimal reading line is **45-75 characters**. For screen design, target `max-width: 65ch` for body copy.
 
@@ -83,20 +73,8 @@ The difference between a luxury brand's interface and a cheap template is the co
 
 **The Rule of 2x:** If the AI generates a layout with `padding: 1.5rem`, scale it to `padding: 3rem` or even `4rem` for hero structures. Give your text components room to breathe.
 
-```css
-/* Spacing Scale */
-:root {
-    --space-1:  0.25rem;   /* 4px  — tight: icons, badges */
-    --space-2:  0.5rem;    /* 8px  — compact: related items */
-    --space-3:  0.75rem;   /* 12px — default: list items */
-    --space-4:  1rem;      /* 16px — standard: card padding */
-    --space-6:  1.5rem;    /* 24px — comfortable: section gaps */
-    --space-8:  2rem;      /* 32px — spacious: component separation */
-    --space-12: 3rem;      /* 48px — generous: section breaks */
-    --space-16: 4rem;      /* 64px — hero: page-level breathing */
-    --space-24: 6rem;      /* 96px — editorial: major section breaks */
-}
-```
+**Tell your AI tool:**
+"Create a spacing scale with these values: space-1 (0.25rem/4px), space-2 (0.5rem/8px), space-3 (0.75rem/12px), space-4 (1rem/16px), space-6 (1.5rem/24px), space-8 (2rem/32px), space-12 (3rem/48px), space-16 (4rem/64px), space-24 (6rem/96px). Use consistent spacing across the design system."
 
 ### The Editorial Bento Layout
 
@@ -184,31 +162,14 @@ A senior color palette is restricted, highly intentional, and avoids saturated p
 
 ### The Palette
 
-```css
-:root {
-    /* Background Layers (darkest → lightest) */
-    --bg-base:      #0a0f0d;   /* Page background — never pure black */
-    --bg-surface:   #121a17;   /* Cards, panels, elevated surfaces */
-    --bg-elevated:  #1a2621;   /* Hover states, dropdowns, modals */
-    --bg-active:    #1f2e29;   /* Active states, selected items */
+**Tell your AI tool:**
+"Create a dark theme color palette with these layers:
+- Background layers: base (#0a0f0d), surface (#121a17), elevated (#1a2621), active (#1f2e29)
+- Text hierarchy: primary (#e8efec), secondary (#b0bfb8), muted (#6b8579), faint (#3d564c)
+- Brand colors: primary (#1b4d3e), accent (#3ad29f), accent-dim (rgba(58,210,159,0.12))
+- Borders: subtle (rgba white 4%), default (8%), strong (12%)
 
-    /* Text Hierarchy */
-    --text-primary:   #e8efec; /* Headings, important content */
-    --text-secondary: #b0bfb8; /* Body copy, descriptions */
-    --text-muted:     #6b8579; /* Captions, metadata */
-    --text-faint:     #3d564c; /* Placeholders, disabled */
-
-    /* Brand Colors */
-    --brand-primary:    #1b4d3e;  /* Deep forest — trust, stability */
-    --brand-accent:     #3ad29f;  /* Aqua glow — actions, focus */
-    --brand-accent-dim: rgba(58, 210, 159, 0.12);  /* Accent backgrounds */
-
-    /* Borders */
-    --border-subtle:  rgba(255, 255, 255, 0.04);
-    --border-default: rgba(255, 255, 255, 0.08);
-    --border-strong:  rgba(255, 255, 255, 0.12);
-}
-```
+Never use pure black (#000000) for backgrounds — it causes visual fatigue and halation. Use near-black with a subtle color undertone."
 
 ### Why Never Pure Black (`#000000`)
 

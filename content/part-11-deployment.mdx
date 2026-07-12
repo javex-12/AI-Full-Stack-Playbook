@@ -155,14 +155,14 @@ Caching headers control how long CDNs and browsers remember your files. Getting 
 
 ### Cache Busting Patterns
 
-```bash
-# Build tools inject content hashes into filenames
-dist/
-├── main.a1b2c3.js      ← Hash changes when file content changes
-├── style.d4e5f6.css    ← Browser caches "a1b2c3" version forever
-├── logo.789abc.svg     ← New build = new hash = new filename = cache miss
-└── index.html          ← Small, usually not cached (or short TTL)
-```
+**How it works:** Build tools inject content hashes into filenames. When the file content changes, the hash changes, the filename changes, and the browser treats it as a new file (cache miss).
+
+**Example:**
+- `main.a1b2c3.js` — Browser caches this forever
+- You change the code → new build produces `main.x9y8z7.js`
+- Browser downloads the new file (cache miss for the old one)
+
+This is why you can set `Cache-Control: max-age=31536000` (1 year) on hashed assets — the filename itself is the cache buster.
 
 ### Cache Purging
 
@@ -250,18 +250,13 @@ When deploying, you must separate variables needed during compilation from varia
 
 ### The Recommendation
 
-```
-Building a Next.js app?
-├── YES → Vercel (first-class Next.js support, preview deployments, analytics)
-│
-└── NO → Is it a static site (Astro, Hugo, 11ty)?
-         ├── YES → Cloudflare Pages (free, fast, edge Workers available)
-         │
-         └── NO → Does it need server-side logic?
-                  ├── YES → Vercel or Netlify (both support serverless functions)
-                  │
-                  └── NO → Any platform works — pick by preference
-```
+**Building a Next.js app?** → Use Vercel (first-class support, preview deployments, analytics)
+
+**Building a static site (Astro, Hugo)?** → Use Cloudflare Pages (free, fast, edge Workers available)
+
+**Need server-side logic?** → Use Vercel or Netlify (both support serverless functions)
+
+**Any other case?** → Pick by preference — all platforms work for most projects.
 
 ---
 
@@ -271,12 +266,13 @@ Preview deployments create a unique, shareable URL for every pull request. Stake
 
 ### How It Works
 
-```
-Developer pushes feature branch
-        │
-        ▼
-CI/CD pipeline builds the project
-        │
+1. Developer pushes a feature branch
+2. CI/CD pipeline builds the project
+3. Deploy to unique URL: `feature-branch-abc123.vercel.app`
+4. PR comment: "Preview: https://feature-branch-abc123.vercel.app"
+5. Designer reviews UI changes
+6. QA tests on the live preview
+7. Merge to main → auto-deploys to production
         ▼
 Deploy to unique URL: feature-branch-abc123.vercel.app
         │
@@ -291,32 +287,18 @@ Deploy to unique URL: feature-branch-abc123.vercel.app
 
 ### Vercel Configuration
 
-```json
-// vercel.json — preview deployment settings
-{
-  "github": {
-    "silent": false,
-    "comments": true  // Auto-comment on PRs with preview URL
-  },
-  "preview": {
-    "maxDuration": 30,  // Preview functions timeout after 30s
-    "env": {
-      "DATABASE_URL": "@database-url-preview"  // Separate preview database
-    }
-  }
-}
-```
+**Tell your AI tool:**
+"Configure Vercel for preview deployments:
+- Auto-comment on PRs with preview URL
+- Set preview function timeout to 30 seconds
+- Use a separate DATABASE_URL_PREVIEW for preview deployments"
 
 ### The Preview Database Pattern
 
-Never point preview deployments at production databases. Use a separate preview database or database branch:
+Never point preview deployments at production databases. Use a separate preview database or database branch.
 
-```typescript
-// Automatic database branching (Supabase, PlanetScale, Neon)
-const dbUrl = process.env.VERCEL_GIT_COMMIT_REF === 'main'
-  ? process.env.DATABASE_URL          // Production
-  : process.env.DATABASE_URL_PREVIEW; // Preview/development
-```
+**Tell your AI tool:**
+"Add environment variable routing: if VERCEL_GIT_COMMIT_REF is 'main', use DATABASE_URL (production). Otherwise, use DATABASE_URL_PREVIEW (development). This prevents preview deployments from affecting production data."
 
 ---
 
@@ -339,27 +321,13 @@ netlify api rollbackSiteDeploy --data '{"deploy_id":"PREVIOUS_DEPLOY_ID"}'
 
 ### The Rollback Checklist
 
-```
-1. DETECT — Monitoring alerts fire (error rate spike, latency spike)
-         │
-2. ASSESS — Is it user-facing? How many users affected?
-         │
-3. DECIDE — Rollback or hotfix?
-         │
-         ├──▶ ROLLBACK (fastest, safest)
-         │    vercel rollback  (takes ~30 seconds)
-         │    Verify: check monitoring dashboard
-         │
-         └──▶ HOTFIX (if rollback isn't possible)
-              git revert HEAD
-              git push origin main
-              CI/CD auto-deploys the revert
-              Verify: check monitoring dashboard
-         │
-4. VERIFY — Error rate returns to baseline
-         │
-5. RETROSPECTIVE — What caused the issue? How to prevent it?
-```
+1. **DETECT** — Monitoring alerts fire (error rate spike, latency spike)
+2. **ASSESS** — Is it user-facing? How many users affected?
+3. **DECIDE** — Rollback or hotfix?
+   - **ROLLBACK (fastest, safest):** `vercel rollback` in dashboard or CLI — takes ~30 seconds
+   - **HOTFIX (if rollback isn't possible):** `git revert HEAD` → push → CI/CD auto-deploys
+4. **VERIFY** — Check monitoring dashboard, error rate returns to baseline
+5. **RETROSPECTIVE** — What caused the issue? How to prevent it next time?
 
 ### Database Rollback
 
