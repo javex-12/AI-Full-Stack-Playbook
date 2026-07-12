@@ -91,16 +91,7 @@ A **health check** is a simple URL that returns "yes, I'm alive" when your app i
 
 When building with Lovable or Cursor, add this to your prompt:
 
-```
-Add a health check endpoint at /health that returns:
-{
-  "status": "ok",
-  "timestamp": "current time",
-  "uptime": "how long the server has been running"
-}
-
-If the database connection fails, return status "unhealthy" with a 503 status code.
-```
+"Add a health check endpoint at /health that returns JSON with status ('ok' or 'unhealthy'), timestamp, and uptime. If the database connection fails, return status 'unhealthy' with a 503 status code."
 
 ---
 
@@ -125,16 +116,7 @@ Every log entry should have:
 
 ### What to Tell Your AI Tool
 
-```
-Replace all console.log statements with structured logging.
-Each log entry should be a JSON object with:
-- timestamp: ISO date string
-- level: "info", "warn", or "error"
-- message: human-readable description
-- context: object with requestId, userId, and any relevant data
-
-For errors, also include the error message and stack trace.
-```
+"Replace all console.log statements with structured logging. Each log entry should be a JSON object with: timestamp (ISO date string), level ('info', 'warn', or 'error'), message (human-readable description), and context (object with requestId, userId, and any relevant data). For errors, also include the error message and stack trace."
 
 ---
 
@@ -154,16 +136,14 @@ This prevents data corruption from half-finished operations.
 
 ### What to Tell Your AI Tool
 
-```
-Add graceful shutdown handling:
-- Listen for SIGTERM signal
-- Stop accepting new connections
-- Wait for in-flight requests to complete (max 30 seconds)
-- Close database connections
-- Exit cleanly
+"Add graceful shutdown handling that:
+1. Listens for SIGTERM signal
+2. Stops accepting new connections
+3. Waits for in-flight requests to complete (max 30 seconds)
+4. Closes database connections
+5. Exits cleanly
 
-If shutdown takes longer than 30 seconds, force exit.
-```
+If shutdown takes longer than 30 seconds, force exit."
 
 ---
 
