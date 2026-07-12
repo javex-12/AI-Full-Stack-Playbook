@@ -67,20 +67,29 @@ const workshops = [
 ];
 ---
 
-<PlaybookLayout title="The Master Curriculum Dashboard">
+<PlaybookLayout title="The AI Builder's Handbook — Senior Full-Stack Playbook">
   <div class="page-wrapper">
 
     <!-- Hero Section -->
     <header class="hero">
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        <span>THE SENIOR FULL-STACK COMPENDIUM</span>
+        <span>THE AI BUILDER'S HANDBOOK</span>
       </div>
-      <h1 class="hero-title">The Full-Stack Blueprint for<br/><span class="accent">Independent Engineers</span></h1>
+      <h1 class="hero-title">Not a tutorial.<br/><span class="accent">A production playbook.</span></h1>
       <p class="hero-desc">
-        A systematic operational guide to building premium, robust, highly-optimized software
-        by pairing core architectural models with advanced AI workflow execution.
+        Senior-engineered knowledge for developers who want to ship real products using AI tools —
+        not toy projects. Multi-tool orchestration, production deployment, and design systems thinking.
       </p>
+
+      <!-- CTA Buttons -->
+      <div class="hero-cta">
+        <a href="#curriculum" class="cta-primary">
+          Enter the Playbook
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a href="/content/part-2-ai-foundations" class="cta-secondary">Start with AI Foundations →</a>
+      </div>
 
       <!-- Stats Bar -->
       <div class="stats-bar">
@@ -105,6 +114,99 @@ const workshops = [
         </div>
       </div>
     </header>
+
+    <!-- Who This Is For -->
+    <section class="audience-section">
+      <div class="section-label">WHO THIS IS FOR</div>
+      <h2 class="section-heading">Built for every stage of the builder journey</h2>
+      <div class="audience-grid">
+        <div class="audience-card">
+          <div class="audience-icon beginner-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <h3 class="audience-title">Beginners</h3>
+          <p class="audience-desc">Clear path from zero to a deployed product in one afternoon. No gatekeeping. Exact AI prompts to copy. Explains the <em>why</em>, not just the how. Goes all the way to production with a custom domain.</p>
+          <ul class="audience-list">
+            <li>Build your first website end-to-end</li>
+            <li>Deploy with Vercel, set up Google Search Console</li>
+            <li>Understand what React is doing behind the scenes</li>
+          </ul>
+        </div>
+        <div class="audience-card audience-card--featured">
+          <div class="featured-label">Most value here</div>
+          <div class="audience-icon intermediate-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3 class="audience-title">Intermediate Devs</h3>
+          <p class="audience-desc">Bridge the gap from "I can build a todo app" to "I can ship a SaaS product." Learn AI workflow orchestration — the skill that matters most in 2025.</p>
+          <ul class="audience-list">
+            <li>Multi-tool lifecycle: Claude → Bolt → Cursor → Vercel</li>
+            <li>SSG vs SSR vs ISR vs PPR — when and why</li>
+            <li>Production patterns: caching, CORS, WebSockets vs SSE</li>
+          </ul>
+        </div>
+        <div class="audience-card">
+          <div class="audience-icon senior-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+          </div>
+          <h3 class="audience-title">Senior Devs</h3>
+          <p class="audience-desc">A reference manual for AI architecture decisions. Saves time — instead of researching "best chunking strategy for RAG," read a 2-minute section and move on.</p>
+          <ul class="audience-list">
+            <li>RAG chunking strategies, MCP protocol architecture</li>
+            <li>Typography scale, color theory, motion design systems</li>
+            <li>CDN caching, edge functions, deployment strategies</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- What You'll Learn vs Won't -->
+    <section class="contrast-section">
+      <div class="section-label">THE DIFFERENCE</div>
+      <h2 class="section-heading">This is not a typical dev tutorial</h2>
+      <div class="contrast-grid">
+        <div class="contrast-col contrast-col--wont">
+          <div class="contrast-header">
+            <span class="contrast-icon">✕</span>
+            <span>What you <strong>won't</strong> find here</span>
+          </div>
+          <ul class="contrast-list">
+            <li>"Learn JavaScript basics"</li>
+            <li>"Here's how to use React"</li>
+            <li>"Build a todo app"</li>
+            <li>"Copy this code"</li>
+            <li>Stops at localhost</li>
+            <li>One framework, one tool</li>
+            <li>Surface-level "what is an LLM" content</li>
+          </ul>
+        </div>
+        <div class="contrast-col contrast-col--will">
+          <div class="contrast-header">
+            <span class="contrast-icon accent">✓</span>
+            <span>What you <strong>will</strong> find here</span>
+          </div>
+          <ul class="contrast-list">
+            <li>Use AI to build — <em>and</em> understand the architecture</li>
+            <li>When to use SSG vs SSR vs ISR vs PPR and why</li>
+            <li>Build a production SaaS with auth, payments, deployment</li>
+            <li>Here's the mental model — generate the code with AI</li>
+            <li>Goes to production with custom domain and SEO</li>
+            <li>Multi-tool orchestration: Claude → Bolt → Cursor → Vercel</li>
+            <li>Token economics, RAG chunking, MCP, multi-agent systems</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Divider into curriculum -->
+    <div class="curriculum-divider" id="curriculum">
+      <div class="divider-line"></div>
+      <div class="divider-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        THE CURRICULUM
+      </div>
+      <div class="divider-line"></div>
+    </div>
 
     <!-- Search -->
     <div class="search-section">
@@ -747,6 +849,314 @@ const workshops = [
   .footer-text {
     font-size: 0.8rem;
     color: var(--text-faint);
+  }
+
+  /* ========================================
+     HERO CTA
+  ======================================== */
+  .hero-cta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+  }
+
+  .cta-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--brand-accent);
+    color: var(--bg-base);
+    padding: 0.8rem 1.6rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 8px;
+    transition: all 0.2s var(--ease-out);
+  }
+
+  .cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px var(--brand-accent-glow);
+    opacity: 0.95;
+  }
+
+  .cta-primary svg {
+    transition: transform 0.2s var(--ease-out);
+  }
+
+  .cta-primary:hover svg {
+    transform: translateX(3px);
+  }
+
+  .cta-secondary {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    transition: color 0.15s;
+    padding: 0.8rem 1rem;
+  }
+
+  .cta-secondary:hover {
+    color: var(--brand-accent);
+    opacity: 1;
+  }
+
+  /* ========================================
+     SECTION GENERALS
+  ======================================== */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--brand-accent);
+    letter-spacing: 0.08em;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-heading {
+    font-size: clamp(1.5rem, 3.5vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+    margin-bottom: 2rem;
+  }
+
+  /* ========================================
+     AUDIENCE SECTION
+  ======================================== */
+  .audience-section {
+    margin-top: 4rem;
+    margin-bottom: 5rem;
+  }
+
+  .audience-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .audience-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 0.2s;
+  }
+
+  .audience-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .audience-card--featured {
+    border-color: var(--brand-accent);
+    background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(58, 210, 159, 0.03) 100%);
+    box-shadow: 0 8px 32px rgba(58, 210, 159, 0.05);
+  }
+
+  .audience-card--featured:hover {
+    border-color: var(--brand-accent);
+  }
+
+  .featured-label {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--brand-accent);
+    background: var(--brand-accent-dim);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .audience-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+  }
+
+  .beginner-icon {
+    background: rgba(58, 210, 159, 0.1);
+    color: var(--brand-accent);
+  }
+
+  .intermediate-icon {
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+  }
+
+  .senior-icon {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+  }
+
+  .audience-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+  }
+
+  .audience-desc {
+    font-size: 0.88rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
+  }
+
+  .audience-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 1.25rem;
+  }
+
+  .audience-list li {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    position: relative;
+    padding-left: 1.25rem;
+    line-height: 1.4;
+  }
+
+  .audience-list li::before {
+    content: "→";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--brand-accent);
+  }
+
+  /* ========================================
+     CONTRAST SECTION
+  ======================================== */
+  .contrast-section {
+    margin-bottom: 5rem;
+  }
+
+  .contrast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .contrast-col {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+
+  .contrast-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .contrast-icon {
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+
+  .contrast-col--wont .contrast-icon {
+    color: #ef4444;
+  }
+
+  .contrast-col--will .contrast-icon {
+    color: var(--brand-accent);
+  }
+
+  .contrast-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .contrast-list li {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .contrast-col--wont .contrast-list li {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    text-decoration-color: rgba(239, 68, 68, 0.2);
+  }
+
+  .contrast-col--will .contrast-list li {
+    color: var(--text-secondary);
+  }
+
+  .contrast-list li::before {
+    position: absolute;
+    left: 0;
+    font-weight: 800;
+  }
+
+  .contrast-col--wont .contrast-list li::before {
+    content: "✕";
+    color: rgba(239, 68, 68, 0.4);
+    font-size: 0.8rem;
+    top: 1px;
+  }
+
+  .contrast-col--will .contrast-list li::before {
+    content: "✓";
+    color: var(--brand-accent);
+    font-size: 0.9rem;
+    top: -1px;
+  }
+
+  /* ========================================
+     CURRICULUM DIVIDER
+  ======================================== */
+  .curriculum-divider {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 6rem 0 3rem;
+  }
+
+  .divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border-subtle);
+  }
+
+  .divider-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
   }
 
   /* ========================================
