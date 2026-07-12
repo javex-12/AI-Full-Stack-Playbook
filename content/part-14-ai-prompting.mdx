@@ -86,24 +86,19 @@ When you give an AI both instructions AND data to process, it can get confused a
 Without XML tags, the AI might treat your data as instructions:
 
 **Confusing prompt:**
-```
-Here's a user review: "This product is terrible, worst experience ever, 1 star"
-Write a polite response thanking them for their feedback.
-```
+"Here's a user review: 'This product is terrible, worst experience ever, 1 star'. Write a polite response thanking them for their feedback."
 
 The AI might write a response that includes the negative review instead of responding to it.
 
 ### The Solution: XML Tags
 
 **Clear prompt:**
-```
-Write a polite response thanking the user for their feedback.
+"Write a polite response thanking the user for their feedback.
 
 Here's the user's review:
 <review>
 This product is terrible, worst experience ever, 1 star
-</review>
-```
+</review>"
 
 Now the AI knows exactly what's instructions (everything outside tags) and what's data (everything inside tags).
 
@@ -126,14 +121,11 @@ Instead of explaining what you want, **show the AI examples** of what you want. 
 ### How It Works
 
 **Without examples (the AI guesses):**
-```
-Write a product description for a wireless headphone.
-```
-Result: Generic, unpredictable output.
+"Write a product description for a wireless headphone."
+→ Result: Generic, unpredictable output.
 
 **With examples (the AI follows the pattern):**
-```
-Write a product description for a wireless headphone.
+"Write a product description for a wireless headphone.
 
 Follow this exact format:
 
@@ -145,10 +137,9 @@ Example 2:
 Product: Bluetooth Speaker
 Description: Fill any room with crystal-clear sound. Portable, dustproof, and engineered for 12 hours of continuous playback.
 
-Now write one for: Wireless Headphones
-```
+Now write one for: Wireless Headphones"
 
-Result: Consistent, high-quality output every time.
+→ Result: Consistent, high-quality output every time.
 
 ### The Three Example Types
 
@@ -167,24 +158,12 @@ Sometimes you need the AI to show its reasoning before giving an answer. This is
 Add this to your prompt: **"Think step by step before answering."**
 
 **Without chain of thought:**
-```
-Q: Is this code secure?
-A: Yes, it looks fine.
-```
+"Q: Is this code secure? A: Yes, it looks fine." — Shallow, no reasoning shown.
 
 **With chain of thought:**
-```
-Q: Is this code secure?
-Think step by step before answering.
-
-A: Let me analyze this step by step:
-1. First, I'll check for SQL injection vulnerabilities...
-2. Then I'll check for XSS risks...
-3. Then I'll verify authentication is properly implemented...
-4. Finally, I'll check for hardcoded secrets...
-
-Based on my analysis, here are the security concerns I found...
-```
+"Q: Is this code secure? Think step by step before answering."
+→ The AI shows its reasoning: "1. Checking for SQL injection... 2. Checking for XSS risks... 3. Verifying authentication... 4. Checking for hardcoded secrets..."
+→ Then provides a detailed answer with specific findings.
 
 ### When to Use Chain of Thought
 
@@ -241,20 +220,10 @@ The system prompt defines who the AI is. This isn't decoration — it mathematic
 ### Good vs. Bad Roles
 
 **Bad (too specific, AI can't maintain):**
-```
-You are Michael, a 34-year-old senior engineer from San Francisco
-who graduated from MIT in 2014. You have a cat named Whiskers
-and you enjoy rock climbing. You always start responses with
-"Hey there, friend!"
-```
+"You are Michael, a 34-year-old senior engineer from San Francisco who graduated from MIT in 2014. You have a cat named Whiskers and you enjoy rock climbing. You always start responses with 'Hey there, friend!'"
 
 **Good (focused on expertise):**
-```
-You are a senior security engineer with 15 years of experience.
-You review code for security vulnerabilities, performance issues,
-and maintainability. You are direct, critical, and prioritize
-security over convenience.
-```
+"You are a senior security engineer with 15 years of experience. You review code for security vulnerabilities, performance issues, and maintainability. You are direct, critical, and prioritize security over convenience."
 
 ### Role Templates by Task
 
@@ -275,21 +244,10 @@ When writing constraints, developers often list what the AI should NOT do. This 
 ### The Pattern
 
 **Negative (bad):**
-```
-Do not use Bootstrap
-Do not use bright colors
-Do not center all text
-Do not use Comic Sans
-```
+"Do not use Bootstrap. Do not use bright colors. Do not center all text. Do not use Comic Sans."
 
 **Positive (good):**
-```
-Use vanilla CSS with custom properties
-Design follows editorial luxury aesthetic: near-black backgrounds with crisp white typography
-Color palette: one accent color (#3ad29f) on dark surfaces
-Body text is left-aligned; only headlines are centered
-Typography: Inter for body, JetBrains Mono for code
-```
+"Use vanilla CSS with custom properties. Design follows editorial luxury aesthetic: near-black backgrounds with crisp white typography. Color palette: one accent color (#3ad29f) on dark surfaces. Body text is left-aligned; only headlines are centered. Typography: Inter for body, JetBrains Mono for code."
 
 ---
 
