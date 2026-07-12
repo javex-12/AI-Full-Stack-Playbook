@@ -37,27 +37,8 @@ Typography is the single most important design element. A mediocre layout with e
 
 Use a modular scale based on a root size. The golden ratio for screen design is **1.25** — each level is 1.25x larger than the previous.
 
-```css
-:root {
-    /* Type Scale (1.25 ratio) */
-    --text-xs:    0.64rem;    /* 10.24px — captions, labels */
-    --text-sm:    0.8rem;     /* 12.8px  — secondary text */
-    --text-base:  1rem;       /* 16px    — body copy */
-    --text-lg:    1.25rem;    /* 20px    — lead paragraphs */
-    --text-xl:    1.563rem;   /* 25px    — section headings */
-    --text-2xl:   1.953rem;   /* 31.25px — page subheadings */
-    --text-3xl:   2.441rem;   /* 39px    — page titles */
-    --text-4xl:   3.052rem;   /* 48.8px  — hero headlines */
-    --text-5xl:   3.815rem;   /* 61px    — display headlines */
-
-    /* Font Weights */
-    --weight-normal:    400;
-    --weight-medium:    500;
-    --weight-semibold:  600;
-    --weight-bold:      700;
-    --weight-extrabold: 800;
-}
-```
+**Tell your AI tool:**
+"Create a type scale using a 1.25 ratio: xs (0.64rem), sm (0.8rem), base (1rem), lg (1.25rem), xl (1.563rem), 2xl (1.953rem), 3xl (2.441rem), 4xl (3.052rem), 5xl (3.815rem). Define font weights: normal 400, medium 500, semibold 600, bold 700, extrabold 800."
 
 ### The Typography Rules
 
@@ -80,24 +61,8 @@ Use a modular scale based on a root size. The golden ratio for screen design is 
 
 **3. Measure (line length) matters.** The optimal reading line is **45-75 characters**. For screen design, target `max-width: 65ch` for body copy.
 
-```css
-.prose {
-    max-width: 65ch;           /* Optimal reading measure */
-    font-size: var(--text-base);
-    line-height: 1.7;
-    color: var(--text-secondary);
-}
-
-.prose h2 {
-    max-width: none;           /* Headlines can be wider */
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-bold);
-    line-height: 1.2;
-    color: var(--text-primary);
-    margin-top: 3rem;
-    margin-bottom: 1rem;
-}
-```
+**Tell your AI tool:**
+"Set body text max-width to 65 characters for optimal readability. Use font-size 1rem, line-height 1.7, and secondary text color. Headlines can be full-width with larger font sizes."
 
 **4. Contrast hierarchy.** Your eye should flow naturally: primary text (headings) → secondary text (body) → muted text (captions). Never make all text the same brightness.
 
@@ -137,54 +102,15 @@ The difference between a luxury brand's interface and a cheap template is the co
 
 For modern dashboard structures and product landing pages, utilize a modular **Bento Grid** layout. Instead of floating independent cards, the entire layout grids like a high-end editorial magazine.
 
-```css
-/* 12-Column Bento Grid */
-.bento-container {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: var(--space-6);
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 var(--space-8);
-}
+**Tell your AI tool:**
+"Create a 12-column Bento Grid layout with these card sizes:
+- bento-span-3: quarter width (3 columns)
+- bento-span-4: third width (4 columns)
+- bento-span-6: half width (6 columns)
+- bento-span-8: two-thirds width (8 columns)
+- bento-span-12: full width (12 columns)
 
-/* Card Sizes */
-.bento-span-3  { grid-column: span 3; }   /* Quarter card */
-.bento-span-4  { grid-column: span 4; }   /* Third card */
-.bento-span-6  { grid-column: span 6; }   /* Half card */
-.bento-span-8  { grid-column: span 8; }   /* Two-thirds card */
-.bento-span-12 { grid-column: span 12; }  /* Full width */
-
-/* Card Styling */
-.bento-card {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
-    border-radius: 12px;
-    padding: var(--space-8);
-    transition: border-color 0.2s ease, background 0.2s ease;
-}
-
-.bento-card:hover {
-    border-color: var(--border-strong);
-    background: var(--bg-elevated);
-}
-
-/* Responsive: Stack on mobile */
-@media (max-width: 900px) {
-    .bento-container {
-        grid-template-columns: 1fr;
-        padding: 0 var(--space-4);
-    }
-
-    .bento-span-3,
-    .bento-span-4,
-    .bento-span-6,
-    .bento-span-8,
-    .bento-span-12 {
-        grid-column: span 1;
-    }
-}
-```
+Cards should have surface background, subtle border, 12px border-radius, and hover effects. On mobile (below 900px), stack all cards to full width."
 
 ### Common Bento Layouts
 
@@ -329,154 +255,47 @@ Motion should never be decorative or flashy. Flashing glitch transitions and err
 
 Every animation needs an easing curve. Linear motion feels robotic. Default ease feels generic. Premium motion uses custom cubic-bezier curves that mimic physical physics.
 
-```css
-:root {
-    /* Standard easing — for most UI transitions */
-    --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
-    /* Starts fast, decelerates smoothly — feels responsive */
+**Tell your AI tool:**
+"Use these easing curves for animations:
+- ease-out (0.16, 1, 0.3, 1): Standard for most UI transitions — starts fast, decelerates smoothly
+- ease-in-out (0.65, 0, 0.35, 1): Gentle — for subtle background transitions
+- ease-spring (0.34, 1.56, 0.64, 1): Sharp — overshoots then settles, feels alive
 
-    /* Gentle easing — for subtle background transitions */
-    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-    /* Symmetric acceleration/deceleration — feels fluid */
-
-    /* Sharp easing — for attention-grabbing micro-interactions */
-    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-    /* Overshoots then settles — feels alive, physical */
-
-    /* Duration scale */
-    --duration-instant: 100ms;  /* Hover states, focus rings */
-    --duration-fast:    150ms;  /* Button clicks, toggle switches */
-    --duration-normal:  250ms;  /* Panel slides, modal opens */
-    --duration-slow:    400ms;  /* Page transitions, complex animations */
-    --duration-glacial: 600ms;  /* Hero reveals, major state changes */
-}
-```
+Duration scale:
+- instant: 100ms for hover states
+- fast: 150ms for button clicks
+- normal: 250ms for panel slides
+- slow: 400ms for page transitions
+- glacial: 600ms for hero reveals"
 
 ### The Transition Patterns
 
 **Hover States — Instant Feedback:**
-```css
-.button {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-default);
-    transition: all var(--duration-instant) var(--ease-out);
-}
 
-.button:hover {
-    background: var(--bg-elevated);
-    border-color: var(--border-strong);
-    transform: translateY(-1px);  /* Subtle lift — physical weight */
-}
-
-.button:active {
-    transform: translateY(0);     /* Press down — gravity */
-    transition-duration: 50ms;   /* Faster on press — responsiveness */
-}
-```
+**Tell your AI tool:**
+"Add hover effects to buttons: lift up 1px on hover (translateY: -1px), press down on active (translateY: 0). Use instant transition (100ms) with ease-out curve."
 
 **Focus States — Keyboard Accessibility:**
-```css
-.input:focus {
-    outline: none;
-    border-color: var(--brand-accent);
-    box-shadow: 0 0 0 3px var(--brand-accent-dim);
-    transition: border-color var(--duration-fast),
-                box-shadow var(--duration-fast);
-}
-```
+
+**Tell your AI tool:**
+"Add focus styles for keyboard navigation: remove default outline, add brand accent border color, add a 3px glow box-shadow. Use fast transition (150ms)."
 
 ### Case Study: Cohesive 3D Ring Element
 
 Instead of scattered floating particles that drift randomly across the screen, a premium layout uses a tightly bound, solid mathematical structure — like a rotating ring or orb — to hold visual interest behind hero typography.
 
-```javascript
-import * as THREE from 'three';
-
-// 1. Scene Setup
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-);
-const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    alpha: true  // Transparent background — blends with page
-});
-
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-// 2. Cohesive Geometry — single torus ring, not scattered particles
-const geometry = new THREE.TorusGeometry(3, 0.08, 16, 100);
-const material = new THREE.MeshBasicMaterial({
-    color: 0x3ad29f,
-    wireframe: true
-});
-const torus = new THREE.Mesh(geometry, material);
-scene.add(torus);
-
-camera.position.z = 6;
-
-// 3. Inertial Animation Loop
-const clock = new THREE.Clock();
-
-function animate() {
-    const elapsed = clock.getElapsedTime();
-
-    // Slow, deliberate rotation — feels weighted, physical
-    torus.rotation.x = elapsed * 0.15;
-    torus.rotation.y = elapsed * 0.1;
-
-    renderer.render(scene, camera);
-    requestAnimationFrame(animate);
-}
-
-animate();
-
-// 4. Resize handler — maintains aspect ratio
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-```
+**Tell your AI tool:**
+"Add a Three.js canvas element behind the hero section. Create a wireframe torus ring using the brand accent color (#3ad29f). Animate it with slow, deliberate rotation (0.15 on X axis, 0.1 on Y axis per second). Make the background transparent so it blends with the page. Handle window resize to maintain aspect ratio."
 
 ### GSAP for Non-WebGL Animations
 
 For DOM animations (text reveals, scroll-triggered transitions, staggered lists), use GSAP instead of CSS animations. GSAP gives you precise control over timing, easing, and sequencing.
 
-```javascript
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
-
-// Staggered card reveal on scroll
-gsap.from('.bento-card', {
-    y: 40,
-    opacity: 0,
-    duration: 0.6,
-    stagger: 0.1,        // 100ms between each card
-    ease: 'power3.out',   // GSAP's equivalent of --ease-out
-    scrollTrigger: {
-        trigger: '.bento-container',
-        start: 'top 80%',  // Trigger when container enters viewport
-    }
-});
-
-// Hero text line-by-line reveal
-gsap.from('.hero-line', {
-    y: 60,
-    opacity: 0,
-    duration: 0.8,
-    stagger: 0.15,
-    ease: 'power4.out',
-    delay: 0.3  // Small delay after page load
-});
-```
+**Tell your AI tool:**
+"Add GSAP scroll-triggered animations:
+1. Staggered card reveal: cards slide up 40px and fade in, 100ms between each, triggered when the container enters viewport
+2. Hero text reveal: lines slide up 60px and fade in, 150ms between each, with 300ms delay after page load
+3. Use power3.out easing for smooth deceleration"
 
 ### Senior Moves for Motion
 
@@ -515,124 +334,24 @@ Never let the AI auto-generate a full-screen loading spinner blocking the entire
 
 When data is loading, the layout skeleton should already be rendered as empty, static Bento containers. A subtle shimmer tells the user *where* content is arriving without a jarring visual jump.
 
-```css
-/* Skeleton base */
-.skeleton {
-    background: var(--bg-surface);
-    border-radius: 8px;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Shimmer overlay */
-.skeleton::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.04) 50%,
-        transparent 100%
-    );
-    animation: shimmer 1.8s infinite linear;
-}
-
-@keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-}
-
-/* Shape variants */
-.skeleton-text {
-    height: 1rem;
-    width: 100%;
-    margin-bottom: 0.5rem;
-}
-
-.skeleton-text-sm {
-    height: 0.75rem;
-    width: 60%;
-}
-
-.skeleton-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-}
-
-.skeleton-card {
-    height: 200px;
-    width: 100%;
-}
-```
+**Tell your AI tool:**
+"Create skeleton loading states with shimmer animation:
+- Skeleton base: surface background, 8px border-radius, overflow hidden
+- Shimmer overlay: subtle gradient that slides left to right every 1.8 seconds
+- Shape variants: text (1rem height), small text (0.75rem, 60% width), avatar (40px circle), card (200px height)
+- Mirror the actual layout structure so content doesn't jump when loaded"
 
 ### Skeleton HTML Structure
 
-```html
-<!-- Dashboard skeleton — mirrors actual layout -->
-<div class="bento-container">
-    <div class="bento-span-12 skeleton skeleton-card" style="height: 80px;"></div>
-
-    <div class="bento-span-4">
-        <div class="bento-card">
-            <div class="skeleton skeleton-text" style="width: 40%;"></div>
-            <div class="skeleton skeleton-text" style="height: 2rem; width: 70%;"></div>
-            <div class="skeleton skeleton-text-sm" style="margin-top: 1rem;"></div>
-        </div>
-    </div>
-
-    <div class="bento-span-8">
-        <div class="bento-card">
-            <div class="skeleton skeleton-text" style="width: 30%;"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text"></div>
-            <div class="skeleton skeleton-text" style="width: 80%;"></div>
-        </div>
-    </div>
-</div>
-```
+**Tell your AI tool:**
+"Create a dashboard skeleton that mirrors the actual layout. Use Bento grid with skeleton elements for each section. Show the structure before data loads — this prevents layout shift."
 
 ### Page Transitions
 
 For multi-page applications, use smooth transitions instead of instant swaps:
 
-```css
-/* Page transition wrapper */
-.page-transition {
-    animation: fadeIn var(--duration-slow) var(--ease-out) both;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Route change trigger */
-.page-enter {
-    animation: pageIn var(--duration-slow) var(--ease-out) both;
-}
-
-.page-exit {
-    animation: pageOut var(--duration-fast) ease-in both;
-}
-
-@keyframes pageIn {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pageOut {
-    from { opacity: 1; transform: translateY(0); }
-    to { opacity: 0; transform: translateY(-8px); }
-}
-```
+**Tell your AI tool:**
+"Add page transitions: when navigating between pages, the old page fades out (translateY: -8px, 150ms) and the new page fades in (translateY: 12px → 0, 400ms). Use ease-out curve for smooth deceleration."
 
 ---
 
@@ -642,77 +361,16 @@ Buttons are the most interaction-heavy element in any interface. A poorly design
 
 ### The Button System
 
-```css
-/* Base button */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: 0.6rem 1.2rem;
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    font-weight: var(--weight-medium);
-    border-radius: 8px;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all var(--duration-instant) var(--ease-out);
-    text-decoration: none;
-    line-height: 1;
-    white-space: nowrap;
-}
+**Tell your AI tool:**
+"Create a button system with 3 styles:
+1. Primary: filled accent color, dark text, hover lifts and glows, active scales down
+2. Secondary: transparent background, border only, hover adds background
+3. Danger: red text and border for destructive actions
 
-/* Primary — filled accent */
-.btn-primary {
-    background: var(--brand-accent);
-    color: var(--bg-base);
-    border-color: var(--brand-accent);
-}
+All buttons: 8px border-radius, medium font weight, instant transition (100ms), 0.6rem vertical padding, 1.2rem horizontal padding.
 
-.btn-primary:hover {
-    background: #2ee0ac;  /* Slightly lighter */
-    box-shadow: 0 0 20px rgba(58, 210, 159, 0.25);
-}
-
-.btn-primary:active {
-    transform: scale(0.98);
-}
-
-/* Secondary — ghost/border only */
-.btn-secondary {
-    background: transparent;
-    color: var(--text-secondary);
-    border-color: var(--border-default);
-}
-
-.btn-secondary:hover {
-    background: var(--bg-hover);
-    border-color: var(--border-strong);
-    color: var(--text-primary);
-}
-
-/* Danger — for destructive actions */
-.btn-danger {
-    background: transparent;
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.3);
-}
-
-.btn-danger:hover {
-    background: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.5);
-}
-
-/* Size variants */
-.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
-.btn-lg { padding: 0.8rem 1.6rem; font-size: 1rem; }
-
-/* Disabled state */
-.btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-```
+Size variants: sm (0.4rem/0.8rem), lg (0.8rem/1.6rem).
+Disabled state: 40% opacity, no pointer events."
 
 ### Button Rules
 
