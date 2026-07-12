@@ -54,36 +54,8 @@ By default, Pagefind indexes your entire page — including navbars, footers, an
 
 Add `data-pagefind-body` to your main content wrapper. Only content inside this attribute gets indexed.
 
-```astro
----
-// src/layouts/PlaybookLayout.astro
-const { frontmatter } = Astro.props;
----
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>{frontmatter.title} — AI Full-Stack Playbook</title>
-  </head>
-  <body>
-    <!-- Sidebar — NOT indexed -->
-    <aside class="sidebar">
-      <nav><!-- navigation links --></nav>
-    </aside>
-
-    <!-- Main content — INDEXED -->
-    <main data-pagefind-body>
-      <div class="meta">
-        PART {frontmatter.part} // SECTION {frontmatter.section}
-      </div>
-      <h1>{frontmatter.title}</h1>
-      <slot />
-    </main>
-
-    <!-- Footer — NOT indexed -->
-    <footer><!-- footer links --></footer>
-  </body>
-</html>
-```
+**Tell your AI tool:**
+"Add data-pagefind-body attribute to the main content element in the layout. The sidebar and footer should NOT have this attribute — they won't be searchable. Only the article content inside main should be indexed."
 
 ### Fine-Grained Control
 
@@ -536,63 +508,16 @@ This is the full-featured search component with keyboard shortcuts, debouncing, 
 
 Add a search trigger button that opens the command palette. This should be visible in the sidebar header and respond to the same `Cmd+K` shortcut.
 
-```astro
----
-// In your sidebar component (Sidebar.astro or similar)
----
+**Tell your AI tool:**
+"Create a search trigger button in the sidebar with:
+- Text: 'Search playbook...'
+- Keyboard shortcut badge: ⌘K
+- Styled with surface background, subtle border, 8px border-radius
+- Hover: border becomes stronger
+- Focus: accent color border with glow
+- On click: opens the search overlay and focuses the input"
 
-<button class="search-trigger" id="searchTrigger" type="button">
-  <span>Search playbook...</span>
-  <kbd class="kbd">⌘K</kbd>
-</button>
-
-<style>
-  .search-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0.5rem 0.8rem;
-    background: var(--bg-base);
-    border: 1px solid var(--border-default);
-    border-radius: 8px;
-    color: var(--text-muted);
-    font-size: 0.82rem;
-    font-family: var(--font-sans);
-    cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    margin-top: 0.75rem;
-  }
-
-  .search-trigger:hover {
-    border-color: var(--border-strong);
-  }
-
-  .search-trigger:focus-visible {
-    outline: none;
-    border-color: var(--brand-accent);
-    box-shadow: 0 0 0 2px var(--brand-accent-dim);
-  }
-
-  .kbd {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border-default);
-    padding: 0.15rem 0.4rem;
-    border-radius: 4px;
-    color: var(--text-faint);
-  }
-</style>
-
-<script>
-  // Wire the trigger button to open the search overlay
-  document.getElementById('searchTrigger')?.addEventListener('click', () => {
-    document.getElementById('searchOverlay')?.classList.add('open');
-    document.getElementById('searchInput')?.focus();
-  });
-</script>
-```
+The button should be styled with your design system colors and wire up to the search overlay component.
 
 ---
 
