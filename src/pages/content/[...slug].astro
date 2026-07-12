@@ -105,7 +105,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     max-width: 1100px;
     margin: 0 auto;
     gap: 3rem;
-    padding: 3rem 2rem 6rem;
+    padding: calc(3rem + 56px) 2rem 6rem; /* 56px = global navbar height */
   }
 
   .content-sidebar {
@@ -116,7 +116,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   .sidebar-trigger {
     display: none;
     position: fixed;
-    top: 1rem;
+    top: calc(1rem + 56px); /* below global navbar */
     left: 1rem;
     z-index: 101;
     width: 44px;

@@ -445,7 +445,35 @@ const jsonLd = isArticle
 <body>
   <LoadingScreen />
   <OfflineBanner />
+
+  <!-- Global Top Navbar (all pages) -->
+  <nav class="global-nav" id="globalNav">
+    <div class="global-nav-inner">
+      <a href="/" class="nav-brand">
+        <span class="nav-brand-dot"></span>
+        CyderCoder<span class="nav-brand-accent">.playbook</span>
+      </a>
+      <div class="nav-links-group">
+        <a href="/#curriculum" class="nav-link-item">Curriculum</a>
+        <a href="/content/part-2-ai-foundations" class="nav-link-item">AI Foundations</a>
+        <a href="/content/guide-build-website" class="nav-link-item">Guides</a>
+      </div>
+      <div class="nav-actions">
+        <button class="nav-search-btn" id="globalSearchBtn" title="Search (Ctrl+K)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
+        <button class="nav-install-btn" id="navInstallBtn" title="Install App" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Install
+        </button>
+      </div>
+    </div>
+  </nav>
+
   <slot />
+
 
   <!-- Back to top button -->
   <button class="back-to-top" id="backToTop" aria-label="Back to top">
@@ -500,6 +528,144 @@ const jsonLd = isArticle
         height: 44px;
       }
     }
+
+    /* ---- Global Navbar ---- */
+    .global-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 200;
+      backdrop-filter: blur(14px) saturate(1.5);
+      -webkit-backdrop-filter: blur(14px) saturate(1.5);
+      background: rgba(7, 10, 9, 0.82);
+      border-bottom: 1px solid rgba(57, 255, 140, 0.08);
+      transition: box-shadow 0.25s ease, background 0.25s ease;
+    }
+    .global-nav.scrolled {
+      background: rgba(7, 10, 9, 0.96);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.45);
+    }
+    .global-nav-inner {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+    .nav-brand {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary, #e8f0eb);
+      text-decoration: none;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .nav-brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #39ff8c;
+      box-shadow: 0 0 8px #39ff8c;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .nav-brand-accent { color: #39ff8c; }
+    .nav-links-group {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex: 1;
+    }
+    .nav-link-item {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-muted, #7a9e89);
+      text-decoration: none;
+      padding: 0.35rem 0.7rem;
+      border-radius: 6px;
+      transition: color 0.18s ease, background 0.18s ease;
+      letter-spacing: 0.01em;
+    }
+    .nav-link-item:hover {
+      color: #e8f0eb;
+      background: rgba(57, 255, 140, 0.07);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-shrink: 0;
+    }
+    .nav-search-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text-muted, #7a9e89);
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+    }
+    .nav-search-btn:hover {
+      border-color: rgba(57, 255, 140, 0.3);
+      color: #e8f0eb;
+      background: rgba(57, 255, 140, 0.06);
+    }
+    .nav-search-btn kbd {
+      font-family: inherit;
+      font-size: 0.7rem;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 4px;
+      padding: 1px 5px;
+      color: var(--text-muted, #7a9e89);
+    }
+    .nav-install-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: linear-gradient(135deg, #39ff8c, #00c95d);
+      border: none;
+      border-radius: 8px;
+      color: #030a05;
+      padding: 0.38rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+    }
+    .nav-install-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(57, 255, 140, 0.4);
+    }
+    .nav-install-btn:active { transform: translateY(0); }
+
+    @media (max-width: 768px) {
+      .global-nav-inner { padding: 0 1rem; gap: 1rem; }
+      .nav-links-group { display: none; }
+      .nav-search-btn span, .nav-search-btn kbd { display: none; }
+      .nav-search-btn { padding: 0.35rem; }
+    }
+
+    /* Push page content below navbar */
+    body > .global-nav + * { padding-top: 56px; }
+    body > .global-nav ~ .content-wrapper,
+    body > .global-nav ~ main,
+    body > .global-nav ~ .hero,
+    body > .global-nav ~ .page-body,
+    body > .global-nav ~ .layout-shell { padding-top: 56px !important; }
   </style>
 
   <script>
@@ -540,6 +706,77 @@ const jsonLd = isArticle
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       });
     }
+
+    // ---- Global Nav: scroll class ----
+    const globalNav = document.getElementById('globalNav');
+    if (globalNav) {
+      window.addEventListener('scroll', () => {
+        globalNav.classList.toggle('scrolled', window.scrollY > 20);
+      }, { passive: true });
+    }
+
+    // ---- PWA Install prompt management ----
+    let deferredInstallPrompt: any = null;
+    const navInstallBtn = document.getElementById('navInstallBtn') as HTMLButtonElement | null;
+
+    // Capture the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      // Show the install button in the nav bar
+      if (navInstallBtn) navInstallBtn.style.display = 'flex';
+    });
+
+    // If user already installed, hide the button
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      if (navInstallBtn) navInstallBtn.style.display = 'none';
+      localStorage.setItem('pwa-installed', 'true');
+    });
+
+    // Nav install button click → show prompt
+    if (navInstallBtn) {
+      navInstallBtn.addEventListener('click', async () => {
+        if (!deferredInstallPrompt) {
+          // Already installed or prompt unavailable — friendly message
+          alert('To install: open your browser menu and choose "Add to Home Screen" or "Install app".');
+          return;
+        }
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          deferredInstallPrompt = null;
+          navInstallBtn.style.display = 'none';
+        }
+      });
+    }
+
+    // ---- Global search shortcut ----
+    const searchBtn = document.getElementById('globalSearchBtn');
+    if (searchBtn) {
+      searchBtn.addEventListener('click', () => {
+        // Trigger Pagefind UI open (same shortcut as Ctrl+K)
+        const pf = (document.querySelector('[data-pagefind-ui]') as HTMLElement);
+        if (pf) {
+          const input = pf.querySelector('input') as HTMLInputElement;
+          if (input) { input.focus(); input.click(); }
+        }
+        // Also dispatch a keyboard event Ctrl+K to trigger the search
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+      });
+    }
+
+    // ---- Keyboard shortcut Ctrl+K / Cmd+K ----
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        const pf = document.querySelector('[data-pagefind-ui]') as HTMLElement;
+        if (pf) {
+          const input = pf.querySelector('input') as HTMLInputElement;
+          if (input) input.focus();
+        }
+      }
+    });
   </script>
 </body>
 </html>
