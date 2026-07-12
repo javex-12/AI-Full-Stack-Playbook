@@ -1,5 +1,6 @@
 ---
 import LoadingScreen from '../components/LoadingScreen.astro';
+import OfflineBanner from '../components/OfflineBanner.astro';
 
 interface Props {
   title: string;
@@ -425,6 +426,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.co
 </head>
 <body>
   <LoadingScreen />
+  <OfflineBanner />
   <slot />
 
   <!-- Back to top button -->

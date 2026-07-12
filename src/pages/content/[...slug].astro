@@ -22,9 +22,21 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 ---
 
 <PlaybookLayout title={entry.data.title}>
+  <!-- Mobile sidebar trigger -->
+  <button class="sidebar-trigger" id="sidebarTrigger" aria-label="Open navigation">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- Sidebar overlay -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <div class="content-layout">
-    <!-- Sidebar navigation (desktop only) -->
-    <aside class="content-sidebar">
+    <!-- Sidebar navigation -->
+    <aside class="content-sidebar" id="contentSidebar">
       <ContentNav currentSlug={entry.id} />
     </aside>
 
@@ -98,6 +110,36 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
   .content-sidebar {
     position: relative;
+  }
+
+  /* Sidebar trigger (mobile) */
+  .sidebar-trigger {
+    display: none;
+    position: fixed;
+    top: 68px;
+    left: 1rem;
+    z-index: 101;
+    width: 40px;
+    height: 40px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    border-radius: 10px;
+    color: var(--text-muted);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .sidebar-trigger:hover {
+    border-color: var(--brand-accent);
+    color: var(--brand-accent);
+  }
+
+  @media (max-width: 900px) {
+    .sidebar-trigger {
+      display: flex;
+    }
   }
 
   .content-wrapper {
@@ -431,14 +473,46 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
 
   /* Responsive */
-  @media (max-width: 1200px) {
+  @media (max-width: 900px) {
     .content-layout {
       grid-template-columns: 1fr;
       gap: 0;
+      padding: 5rem 1.25rem 4rem;
     }
 
     .content-sidebar {
-      display: none;
+      position: fixed;
+      top: 56px;
+      left: 0;
+      bottom: 0;
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s var(--ease-out);
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .content-sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      top: 56px;
+      background: rgba(0,0,0,0.5);
+      z-index: 99;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s;
+    }
+
+    .sidebar-overlay.open {
+      opacity: 1;
+      visibility: visible;
     }
   }
 
@@ -510,3 +584,20 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     }
   }
 </style>
+
+<script>
+  // Sidebar toggle
+  const trigger = document.getElementById('sidebarTrigger');
+  const sidebar = document.getElementById('contentSidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+
+  trigger?.addEventListener('click', () => {
+    sidebar?.classList.toggle('open');
+    overlay?.classList.toggle('open');
+  });
+
+  overlay?.addEventListener('click', () => {
+    sidebar?.classList.remove('open');
+    overlay?.classList.remove('open');
+  });
+</script>
