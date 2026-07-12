@@ -33,14 +33,13 @@ Every kilobyte of JavaScript has a compounding cost:
 
 Before choosing any framework, set a JavaScript budget:
 
-```
-PERFORMANCE BUDGET (target: Lighthouse 90+)
-├── Total JS:           < 200 KB (gzipped)
-├── First Contentful:   < 1.0s
-├── Largest Paint:      < 2.5s
-├── Time to Interactive: < 3.0s
-└── Cumulative Layout:  < 0.1
-```
+| Metric | Target | What It Means |
+|--------|--------|---------------|
+| Total JS | < 200 KB (gzipped) | Total JavaScript sent to browser |
+| First Contentful | < 1.0s | When first text/image appears |
+| Largest Paint | < 2.5s | When main content is visible |
+| Time to Interactive | < 3.0s | When user can click buttons |
+| Cumulative Layout Shift | < 0.1 | Elements don't jump around |
 
 If your framework choice can't meet this budget for your use case, you've chosen the wrong framework — not the wrong optimization.
 
@@ -225,70 +224,33 @@ The master advantage: **You choose exactly *how* and *when* that component hydra
 
 ### The Client Directives
 
-```astro
----
-import HeavyChart from '../components/HeavyChart.jsx';
-import SearchWidget from '../components/SearchWidget.tsx';
-import VideoPlayer from '../components/VideoPlayer.jsx';
-import ModalDialog from '../components/ModalDialog.tsx';
----
-
-<!-- Static HTML — zero JS, renders instantly -->
-<header>
-  <nav><!-- links, logo, all static --></nav>
-</header>
-
-<!-- Hydrate ONLY when it scrolls into the user's viewport -->
-<HeavyChart client:visible />
-
-<!-- Hydrate as soon as the browser idle time is available -->
-<SearchWidget client:idle />
-
-<!-- Hydrate immediately on page load (rare — use sparingly) -->
-<VideoPlayer client:load />
-
-<!-- Hydrate when the user interacts (hover, click, focus) -->
-<ModalDialog client:hydrate />
-```
+**Tell your AI tool:**
+"Use Astro's client directives to control when components hydrate:
+- client:load — hydrate immediately (for critical above-fold elements)
+- client:idle — hydrate when browser is idle (for below-fold widgets)
+- client:visible — hydrate when scrolled into view (for charts, maps)
+- client:hydrate — hydrate on user interaction (hover, click, focus)"
 
 ### Client Directive Cheat Sheet
 
 | Directive | When It Hydrates | Use Case |
 |-----------|-----------------|----------|
 | `client:load` | Immediately on page load | Critical interactive elements above the fold |
-| `client:idle` | When browser is idle (requestIdleCallback) | Below-the-fold widgets, search bars |
-| `client:visible` | When element enters viewport (IntersectionObserver) | Charts, maps, heavy components below fold |
+| `client:idle` | When browser is idle | Below-the-fold widgets, search bars |
+| `client:visible` | When element enters viewport | Charts, maps, heavy components below fold |
 | `client:media` | When a CSS media query matches | Mobile-only navigation, responsive widgets |
 | `client:hydrate` | Manual trigger via script | Complex state-driven components |
 
 ### Real-World Island Example
 
-```astro
----
-// src/pages/dashboard.astro
-import Layout from '../layouts/App.astro';      // Static shell
-import Sidebar from '../components/Sidebar.astro'; // Pure HTML
-import StatsCard from '../components/StatsCard.jsx'; // Interactive
-import LiveActivityFeed from '../components/LiveFeed.jsx'; // Real-time
-import PricingToggle from '../components/PricingToggle.tsx'; // Interactive
----
+**Tell your AI tool:**
+"Create a dashboard page where:
+- Sidebar is static HTML (zero JS)
+- StatsCard hydrates when scrolled into view
+- LiveActivityFeed hydrates immediately (real-time data)
+- PricingToggle hydrates on user interaction"
 
-<Layout>
-  <!-- Static — zero JS cost -->
-  <Sidebar />
-
-  <!-- Below fold — hydrate when visible -->
-  <StatsCard client:visible />
-
-  <!-- Real-time data — hydrate immediately -->
-  <LiveActivityFeed client:load />
-
-  <!-- Interactive toggle — hydrate on interaction -->
-  <PricingToggle client:hydrate />
-</Layout>
-```
-
-**The result:** The page loads as pure HTML (~20KB). The interactive components download their JS individually and hydrate only when needed. A 50KB React component that's below the fold? Zero cost until the user scrolls to it.
+**The result:** The page loads as pure HTML (~20KB). The interactive components download their JS individually and hydrate only when needed.
 
 ---
 
@@ -298,44 +260,12 @@ Next.js App Router (introduced in v13, stable in v14+) fundamentally changed how
 
 ### Server Components vs. Client Components
 
-```tsx
-// app/dashboard/page.tsx — SERVER COMPONENT (default)
-// This runs on the server. Zero JS shipped to the browser.
-import { getUser } from '@/lib/auth';
-import { getStats } from '@/lib/db';
+**Server Components** run on the server and ship zero JavaScript to the browser. Use them for data fetching, database queries, and static layout.
 
-export default async function DashboardPage() {
-  const user = await getUser();    // Runs server-side
-  const stats = await getStats();  // Runs server-side
+**Client Components** run in the browser and ship JavaScript. Use them for user interactions (clicks, inputs), state management, and browser APIs.
 
-  return (
-    <div>
-      <h1>Welcome, {user.name}</h1>
-      <StatsGrid stats={stats} />
-      <ActivityFeed userId={user.id} />  {/* Server component */}
-      <UserPreferences user={user} />    {/* Server component */}
-    </div>
-  );
-}
-```
-
-```tsx
-// app/components/Counter.tsx — CLIENT COMPONENT
-// This runs in the browser. JS is shipped for this component.
-'use client';  // ← This directive marks it as a client component
-
-import { useState } from 'react';
-
-export function Counter({ initialCount }: { initialCount: number }) {
-  const [count, setCount] = useState(initialCount);
-
-  return (
-    <button onClick={() => setCount(c => c + 1)}>
-      Count: {count}
-    </button>
-  );
-}
-```
+**Tell your AI tool:**
+"By default, all components are server components in Next.js App Router. Only add 'use client' directive when the component needs useState, useEffect, onClick handlers, or browser APIs. Keep everything else as server components to minimize JavaScript bundle."
 
 ### The Rule: Server First, Client Only When Necessary
 
@@ -351,33 +281,10 @@ export function Counter({ initialCount }: { initialCount: number }) {
 
 PPR in Next.js uses React Suspense to stream dynamic content:
 
-```tsx
-// app/dashboard/page.tsx
-import { Suspense } from 'react';
+**Tell your AI tool:**
+"Use React Suspense to stream dynamic content. Wrap async server components in Suspense with skeleton fallbacks. The static header renders instantly while dynamic content streams in as database queries complete."
 
-export default function Dashboard() {
-  return (
-    <div>
-      {/* Static — renders immediately */}
-      <header>
-        <h1>Dashboard</h1>
-        <nav>{/* links */}</nav>
-      </header>
-
-      {/* Dynamic — streams when ready */}
-      <Suspense fallback={<StatsSkeleton />}>
-        <LiveStats />  {/* Async server component */}
-      </Suspense>
-
-      <Suspense fallback={<ActivitySkeleton />}>
-        <ActivityFeed />  {/* Async server component */}
-      </Suspense>
-    </div>
-  );
-}
-```
-
-The user sees the header instantly. The stats stream in when the database query completes. The activity feed streams in when its query completes. No waterfall. No layout shift (skeletons hold space).
+**What this does:** The user sees the header immediately. Stats stream in when ready. Activity feed streams in when ready. No waterfall. No layout shift (skeletons hold space).
 
 ---
 
