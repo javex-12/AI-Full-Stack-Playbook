@@ -83,27 +83,8 @@ Modern edge platforms don't just cache — they **execute code** at the edge nod
 | **Netlify** | Edge Functions (Deno) | Request rewriting, A/B testing, auth checks |
 | **AWS** | Lambda@Edge (Node.js) | Request/response manipulation |
 
-```typescript
-// Vercel Edge Function — runs in the nearest edge node
-export const config = {
-  matcher: '/api/:path*',
-};
-
-export function middleware(request: Request) {
-  // This code runs in Lagos, Tokyo, London — wherever the user is
-  const url = new URL(request.url);
-
-  // A/B testing at the edge — no origin round trip
-  const bucket = request.cookies.get('ab-bucket');
-  if (!bucket) {
-    const response = NextResponse.next();
-    response.cookies.set('ab-bucket', Math.random() > 0.5 ? 'a' : 'b');
-    return response;
-  }
-
-  return NextResponse.next();
-}
-```
+**Tell your AI tool:**
+"Create a Vercel Edge Function that runs at the nearest edge node. Implement A/B testing by checking for an 'ab-bucket' cookie. If not present, randomly assign bucket A or B and set the cookie. This runs at the edge — no origin round trip."
 
 ### When to Use Edge vs. Origin
 
@@ -187,19 +168,13 @@ dist/
 
 When you deploy a new version, you need to purge stale caches:
 
-```bash
-# Cloudflare — purge everything
-curl -X DELETE "https://api.cloudflare.com/client/v4/zones/ZONE_ID/purge_cache" \
-  -H "Authorization: Bearer API_TOKEN" \
-  -d '{"purge_everything":true}'
+**How to purge cache:**
 
-# Vercel — automatic on deploy (no manual purge needed)
-vercel --prod  # Deployments auto-invalidate edge cache
+**Cloudflare:** Go to your Cloudflare dashboard → Caching → Configuration → Purge Everything. Or use their API with a purge request.
 
-# Manual purge for specific paths
-curl -X DELETE "https://api.vercel.com/v1/urls/URL_ID" \
-  -H "Authorization: Bearer TOKEN"
-```
+**Vercel:** Cache is automatically purged on every deploy. No manual action needed. If you need to purge specific URLs, use the Vercel dashboard or API.
+
+**Manual purge for specific paths:** Use the platform's API to purge specific URLs while keeping other cached content intact.
 
 ---
 
@@ -236,38 +211,17 @@ When deploying, you must separate variables needed during compilation from varia
 ### Platform Configuration
 
 **Vercel:**
-```bash
-# Build-time variables (set in dashboard or vercel.json)
-vercel env add CMS_API_TOKEN production
-
-# Runtime variables (set in dashboard, live immediately)
-vercel env add DATABASE_URL production
-
-# vercel.json — explicit build vs runtime
-{
-  "build": {
-    "env": {
-      "CMS_API_TOKEN": "@cms-api-token"  // Available during build
-    }
-  },
-  "functions": {
-    "api/**": {
-      "env": {
-        "DATABASE_URL": "@database-url"  // Available at runtime
-      }
-    }
-  }
-}
-```
+1. Go to your project in Vercel dashboard
+2. Settings → Environment Variables
+3. Add build-time variables (CMS_API_TOKEN)
+4. Add runtime variables (DATABASE_URL, STRIPE_SECRET_KEY)
+5. Select which environment each applies to (Production, Preview, Development)
 
 **Cloudflare Pages:**
-```bash
-# Build variables (set in dashboard)
-wrangler pages secret put DATABASE_URL
-
-# Or via CLI
-npx wrangler pages secret put DATABASE_URL --project-name=my-app
-```
+1. Go to your project in Cloudflare dashboard
+2. Settings → Environment Variables
+3. Add your secrets (DATABASE_URL, etc.)
+4. These are available at runtime, not during build
 
 ### The Rule
 
@@ -409,19 +363,16 @@ netlify api rollbackSiteDeploy --data '{"deploy_id":"PREVIOUS_DEPLOY_ID"}'
 
 ### Database Rollback
 
-If a migration caused the issue:
+If a migration caused the issue, you have two options:
 
-```bash
-# Drizzle — rollback last migration
-npx drizzle-kit migrate:rollback
+**Option 1: Rollback the migration**
+If your migration tool supports rollback (Drizzle, Prisma), run the rollback command to undo the last migration.
 
-# Prisma — revert to previous migration state
-npx prisma migrate reset  # WARNING: destructive — resets to baseline
+**Option 2: Create a forward-fix migration (safer)**
+Instead of rolling back, create a new migration that undoes the problematic change. This preserves your migration history and is easier to reason about.
 
-# Safer: use a forward-fix migration instead
-# Create a new migration that undoes the problematic change
-npx drizzle-kit generate --name revert-add-column
-```
+**Tell your AI tool:**
+"Create a migration that undoes the previous change. If the last migration added a column, this one should drop it. Always write a rollback path for every migration."
 
 ### The Rule: Make Rollbacks Easy
 
@@ -433,37 +384,21 @@ If your rollback process takes more than 5 minutes, your deployment architecture
 
 ### Domain Setup
 
-```bash
-# 1. Add domain in your platform dashboard
-# Vercel: Settings → Domains → Add → playbook.cydercoder.com
+**Step 1:** Add your domain in your platform dashboard (Vercel → Settings → Domains)
 
-# 2. Configure DNS at your registrar
-# Option A: CNAME (recommended — works with most registrars)
-playbook  CNAME  cname.vercel-dns.com
+**Step 2:** Configure DNS at your domain registrar:
+- **Option A (recommended):** Add a CNAME record pointing to your platform (e.g., `playbook CNAME cname.vercel-dns.com`)
+- **Option B:** Add an A record pointing to your platform's IP address
 
-# Option B: A Records (if CNAME isn't supported for apex domain)
-@  A  76.76.21.21
-
-# 3. Wait for DNS propagation (usually 5-30 minutes)
-# Verify:
-dig playbook.cydercoder.com +short
-nslookup playbook.cydercoder.com
-```
+**Step 3:** Wait for DNS propagation (usually 5-30 minutes). Verify with online tools like dnschecker.org.
 
 ### SSL/TLS Configuration
 
-```bash
-# Vercel/Cloudflare/Netlify — SSL is automatic
-# You don't need to configure anything
+**Vercel/Cloudflare/Netlify:** SSL is automatic. You don't need to configure anything.
 
-# Verify SSL is working:
-curl -I https://playbook.cydercoder.com
-# Look for: Strict-Transport-Security: max-age=31536000
+**Verify SSL is working:** Visit your site and check for the padlock icon in the browser. Or run: `curl -I https://yourdomain.com` and look for `Strict-Transport-Security` header.
 
-# Force HTTP → HTTPS redirect (usually automatic)
-# If not, add in your hosting dashboard or _redirects file:
-# https://playbook.cydercoder.com/:splat  301!
-```
+**Force HTTPS redirect:** Usually automatic. If not, add a redirect rule in your hosting dashboard.
 
 ### DNS Propagation Timeline
 
