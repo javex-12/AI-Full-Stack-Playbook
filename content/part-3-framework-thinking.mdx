@@ -98,19 +98,8 @@ FRESHNESS →
 
 **Best For:** Documentation sites, portfolios, corporate landing pages, blogs, marketing pages.
 
-```javascript
-// Astro — SSG by default, zero config needed
-// src/pages/index.astro
----
-import Layout from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
----
-
-<Layout title="My Landing Page">
-  <Hero />
-  <!-- This entire page is static HTML. Zero JS shipped. -->
-</Layout>
-```
+**Tell your AI tool:**
+"Create a static landing page with a hero section and layout. The page should be pure HTML with zero JavaScript shipped. Use Astro's static output mode."
 
 **The limitation:** Content is frozen at build time. If your data changes (new blog post, updated price), you must rebuild and redeploy the entire site.
 
@@ -118,15 +107,8 @@ import Hero from '../components/Hero.astro';
 
 **The Mechanics:** Like SSG, but with a TTL (time-to-live). The page is served from cache, and when the TTL expires, the next request triggers a background revalidation. The user gets the cached version instantly; the fresh version is built and cached for the next user.
 
-```javascript
-// Next.js — ISR with 1-hour revalidation
-export const revalidate = 3600; // Revalidate every hour
-
-export default async function PricingPage() {
-  const prices = await fetchPrices(); // Fresh data every hour
-  return <PricingTable prices={prices} />;
-}
-```
+**Tell your AI tool:**
+"Create a pricing page with ISR. Set revalidation to 3600 seconds (1 hour). The page should fetch fresh prices on each revalidation but serve cached content between refreshes."
 
 **Best For:** E-commerce product pages, news articles, any content that changes periodically but doesn't need real-time freshness.
 
@@ -153,13 +135,10 @@ export default async function DashboardPage() {
 
 **The Modern Apex:** PPR breaks the binary trade-off between SSG and SSR. At build time, it generates a static HTML shell for parts of the page that never change (navbar, layout, footer) but leaves **dynamic holes** wrapped in React Suspense boundaries.
 
-```
-PPR PAGE STRUCTURE:
-
-STATIC (instant)     →  Nav, Hero, Footer
-DYNAMIC (streams)    →  User data, Dashboard metrics
-SKELETON (placeholder) →  Shown while dynamic loads
-```
+**PPR Page Structure:**
+- **STATIC (instant):** Nav, Hero, Footer — served from CDN in ~20ms
+- **DYNAMIC (streams):** User data, Dashboard metrics — loaded as data arrives
+- **SKELETON (placeholder):** Shown while dynamic content loads
 
 **The Execution:** The instant a user clicks your link, the edge server ships the static shell immediately (~20ms TTFB). While the user reads the hero, the server streams the dynamic components down the same HTTP request. No extra round trips.
 
@@ -171,18 +150,15 @@ SKELETON (placeholder) →  Shown while dynamic loads
 
 **Why you should avoid it for new projects:** The user sees a blank screen until the JS loads and executes. No SEO (crawlers see empty HTML). Worst Core Web Vitals of any pattern.
 
-```
-CSR Loading Timeline:
-0ms    → Browser receives empty HTML shell
-200ms  → JS bundle starts downloading
-500ms  → JS bundle finishes downloading
-700ms  → JS starts executing
-1000ms → API call fires to fetch data
-1500ms → Data returns, React renders DOM
-1600ms → User finally sees content
-
-Total: ~1.6 seconds of blank screen
-```
+**CSR Loading Timeline:**
+- 0ms: Browser receives empty HTML shell
+- 200ms: JS bundle starts downloading
+- 500ms: JS bundle finishes downloading
+- 700ms: JS starts executing
+- 1000ms: API call fires to fetch data
+- 1500ms: Data returns, React renders DOM
+- 1600ms: User finally sees content
+- **Total: ~1.6 seconds of blank screen**
 
 ---
 
