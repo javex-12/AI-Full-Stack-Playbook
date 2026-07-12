@@ -33,37 +33,13 @@ Not all AI interaction is equal. Understanding which mode you're in prevents you
 
 Every AI tool falls into a specific capability tier. Knowing which level you're operating at prevents you from using a sledgehammer where you need a scalpel.
 
-```
-LEVEL 5: Autonomous Agents
-├── Full task execution with planning, coding, testing, iteration
-├── Tools: Devin, OpenAI Codex (autonomous mode), custom agent loops
-├── Use when: You need end-to-end execution without supervision
-├── Cost: Very high (100k+ tokens per task)
-│
-LEVEL 4: Execution Agents
-├── Terminal commands, file operations, test running, debugging
-├── Tools: Antigravity, Mimo Agent, Cursor Agent Mode
-├── Use when: You need to run commands, execute tests, or operate the system
-├── Cost: High (10k-50k tokens per operation)
-│
-LEVEL 3: Code-Native IDEs
-├── File-aware editing with full codebase context
-├── Tools: Cursor, Windsurf, Cline
-├── Use when: You're editing existing code across multiple files
-├── Cost: Medium (5k-20k tokens per edit)
-│
-LEVEL 2: Scaffold Engines
-├── Full-stack generation from natural language prompts
-├── Tools: Lovable, Bolt.new, v0
-├── Use when: You need to bootstrap a new project or major feature
-├── Cost: Medium (10k-30k tokens per generation)
-│
-LEVEL 1: Chat & Reasoning Models
-├── Text generation, planning, code snippets, explanations
-├── Tools: Claude, ChatGPT, Gemini, DeepSeek
-├── Use when: You need a code snippet, architecture plan, or explanation
-├── Cost: Low (1k-10k tokens per interaction)
-```
+| Level | What It Does | Tools | When to Use | Cost |
+|-------|-------------|-------|-------------|------|
+| **5: Autonomous Agents** | Full task execution | Devin, OpenAI Codex | End-to-end without supervision | Very high |
+| **4: Execution Agents** | Terminal commands, tests | Antigravity, Mimo Agent | Run commands, debug system | High |
+| **3: Code-Native IDEs** | File-aware editing | Cursor, Windsurf | Edit existing code across files | Medium |
+| **2: Scaffold Engines** | Full-stack generation | Lovable, Bolt.new | Bootstrap new projects | Medium |
+| **1: Chat & Reasoning** | Text generation, planning | Claude, ChatGPT, Gemini | Code snippets, explanations | Low |
 
 ### The Critical Rule: Match the Level to the Task
 
@@ -158,33 +134,13 @@ In 2026, no serious full-stack app is built inside a single chat window. The mos
 - API endpoint list with request/response shapes
 - Auth flow diagram
 
-```markdown
-# Example: spec.md output from Claude
+**Tell Claude or ChatGPT:**
+"Create a spec.md file for a Community Savings App with:
+- Database schema: users table (id, email, role, created_at), contributions table (id, user_id, amount, cycle_id, created_at)
+- API endpoints: signup, get contributions, create contribution
+- Component tree and auth flow diagram"
 
-## Database Schema: Community Savings App
-
-### users
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PRIMARY KEY, DEFAULT gen_random_uuid() |
-| email | TEXT | UNIQUE, NOT NULL |
-| role | ENUM | 'admin', 'member', DEFAULT 'member' |
-| created_at | TIMESTAMPTZ | DEFAULT now() |
-
-### contributions
-| Column | Type | Constraints |
-|--------|------|-------------|
-| id | UUID | PRIMARY KEY |
-| user_id | UUID | FK → users.id, NOT NULL |
-| amount | INTEGER | NOT NULL, CHECK (amount > 0) |
-| cycle_id | UUID | FK → cycles.id |
-| created_at | TIMESTAMPTZ | DEFAULT now() |
-
-## API Endpoints
-- POST /api/auth/signup → creates user, returns session
-- GET /api/contributions?user_id=X → returns user's contributions
-- POST /api/contributions → creates contribution, validates amount
-```
+**What the AI gives you:** A structured markdown file with tables defining your database schema, API endpoints, and component hierarchy. This becomes your blueprint — paste it into Lovable as the first prompt.
 
 ### Stage 2: Rapid Scaffolding (Level 2 — Lovable / Bolt.new)
 
@@ -354,63 +310,37 @@ These are the exact patterns that separate senior engineers from vibe coders.
 
 ### The Death Spiral Prompt
 
-```
-❌ "Build me a full-stack social media app with posts, comments, 
-    likes, user profiles, real-time notifications, and a chat system"
+**Bad:** "Build me a full-stack social media app with posts, comments, likes, user profiles, real-time notifications, and a chat system"
 
-Why it fails: The scope is too large. The AI will generate shallow 
-code for all features instead of deep code for any single feature.
-```
+**Why it fails:** The scope is too large. The AI will generate shallow code for all features instead of deep code for any single feature.
 
-```
-✅ Step 1: "Design the database schema for a social media app with 
-   posts, comments, likes, and user profiles"
-   
-Step 2: "Build the user authentication flow with Supabase"
+**Good approach (step by step):**
+1. "Design the database schema for a social media app with posts, comments, likes, and user profiles"
+2. "Build the user authentication flow with Supabase"
+3. "Build the post creation and feed display"
+4. "Add comments to posts"
 
-Step 3: "Build the post creation and feed display"
-
-Step 4: "Add comments to posts"
-
-Why it works: Each prompt has a narrow, achievable scope. The AI 
-produces high-quality code because it can focus.
-```
+**Why it works:** Each prompt has a narrow, achievable scope. The AI produces high-quality code because it can focus.
 
 ### The Context Window Pollution
 
-```
-❌ Pasting your entire 2,000-line codebase into the chat to fix 
-   a single CSS alignment issue
+**Bad:** Pasting your entire 2,000-line codebase into the chat to fix a single CSS alignment issue.
 
-Why it fails: The model has to process 2,000 lines of irrelevant 
-code to find the 3 lines that matter. Quality degrades.
-```
+**Why it fails:** The model has to process 2,000 lines of irrelevant code to find the 3 lines that matter. Quality degrades.
 
-```
-✅ "Here is my Header.tsx component [paste file]. The logo and 
-   nav links are not vertically centered. Fix the flex alignment."
+**Good:** "Here is my Header.tsx component [paste file]. The logo and nav links are not vertically centered. Fix the flex alignment."
 
-Why it works: The AI sees exactly the file that needs fixing 
-and the specific problem to solve.
-```
+**Why it works:** The AI sees exactly the file that needs fixing and the specific problem to solve.
 
 ### The Framework Migration Trap
 
-```
-❌ "Rewrite my entire app from JavaScript to TypeScript"
+**Bad:** "Rewrite my entire app from JavaScript to TypeScript"
 
-Why it fails: The AI will generate a type-heavy mess where 
-every variable is `any` and every function signature is wrong.
-```
+**Why it fails:** The AI will generate a type-heavy mess where every variable is `any` and every function signature is wrong.
 
-```
-✅ "Convert just the /api/auth.ts file to TypeScript. Add proper 
-   types for the request and response objects. Do not change 
-   any logic."
+**Good:** "Convert just the /api/auth.ts file to TypeScript. Add proper types for the request and response objects. Do not change any logic."
 
-Why it works: Incremental migration with explicit constraints.
-The AI adds types without breaking working code.
-```
+**Why it works:** Incremental migration with explicit constraints. The AI adds types without breaking working code.
 
 ---
 
