@@ -1,0 +1,19 @@
+{
+  "name": "The AI Full-Stack Playbook",
+  "short_name": "AI Playbook",
+  "description": "A senior-engineered guide to full-stack development with AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070a09",
+  "theme_color": "#3ad29f",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "technology", "programming"]
+}

@@ -1,0 +1,278 @@
+---
+// ContentNav.astro — Sidebar navigation with hierarchy and progress
+interface Props {
+  currentSlug: string;
+}
+
+const { currentSlug } = Astro.props;
+
+const navigation = [
+  {
+    phase: "01",
+    title: "Global Infrastructure",
+    color: "#3ad29f",
+    items: [
+      { slug: "part-1-global-foundations", title: "How the Internet Works", section: "01" },
+      { slug: "part-7-authentication", title: "Authentication & Security", section: "02" },
+      { slug: "part-11-deployment", title: "Deployment & Edge", section: "03" },
+    ]
+  },
+  {
+    phase: "02",
+    title: "Data & Frameworks",
+    color: "#8b5cf6",
+    items: [
+      { slug: "part-6-databases", title: "Databases & Modeling", section: "01" },
+      { slug: "part-3-framework-thinking", title: "Framework Thinking", section: "02" },
+      { slug: "part-10-design-systems", title: "Design & Motion", section: "03" },
+    ]
+  },
+  {
+    phase: "03",
+    title: "AI Engineering",
+    color: "#f59e0b",
+    items: [
+      { slug: "part-2-ai-foundations", title: "AI Foundations", section: "01" },
+      { slug: "part-14-ai-prompting", title: "AI Prompting", section: "02" },
+      { slug: "part-4-ai-workflow", title: "AI Workflow", section: "03" },
+    ]
+  },
+  {
+    phase: "04",
+    title: "Production & Ops",
+    color: "#ef4444",
+    items: [
+      { slug: "part-12-13-seo-security", title: "SEO & Security", section: "01" },
+      { slug: "part-5-production-and-ops", title: "CI/CD & Docker", section: "02" },
+      { slug: "part-15-production-thinking", title: "Telemetry & Recovery", section: "03" },
+    ]
+  },
+  {
+    phase: "W",
+    title: "Workshops",
+    color: "#3ad29f",
+    items: [
+      { slug: "guide-build-website", title: "Build a Website", section: "01" },
+      { slug: "guide-build-ai", title: "Build AI Apps", section: "02" },
+      { slug: "guide-projects", title: "10 Projects", section: "03" },
+    ]
+  }
+];
+
+// Find current position
+let currentPhase = 0;
+let currentChapter = 0;
+navigation.forEach((phase, pi) => {
+  phase.items.forEach((item, ci) => {
+    if (item.slug === currentSlug) {
+      currentPhase = pi;
+      currentChapter = ci;
+    }
+  });
+});
+
+// Calculate total items and current position
+let totalItems = 0;
+let currentItem = 0;
+let found = false;
+navigation.forEach((phase, pi) => {
+  phase.items.forEach((item, ci) => {
+    totalItems++;
+    if (!found) {
+      if (item.slug === currentSlug) {
+        found = true;
+        currentItem = totalItems;
+      }
+    }
+  });
+});
+
+const progressPercent = Math.round((currentItem / totalItems) * 100);
+---
+
+<nav class="content-nav" aria-label="Chapter navigation">
+  <!-- Progress indicator -->
+  <div class="nav-progress">
+    <div class="progress-label">Progress</div>
+    <div class="progress-track">
+      <div class="progress-fill" style={`width: ${progressPercent}%`}></div>
+    </div>
+    <div class="progress-text">{currentItem} of {totalItems}</div>
+  </div>
+
+  <!-- Navigation sections -->
+  <div class="nav-sections">
+    {navigation.map((phase, pi) => (
+      <div class={`nav-phase ${pi === currentPhase ? 'active-phase' : ''}`}>
+        <div class="phase-header" style={`--phase-color: ${phase.color}`}>
+          <span class="phase-num">{phase.phase}</span>
+          <span class="phase-title">{phase.title}</span>
+        </div>
+        <ul class="phase-items">
+          {phase.items.map((item) => (
+            <li>
+              <a
+                href={`/content/${item.slug}`}
+                class={`phase-item ${item.slug === currentSlug ? 'current' : ''}`}
+              >
+                <span class="item-section">{item.section}</span>
+                <span class="item-title">{item.title}</span>
+                {item.slug === currentSlug && <span class="current-dot"></span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </div>
+</nav>
+
+<style>
+  .content-nav {
+    position: sticky;
+    top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+    padding-right: 1rem;
+  }
+
+  /* Progress */
+  .nav-progress {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .progress-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 3px;
+    background: var(--border-default);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.35rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--brand-accent);
+    border-radius: 2px;
+    transition: width 0.4s var(--ease-out);
+  }
+
+  .progress-text {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+  }
+
+  /* Phase sections */
+  .nav-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .nav-phase {
+    margin-bottom: 0.5rem;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 0.25rem;
+  }
+
+  .active-phase .phase-header {
+    background: color-mix(in srgb, var(--phase-color) 8%, transparent);
+  }
+
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--phase-color);
+    min-width: 1.5rem;
+  }
+
+  .phase-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .active-phase .phase-title {
+    color: var(--text-primary);
+  }
+
+  /* Phase items */
+  .phase-items {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .phase-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem 0.4rem 2.25rem;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .phase-item:hover {
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+  }
+
+  .phase-item.current {
+    color: var(--text-primary);
+    background: var(--brand-accent-dim);
+    font-weight: 500;
+  }
+
+  .item-section {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--text-faint);
+    min-width: 1rem;
+  }
+
+  .current .item-section {
+    color: var(--brand-accent);
+  }
+
+  .item-title {
+    flex: 1;
+  }
+
+  .current-dot {
+    width: 4px;
+    height: 4px;
+    background: var(--brand-accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 1200px) {
+    .content-nav {
+      display: none;
+    }
+  }
+</style>
