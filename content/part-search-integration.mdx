@@ -13,15 +13,13 @@ Traditional search requires a running server — Elasticsearch, Algolia, Meilise
 
 **Pagefind is different.** It runs a compiled Rust binary at build time, parsing your HTML and chunking keywords into tiny cached fragments. When a user searches, the browser downloads *only* the specific fragments needed — usually under 30KB total. Zero backend. Zero infrastructure. Zero latency.
 
-```
-Traditional Search (Algolia/Elasticsearch):
-User types → Network request → Server queries index → Response → Render
-            ~50-200ms round trip
+**Traditional Search (Algolia/Elasticsearch):**
+- User types → Network request → Server queries index → Response → Render
+- Latency: ~50-200ms round trip
 
-Pagefind (Static):
-User types → Local WASM index → Instant results → Render
-            ~1-5ms local execution
-```
+**Pagefind (Static):**
+- User types → Local WASM index → Instant results → Render
+- Latency: ~1-5ms local execution
 
 ---
 
@@ -29,51 +27,22 @@ User types → Local WASM index → Instant results → Render
 
 ### Install Pagefind
 
-```bash
-# npm
-npm install -D pagefind
-
-# pnpm
-pnpm add -D pagefind
-
-# yarn
-yarn add -D pagefind
-```
+**Tell your AI tool:**
+"Add Pagefind as a dev dependency. Update the build script to run Pagefind after the static build: `astro build && pagefind --site dist`"
 
 ### Configure the Build Script
 
 Append Pagefind to your static build command. It runs *after* your site is built, parsing the output HTML.
 
-```json
-{
-  "name": "ai-fullstack-playbook",
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "astro dev",
-    "build": "astro build && pagefind --site dist",
-    "preview": "astro preview",
-    "search:dev": "pagefind --site dist --serve"
-  }
-}
-```
+**Tell your AI tool:**
+"Configure the build script to run Pagefind after Astro build: `astro build && pagefind --site dist`. Add a `search:dev` script that runs Pagefind's local server at localhost:1414 for testing."
 
 The `search:dev` script runs Pagefind's local server so you can test search without deploying. It serves the built site at `localhost:1414` with search enabled.
 
 ### Astro Configuration
 
-```javascript
-// astro.config.mjs
-import { defineConfig } from 'astro/config';
-
-export default defineConfig({
-  site: 'https://your-playbook.com',
-  build: {
-    // Pagefind works best with standard HTML output
-    format: 'directory',
-  },
-});
-```
+**Tell your AI tool:**
+"Configure Astro with MDX integration and Shiki syntax highlighting. Set the site URL and use directory output format for Pagefind compatibility."
 
 ---
 
@@ -129,13 +98,8 @@ const { frontmatter } = Astro.props;
 
 ### Excluding Navigation from Results
 
-```astro
-<!-- This content is visible but NOT searchable -->
-<nav data-pagefind-exclude>
-  <a href="/part-1">Part I: Foundations</a>
-  <a href="/part-2">Part II: AI Foundations</a>
-</nav>
-```
+**Tell your AI tool:**
+"Add data-pagefind-exclude to navigation elements so they don't appear in search results. The nav should be visible but not searchable."
 
 ---
 
@@ -143,38 +107,15 @@ const { frontmatter } = Astro.props;
 
 This is the full-featured search component with keyboard shortcuts, debouncing, arrow-key navigation, and responsive design.
 
-```astro
----
-// src/components/CommandPalette.astro
----
-
-<div class="search-overlay" id="searchOverlay">
-  <div class="search-modal" role="dialog" aria-label="Search">
-    <div class="search-input-wrapper">
-      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="8"/>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-      </svg>
-      <input
-        type="search"
-        id="searchInput"
-        class="search-input"
-        placeholder="Search the playbook..."
-        autocomplete="off"
-        aria-label="Search playbook"
-        aria-controls="searchResults"
-        aria-expanded="false"
-      />
-      <kbd class="search-esc">ESC</kbd>
-    </div>
-
-    <div class="search-status" id="searchStatus" aria-live="polite"></div>
-
-    <div class="search-results" id="searchResults" role="listbox">
-      <!-- Results injected by JS -->
-    </div>
+**Tell your AI tool:**
+"Create a command palette search component with:
+- Full-screen overlay with blur backdrop
+- Search input with magnifying glass icon and ESC badge
+- Status bar showing result count
+- Results list with title, section, and excerpt
+- Footer with keyboard navigation hints (↑↓ Navigate, ↵ Open, ESC Close)
+- Mobile responsive (slides up from bottom on small screens)
+- Accessibility: ARIA labels, live regions, keyboard navigation"
 
     <div class="search-footer">
       <span><kbd>↑</kbd><kbd>↓</kbd> Navigate</span>
