@@ -276,9 +276,9 @@ Standard **HTTP** transmits data in plain text. If a user enters their password 
 
 HSTS tells the browser: "Never connect to this domain over HTTP — always use HTTPS, even if the user types `http://`."
 
-```http
-Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-```
+**The header:** `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`
+
+This tells the browser to enforce HTTPS for 1 year (31536000 seconds), include all subdomains, and submit the domain to the HSTS preload list.
 
 **The rule:** Once you enable HSTS, you cannot easily go back to HTTP. Make sure HTTPS works perfectly before setting this header.
 
@@ -370,18 +370,9 @@ Each request opens a new TCP connection (or reuses one with keep-alive). Only on
 
 HTTP/2 allows multiple requests and responses to travel simultaneously over a **single TCP connection** using binary frames.
 
-```
-HTTP/1.1:
-  Request 1 ──────────▶ Response 1
-                          Request 2 ──────────▶ Response 2
-                                                Request 3 ─────▶ Response 3
-
-HTTP/2:
-  Request 1 ────┐
-  Request 2 ────┤═════════ Single Connection ═══════▶ Response 1
-  Request 3 ────┘                                    Response 2
-                                                     Response 3
-```
+**HTTP/1.1 vs HTTP/2:**
+- HTTP/1.1: Requests queue one at a time — if one is slow, everything behind it waits
+- HTTP/2: Requests travel simultaneously over one connection — no queuing
 
 **Impact:** Pages with 50+ resources load dramatically faster because requests don't queue.
 
@@ -389,17 +380,9 @@ HTTP/2:
 
 HTTP/3 replaces TCP with **QUIC** (built on UDP). This eliminates head-of-line blocking at the transport layer — if one packet is lost, only that stream is affected, not all of them.
 
-```
-HTTP/2 (over TCP):
-  Stream 1: ████████░░████  ← Packet loss blocks ALL streams
-  Stream 2: ████████░░████
-  Stream 3: ████████░░████
-
-HTTP/3 (over QUIC):
-  Stream 1: ████████░░████  ← Packet loss only affects this stream
-  Stream 2: ██████████████
-  Stream 3: ██████████████
-```
+**HTTP/2 vs HTTP/3:**
+- HTTP/2: Packet loss blocks ALL streams (they share one TCP connection)
+- HTTP/3: Packet loss only affects the specific stream that lost data
 
 **Adoption:** Cloudflare, Google, and most modern CDNs support HTTP/3. You get it for free when deploying behind Cloudflare or Vercel.
 
