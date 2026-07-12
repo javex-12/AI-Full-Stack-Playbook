@@ -1,15 +1,15 @@
 ---
-title: "Projects: Build Real Things"
+title: "10 Projects to Build (With AI)"
 guide: true
 section: "Workshop"
-keywords: ["Projects", "Portfolio", "SaaS", "AI App", "E-commerce", "Dashboard"]
-difficulty: "Hands-On"
+keywords: ["Projects", "Portfolio", "AI Builder", "Beginner", "No Code"]
+difficulty: "Beginner"
 lastUpdated: "2026-07-11"
 ---
 
-## Project-Based Learning
+## Build Real Things
 
-The best way to learn is to build. Here are 10 projects organized by difficulty — each one teaches specific skills from the playbook.
+The best way to learn is to build. Here are 10 projects you can build using AI tools — no coding required. Each project teaches you something new.
 
 ---
 
@@ -17,65 +17,67 @@ The best way to learn is to build. Here are 10 projects organized by difficulty 
 
 ### Project 1: Personal Portfolio
 
-**What you build:** A one-page portfolio showcasing your work.
+**What you build:** A one-page website showing your work and how to contact you.
 
-**Skills practiced:**
-- Static site generation (Astro)
-- Responsive design (CSS Grid, Flexbox)
-- Typography and whitespace (Part X)
-- SEO basics (meta tags, OG images)
+**What to tell Lovable:**
+```
+Build me a one-page portfolio website.
 
-**Features:**
-- Hero section with name and tagline
-- Project gallery (3-5 projects with images)
-- About section with skills
-- Contact form (Formspree)
-- Dark mode toggle
+Sections:
+1. Hero with my name "Your Name" and tagline "Web Designer & Developer"
+2. Projects section showing 4 projects with images and descriptions
+3. About section with a photo and short bio
+4. Contact form (name, email, message)
 
-**Tech stack:** Astro + Tailwind CSS
+Design: Dark theme, clean, modern, lots of whitespace.
+Color: #3ad29f as accent.
+Mobile responsive.
+```
+
+**Skills you learn:** Describing layouts, project structure, responsive design.
 
 ---
 
-### Project 2: Markdown Blog
+### Project 2: Blog Site
 
-**What you build:** A blog that reads markdown files and renders them as pages.
+**What you build:** A website where you can write and publish articles.
 
-**Skills practiced:**
-- Content collections (Astro)
-- Dynamic routing
-- MDX syntax
-- Syntax highlighting
-- RSS feed generation
+**What to tell Lovable:**
+```
+Build me a blog website.
 
-**Features:**
-- List all posts on homepage
-- Individual post pages with table of contents
-- Code syntax highlighting
-- Estimated reading time
-- RSS feed
+Features:
+1. Home page showing 6 blog posts in a grid
+2. Individual blog post page with title, date, and content
+3. About page
+4. Dark theme, clean typography
 
-**Tech stack:** Astro + MDX + Shiki
+I want to write posts in markdown files.
+```
+
+**Skills you learn:** Content management, dynamic pages, markdown.
 
 ---
 
 ### Project 3: Landing Page
 
-**What you build:** A high-converting landing page for a fictional product.
+**What you build:** A single page that sells a product or service.
 
-**Skills practiced:**
-- Editorial design (Part X)
-- CSS animations (GSAP or CSS keyframes)
-- Performance optimization
-- A/B testing setup
+**What to tell Lovable:**
+```
+Build me a landing page for a fictional course called "AI Mastery".
 
-**Features:**
-- Hero with animated text reveal
-- Feature grid with icons
-- Pricing table
-- Testimonials section
-- CTA with email capture
+Sections:
+1. Hero: "Master AI in 30 Days" with a "Buy Now" button
+2. Features: 3 things you'll learn
+3. Testimonials: 3 fake reviews
+4. Pricing: One plan at $99
+5. FAQ: 4 common questions
 
-**Tech stack:** Astro + GSAP + Tailwind
+Design: Bold, modern, dark background, green accent.
+```
+
+**Skills you learn:** Sales pages, conversion design, call-to-action buttons.
 
 ---
 
@@ -83,68 +85,72 @@ The best way to learn is to build. Here are 10 projects organized by difficulty 
 
 ### Project 4: AI Chatbot
 
-**What you build:** A chat interface that talks to an LLM API.
+**What you build:** A chat interface that talks to an AI.
 
-**Skills practiced:**
-- API integration (Groq/OpenAI)
-- Streaming responses
-- System prompt engineering (Part XIV)
-- State management
-- Error handling
+**What to tell Lovable:**
+```
+Build me an AI chatbot.
 
-**Features:**
-- Real-time streaming responses
-- Conversation history
-- Code syntax highlighting in responses
-- Copy message button
-- Model selection (GPT-4o, Claude, Llama)
+Features:
+1. Chat interface with message bubbles
+2. User messages on right, AI messages on left
+3. Loading spinner while AI thinks
+4. Connects to Groq API
 
-**Tech stack:** Next.js + Groq API + React
+Technical: Use environment variable for GROQ_API_KEY.
+Never hardcode the API key.
+```
+
+**What you need:** A free Groq API key (see the Build AI guide).
+
+**Skills you learn:** API integration, environment variables, loading states.
 
 ---
 
-### Project 5: Task Manager (SaaS)
+### Project 5: Task Manager
 
-**What you build:** A Kanban-style task manager with user accounts.
+**What you build:** A to-do list app with user accounts.
 
-**Skills practiced:**
-- Authentication (Part VII)
-- Database design (Part VI)
-- CRUD operations
-- Real-time updates (WebSockets)
-- Drag-and-drop UI
+**What to tell Lovable:**
+```
+Build me a task manager app.
 
-**Features:**
-- User registration/login (Supabase Auth)
-- Create, edit, delete tasks
-- Drag-and-drop between columns (To Do, In Progress, Done)
-- Due dates and priority levels
-- Team collaboration (shared boards)
+Features:
+1. User signup and login
+2. Create tasks with title, description, and due date
+3. Mark tasks as complete
+4. Delete tasks
+5. Dashboard showing all tasks
 
-**Tech stack:** Next.js + Supabase + Tailwind
+Use Supabase for the database and authentication.
+```
+
+**What you need:** A free Supabase account.
+
+**Skills you learn:** User authentication, databases, CRUD operations.
 
 ---
 
 ### Project 6: E-commerce Store
 
-**What you build:** A product catalog with cart and checkout.
+**What you build:** A shop where people can buy products.
 
-**Skills practiced:**
-- Payment integration (Stripe)
-- Inventory management
-- Order processing
-- Email notifications
-- SEO (product pages, structured data)
+**What to tell Lovable:**
+```
+Build me a simple e-commerce store.
 
-**Features:**
-- Product listing with filters
-- Individual product pages
-- Shopping cart (persistent)
-- Stripe checkout
-- Order confirmation emails
-- Admin dashboard
+Features:
+1. Product listing page with images and prices
+2. Individual product pages
+3. Shopping cart
+4. Checkout with Stripe
 
-**Tech stack:** Next.js + Stripe + Supabase
+Use Supabase for products and Stripe for payments.
+```
+
+**What you need:** Stripe account (free to start).
+
+**Skills you learn:** Payment processing, product management, cart functionality.
 
 ---
 
@@ -152,132 +158,130 @@ The best way to learn is to build. Here are 10 projects organized by difficulty 
 
 ### Project 7: AI Content Generator
 
-**What you build:** An AI-powered tool that generates blog posts, social media content, or marketing copy.
+**What you build:** A tool that generates blog posts, emails, or social media content using AI.
 
-**Skills practiced:**
-- RAG (Retrieval-Augmented Generation)
-- Prompt templates
-- Token management
-- Usage tracking
-- Subscription billing
+**What to tell Lovable:**
+```
+Build me an AI content generator.
 
-**Features:**
-- Multiple content types (blog, tweet, email)
-- Custom tone and style settings
-- Content history and favorites
-- Export to markdown/PDF
-- Usage-based pricing (Stripe)
+Features:
+1. Choose content type (blog post, email, tweet)
+2. Enter a topic
+3. AI generates the content
+4. Copy to clipboard button
+5. History of generated content
 
-**Tech stack:** Next.js + Groq + Supabase + Stripe
+Use Groq API with a custom system prompt for each content type.
+```
 
----
-
-### Project 8: Real-time Dashboard
-
-**What you build:** A analytics dashboard that updates in real-time.
-
-**Skills practiced:**
-- Data visualization (Chart.js, Recharts)
-- WebSocket connections
-- Server-Sent Events
-- Caching strategies (Redis)
-- Performance optimization
-
-**Features:**
-- Live charts that update without refresh
-- Multiple data sources
-- Date range picker
-- Export to CSV
-- Responsive layout (works on mobile)
-
-**Tech stack:** Next.js + Redis + WebSockets + Recharts
+**Skills you learn:** System prompts, content types, API integration.
 
 ---
 
-### Project 9: Developer Tools API
+### Project 8: Dashboard
 
-**What you build:** A public API that developers can use (like a URL shortener, image optimizer, or code formatter).
+**What you build:** An analytics dashboard with charts and graphs.
 
-**Skills practiced:**
-- API design (RESTful endpoints)
-- Rate limiting
-- API key authentication
-- Documentation (OpenAPI/Swagger)
-- Monitoring and logging
+**What to tell Lovable:**
+```
+Build me an analytics dashboard.
 
-**Features:**
-- API key registration
-- Usage dashboard
-- Rate limiting per key
-- Interactive API docs
-- Webhook support
+Features:
+1. Sidebar navigation
+2. Main area with charts showing:
+   - Revenue over time (line chart)
+   - Users by country (bar chart)
+   - Sales by category (pie chart)
+3. Date range picker
+4. Dark theme, professional look
 
-**Tech stack:** Node.js + Express + Redis + PostgreSQL
+Use fake data for now.
+```
+
+**Skills you learn:** Data visualization, charts, dashboard layouts.
 
 ---
 
-### Project 10: Full-Stack SaaS
+### Project 9: AI Writing Assistant
 
-**What you build:** A complete SaaS application with authentication, billing, and multi-tenancy.
+**What you build:** A tool that helps you write better content.
 
-**Skills practiced:**
-- Everything from the playbook combined
-- Multi-tenant architecture
-- Subscription management
-- Role-based access control
-- CI/CD pipeline
-- Production monitoring
+**What to tell Lovable:**
+```
+Build me an AI writing assistant.
 
-**Features:**
-- User authentication (OAuth + email)
-- Organization/team management
-- Role-based permissions (admin, editor, viewer)
-- Stripe subscription billing
-- Usage analytics
-- Admin dashboard
-- Email notifications
-- API access
+Features:
+1. Text editor area on the left
+2. AI suggestions panel on the right
+3. Buttons: "Improve", "Fix Grammar", "Make Shorter", "Make Longer"
+4. Click a button → AI rewrites the text
 
-**Tech stack:** Next.js + Supabase + Stripe + Redis + Vercel
+Use Groq API. Each button sends a different system prompt.
+```
+
+**Skills you learn:** Text manipulation, multiple system prompts, UI design.
+
+---
+
+### Project 10: Full SaaS App
+
+**What you build:** A complete software-as-a-service application with user accounts, billing, and multiple features.
+
+**What to tell Lovable:**
+```
+Build me a SaaS app for managing client projects.
+
+Features:
+1. User authentication (signup, login, logout)
+2. Dashboard showing project overview
+3. Create, edit, delete projects
+4. Each project has tasks with status (todo, in progress, done)
+5. Team invites (invite others to collaborate)
+6. Settings page
+7. Stripe subscription billing ($19/month)
+
+Use Supabase for database and auth, Stripe for payments.
+```
+
+**Skills you learn:** Full-stack architecture, multi-tenancy, billing.
 
 ---
 
 ## Project Progression
 
-```
-Beginner (Foundation)
-│
-├── Project 1: Portfolio ──────── Static site, responsive design
-├── Project 2: Blog ──────────── Dynamic routing, content management
-├── Project 3: Landing Page ──── Animations, performance
-│
-Intermediate (Applied)
-│
-├── Project 4: AI Chatbot ────── API integration, streaming
-├── Project 5: Task Manager ──── Auth, database, real-time
-├── Project 6: E-commerce ────── Payments, orders, SEO
-│
-Advanced (Production)
-│
-├── Project 7: AI Generator ──── RAG, prompt engineering, billing
-├── Project 8: Dashboard ─────── Data viz, WebSockets, caching
-├── Project 9: Developer API ──── API design, rate limiting, docs
-└── Project 10: Full SaaS ─────── Everything combined
-```
+<div class="flow">
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Beginner</span>
+      <span class="flow-label">Portfolio</span>
+      <span class="flow-sub">Static pages</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Intermediate</span>
+      <span class="flow-label">Chatbot</span>
+      <span class="flow-sub">API + AI</span>
+    </div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+  </div>
+  <div class="flow-step">
+    <div class="flow-box">
+      <span class="flow-num">Advanced</span>
+      <span class="flow-label">SaaS App</span>
+      <span class="flow-sub">Full product</span>
+    </div>
+  </div>
+</div>
 
 ---
 
-## How to Use These Projects
-
-1. **Start with Project 1** — even if you're experienced. It warms you up.
-2. **Build each project fully** — don't skip steps, don't use placeholders.
-3. **Deploy every project** — a project on Vercel is worth 10x more than one on your laptop.
-4. **Add to your portfolio** — each project becomes a showcase piece.
-5. **Write about it** — blog posts about what you built = SEO + learning reinforcement.
-
----
-
-## Time Estimates
+## Time Estimate
 
 | Level | Projects | Time Each | Total |
 |-------|----------|-----------|-------|
@@ -286,4 +290,12 @@ Advanced (Production)
 | Advanced | 4 | 1-2 weeks | 6 weeks |
 | **Total** | **10** | | **~9 weeks** |
 
-Build all 10 in 9 weeks and you'll have a portfolio that rivals most mid-level developers.
+---
+
+## How to Use These Projects
+
+1. **Start with Project 1** — even if you're experienced
+2. **Build each project fully** — don't skip steps
+3. **Deploy every project** — a project on Vercel is worth 10x more than one on your laptop
+4. **Add to your portfolio** — each project becomes a showcase piece
+5. **Write about it** — blog posts about what you built = learning reinforcement
