@@ -96,9 +96,9 @@ The AI might write a response that includes the negative review instead of respo
 "Write a polite response thanking the user for their feedback.
 
 Here's the user's review:
-<review>
-This product is terrible, worst experience ever, 1 star
-</review>"
+`<review>This product is terrible, worst experience ever, 1 star</review>`"
+
+The backticks prevent MDX from parsing the angle brackets as JSX tags.
 
 Now the AI knows exactly what's instructions (everything outside tags) and what's data (everything inside tags).
 
