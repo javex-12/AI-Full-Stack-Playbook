@@ -309,66 +309,16 @@ The feedback loop collapses from minutes to seconds.
 
 ### MCP Architecture for a Full-Stack Project
 
-```typescript
-// Define an MCP tool that exposes your API health check
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+An MCP server exposes **tools** that the AI can call. Each tool has:
+- **A name** (like `check-endpoint`)
+- **A description** (what it does)
+- **Parameters** (what inputs it needs)
+- **A function** (what happens when called)
 
-const server = new McpServer({
-  name: "my-fullstack-server",
-  version: "1.0.0",
-});
+When the AI wants to check if an API is healthy, it calls your `check-endpoint` tool. Your tool runs the actual check and returns the result. The AI reads the result and responds to the user.
 
-// Tool: Check if a specific API endpoint is healthy
-server.tool(
-  "check-endpoint",
-  "Check if a given API endpoint is responding correctly",
-  {
-    url: z.string().describe("The endpoint URL to check"),
-    expectedStatus: z.number().default(200),
-  },
-  async ({ url, expectedStatus }) => {
-    const response = await fetch(url);
-    const isHealthy = response.status === expectedStatus;
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            url,
-            status: response.status,
-            healthy: isHealthy,
-            headers: Object.fromEntries(response.headers),
-          }),
-        },
-      ],
-    };
-  }
-);
-
-// Tool: Query recent error logs from your application
-server.tool(
-  "get-error-logs",
-  "Retrieve recent error logs from the application",
-  {
-    lines: z.number().default(50).describe("Number of recent lines to fetch"),
-    level: z.enum(["error", "warn", "info"]).default("error"),
-  },
-  async ({ lines, level }) => {
-    // Your actual log reading logic here
-    const logs = await readApplicationLogs({ lines, level });
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: logs.join("\n"),
-        },
-      ],
-    };
-  }
-);
-```
+**To build an MCP server, tell your AI tool:**
+"Create an MCP server with tools for: checking API health, reading error logs, and querying the database schema. Use TypeScript with the official MCP SDK."
 
 ### Senior Moves
 
@@ -458,45 +408,16 @@ Instead of expecting the AI to magically execute an operation, you provide the m
 
 ### The Tool Definition
 
-```typescript
-// You define tools as JSON schemas in your API call
-const tools = [
-  {
-    type: "function",
-    function: {
-      name: "create_database_migration",
-      description: "Generates a new SQL migration file for schema changes",
-      parameters: {
-        type: "object",
-        properties: {
-          tableName: {
-            type: "string",
-            description: "Name of the database table to create or modify"
-          },
-          action: {
-            type: "string",
-            enum: ["create", "alter", "drop"],
-            description: "The schema operation to perform"
-          },
-          columns: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                name: { type: "string" },
-                type: { type: "string" },
-                nullable: { type: "boolean" }
-              }
-            },
-            description: "Columns to add (for create/alter)"
-          }
-        },
-        required: ["tableName", "action"]
-      }
-    }
-  }
-];
-```
+When you want the AI to use a tool, you describe it to the model:
+
+**Tool name:** `create_database_migration`
+**Description:** "Generates a new SQL migration file for schema changes"
+**Parameters:**
+- `tableName` (required): The name of the table to create or modify
+- `action` (required): One of "create", "alter", or "drop"
+- `columns` (optional): Array of columns to add, each with name, type, and nullable flag
+
+The AI reads this description and decides when to use the tool. When it does, it outputs a structured request. Your code executes the actual operation.
 
 ### The Tool Execution Loop
 
@@ -728,39 +649,12 @@ Never use a reasoning model for standard UI generation, basic copywriting, or li
 
 The optimal architecture uses **chat models for outward-facing execution layers** and calls **reasoning models behind the scenes** specifically when the system needs to map out structural logic, generate intricate algorithms, or run complex multi-file analysis.
 
-```typescript
-// Smart model routing in your backend
-async function handleUserRequest(prompt: string, complexity: "simple" | "complex") {
-  if (complexity === "simple") {
-    // Fast, cheap, good enough
-    return await chatModel.complete({
-      model: "gpt-4o",
-      temperature: 0.3,
-      messages: [{ role: "user", content: prompt }]
-    });
-  }
+**How to implement smart routing:**
 
-  // Expensive but necessary for deep reasoning
-  return await reasoningModel.complete({
-    model: "o3",
-    messages: [{ role: "user", content: prompt }]
-  });
-}
+Build a simple classifier that checks the user's request for keywords. If it contains words like "refactor", "architecture", "optimize", or "security audit" — route to a reasoning model. Otherwise, use a fast chat model.
 
-// Classify complexity based on prompt signals
-function classifyComplexity(prompt: string): "simple" | "complex" {
-  const complexSignals = [
-    /refactor/i,
-    /architecture/i,
-    /multiple files/i,
-    /optimize/i,
-    /debug.*race condition/i,
-    /security.*audit/i,
-  ];
-
-  return complexSignals.some(r => r.test(prompt)) ? "complex" : "simple";
-}
-```
+**To build this, tell your AI tool:**
+"Create a smart model router that classifies user requests as simple or complex. Use keyword detection to route complex requests (refactor, architecture, optimize, security) to a reasoning model, and simple requests to a fast chat model."
 
 ### Senior Moves
 
