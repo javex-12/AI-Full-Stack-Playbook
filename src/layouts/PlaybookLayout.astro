@@ -8,7 +8,35 @@ interface Props {
 }
 
 const { title, description = "The AI Builder's Handbook — A senior-engineered guide to full-stack development with AI. Covers LLMs, frameworks, databases, security, deployment, and production operations." } = Astro.props;
-const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.com');
+const siteUrl = Astro.site ? Astro.site.origin : 'https://playbook.cydercoder.com';
+const canonicalURL = new URL(Astro.url.pathname, siteUrl);
+
+const isArticle = Astro.url.pathname.includes('/content/') && Astro.url.pathname !== '/';
+
+const jsonLd = isArticle
+  ? {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": `${title} — CyderCoder`,
+      "description": description,
+      "url": canonicalURL.href,
+      "inLanguage": "en",
+      "author": {
+        "@type": "Person",
+        "name": "CyderCoder"
+      }
+    }
+  : {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "The AI Full-Stack Playbook",
+      "description": description,
+      "url": siteUrl,
+      "author": {
+        "@type": "Person",
+        "name": "CyderCoder"
+      }
+    };
 ---
 
 <!DOCTYPE html>
@@ -25,10 +53,10 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.co
   <meta name="author" content="CyderCoder" />
 
   <!-- Open Graph -->
-  <meta property="og:type" content="website" />
+  <meta property="og:type" content={isArticle ? "article" : "website"} />
   <meta property="og:title" content={`${title} — CyderCoder`} />
   <meta property="og:description" content={description} />
-  <meta property="og:image" content="https://playbook.cydercoder.com/og-image.svg" />
+  <meta property="og:image" content={new URL('/og-image.svg', siteUrl).href} />
   <meta property="og:url" content={canonicalURL.href} />
   <meta property="og:site_name" content="The AI Full-Stack Playbook" />
   <meta property="og:locale" content="en_US" />
@@ -37,7 +65,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.co
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content={`${title} — CyderCoder`} />
   <meta name="twitter:description" content={description} />
-  <meta name="twitter:image" content="https://playbook.cydercoder.com/og-image.svg" />
+  <meta name="twitter:image" content={new URL('/og-image.svg', siteUrl).href} />
   <meta name="twitter:creator" content="@cydercoder" />
 
   <!-- Fonts -->
@@ -59,17 +87,7 @@ const canonicalURL = new URL(Astro.url.pathname, 'https://playbook.cydercoder.co
   <meta name="theme-color" content="#070a09" />
 
   <!-- Structured Data -->
-  <script type="application/ld+json" set:html={JSON.stringify({
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    "name": "The AI Full-Stack Playbook",
-    "description": description,
-    "url": "https://playbook.cydercoder.com",
-    "author": {
-      "@type": "Person",
-      "name": "CyderCoder"
-    }
-  })} />
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <style is:global>
     /* ========================================
