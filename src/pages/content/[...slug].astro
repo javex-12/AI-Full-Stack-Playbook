@@ -91,9 +91,9 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   </div>
 </PlaybookLayout>
 
-<style>
+<style is:global>
   /* Prevent horizontal scroll globally */
-  :global(html), :global(body) {
+  html, body {
     overflow-x: hidden;
     max-width: 100vw;
   }
