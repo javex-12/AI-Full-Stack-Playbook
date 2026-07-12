@@ -269,10 +269,19 @@ const progressPercent = Math.round((currentItem / totalItems) * 100);
     flex-shrink: 0;
   }
 
-  /* Responsive */
-  @media (max-width: 1200px) {
+  /*
+   * On mobile (≤1024px) the sidebar becomes a fixed drawer that already
+   * handles its own scroll, so we override sticky positioning here.
+   * The nav itself remains fully visible — visibility is controlled by
+   * the parent .content-sidebar drawer, not by hiding this component.
+   */
+  @media (max-width: 1024px) {
     .content-nav {
-      display: none;
+      position: relative;
+      top: auto;
+      max-height: none;
+      overflow-y: visible;
+      padding-right: 0;
     }
   }
 </style>

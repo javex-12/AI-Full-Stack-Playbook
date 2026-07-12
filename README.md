@@ -40,9 +40,23 @@ fullstackplaybook/
 | **X** | Design Systems & Motion | Typography Scale, Color System, Bento Grid, Three.js, GSAP, Skeleton States, Component Anatomy | Senior |
 | **Addendum** | Search Integration | Pagefind Setup, Content Targeting, Command Palette, Keyboard Navigation | Senior |
 
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start the Astro development server (no search index) |
+| `npm run build` | Build static site + generate Pagefind search index |
+| `npm run preview` | Serve the production build locally |
+| `npm run search:dev` | Serve the production build locally (alias for `preview`). **Requires `npm run build` first.** |
+| `npm run check` | Run Astro TypeScript type-checker |
+
+> **Windows note:** The Pagefind binary requires the [MSVC C++ Runtime](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+> If the runtime is missing, `npm run build` completes without a search index (local dev only).
+> The index is always built in CI/CD (Linux), so search works in production.
+
 ---
 
-## Quick Start
+
 
 ### Prerequisites
 
@@ -54,7 +68,7 @@ fullstackplaybook/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/fullstackplaybook.git
+git clone https://github.com/javex-12/AI-Full-Stack-Playbook.git
 cd fullstackplaybook
 
 # Install dependencies

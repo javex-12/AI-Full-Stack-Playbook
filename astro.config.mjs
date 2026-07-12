@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 
 export default defineConfig({
-  site: 'https://playbook.cydercoder.com',
+  site: process.env.SITE_URL || 'https://playbook.cydercoder.com',
   integrations: [mdx()],
   experimental: {
     contentLayer: true,
