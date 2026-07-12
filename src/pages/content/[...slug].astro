@@ -116,11 +116,11 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   .sidebar-trigger {
     display: none;
     position: fixed;
-    top: 68px;
+    top: 1rem;
     left: 1rem;
     z-index: 101;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     background: var(--bg-surface);
     border: 1px solid var(--border-default);
     border-radius: 10px;
@@ -129,14 +129,16 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     align-items: center;
     justify-content: center;
     transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
 
   .sidebar-trigger:hover {
     border-color: var(--brand-accent);
     color: var(--brand-accent);
+    background: var(--bg-elevated);
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1024px) {
     .sidebar-trigger {
       display: flex;
     }
@@ -473,7 +475,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
 
   /* Responsive */
-  @media (max-width: 900px) {
+  @media (max-width: 1024px) {
     .content-layout {
       grid-template-columns: 1fr;
       gap: 0;
@@ -482,10 +484,10 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
     .content-sidebar {
       position: fixed;
-      top: 56px;
+      top: 0;
       left: 0;
       bottom: 0;
-      width: 280px;
+      width: 300px;
       background: var(--bg-surface);
       border-right: 1px solid var(--border-subtle);
       z-index: 100;
@@ -502,8 +504,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     .sidebar-overlay {
       position: fixed;
       inset: 0;
-      top: 56px;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
       z-index: 99;
       opacity: 0;
       visibility: hidden;
