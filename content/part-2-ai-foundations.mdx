@@ -25,8 +25,6 @@ Because it operates entirely on probability, it doesn't verify if the code works
 
 A junior dev with 10 years of reading experience but zero project context will write code that *looks* right but breaks in production. That's your LLM. It needs your specs, your constraints, your test cases — or it will freestyle.
 
-```
-
 ---
 
 ## 02. Tokens & Tokenization (The Raw Currency)
@@ -126,38 +124,13 @@ How does a machine know that `div` and `section` are conceptually similar, but `
 
 An embedding takes a string of text and converts it into a long list of numbers — a coordinate in high-dimensional space. Words with similar meaning end up close together in this space.
 
-```python
-from sentence_transformers import SentenceTransformer
+**How embeddings work:**
+- "React component for user login" and "Authentication form built with React" → Similar coordinates (high similarity: 0.723)
+- "React component for user login" and "PostgreSQL connection pooling" → Different coordinates (low similarity: 0.089)
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+**Why this matters:** When text is converted into these mathematical coordinates, we store them in a **Vector Database** (Pinecone, Chroma, Supabase pgvector). This allows instant search through millions of documents not by exact keyword matches, but by **semantic meaning**.
 
-# Compare semantic similarity
-texts = [
-    "React component for user login",
-    "Authentication form built with React",
-    "PostgreSQL connection pooling",
-]
-
-embeddings = model.encode(texts)
-
-# Calculate cosine similarity between each pair
-import numpy as np
-
-for i in range(len(texts)):
-    for j in range(i + 1, len(texts)):
-        similarity = np.dot(embeddings[i], embeddings[j]) / (
-            np.linalg.norm(embeddings[i]) * np.linalg.norm(embeddings[j])
-        )
-        print(f"'{texts[i][:30]}...' vs '{texts[j][:30]}...'")
-        print(f"  Similarity: {similarity:.3f}\n")
-
-# Output:
-# 'React component for user login...' vs 'Authentication form built wi...'
-#   Similarity: 0.723  ← HIGH (semantically similar)
-#
-# 'React component for user login...' vs 'PostgreSQL connection pooling'
-#   Similarity: 0.089  ← LOW (completely different topics)
-```
+A search for "user authentication flow" will find documents about "login form," "session management," and "JWT tokens" — even if none of those exact words appear in your query.
 
 ### Why This Matters
 
@@ -374,22 +347,9 @@ Top P takes a different approach. Instead of reshaping probabilities, it **trunc
 
 **When Top P shines:** It adapts dynamically. When the model is confident (e.g., autocompleting `const [state, ` → `setState]`), one token holds 95% weight — Top P restricts to just that token. When uncertain, it widens to 50+ candidates automatically.
 
-```python
-import openai
+**Example API call with temperature:**
 
-response = openai.chat.completions.create(
-    model="gpt-4o",
-    temperature=0.1,        # Low temperature for deterministic code
-    top_p=1.0,              # Leave Top P at default
-    messages=[
-        {"role": "system", "content": "You are a senior TypeScript engineer."},
-        {"role": "user", "content": "Write a function to debounce a callback."}
-    ]
-)
-
-# The output will be nearly identical every time.
-# Same function structure, same variable names, same approach.
-```
+When calling the OpenAI API, set `temperature: 0.1` for deterministic code generation and `top_p: 1.0` (default) to let the model choose from all tokens. The output will be nearly identical every time — same function structure, same variable names, same approach.
 
 ### Senior Moves
 
@@ -467,20 +427,7 @@ User: "Create a reviews table with text and rating columns"
 
 ### Parallel Tool Calls
 
-Modern models can request multiple tools in a single response. If you ask *"What's the weather in Tokyo and London?"*, the model outputs two tool calls simultaneously:
-
-```json
-[
-  {
-    "name": "get_weather",
-    "arguments": { "city": "Tokyo" }
-  },
-  {
-    "name": "get_weather",
-    "arguments": { "city": "London" }
-  }
-]
-```
+Modern models can request multiple tools in a single response. If you ask *"What's the weather in Tokyo and London?"*, the model outputs two tool calls simultaneously — one for Tokyo, one for London.
 
 Your backend runs both in parallel, returns both results, and the model synthesizes a single answer. This is why function calling is dramatically faster than chaining single tool calls.
 
