@@ -115,89 +115,6 @@ const workshops = [
       </div>
     </header>
 
-    <!-- Who This Is For -->
-    <section class="audience-section">
-      <div class="section-label">WHO THIS IS FOR</div>
-      <h2 class="section-heading">Built for every stage of the builder journey</h2>
-      <div class="audience-grid">
-        <div class="audience-card">
-          <div class="audience-icon beginner-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-          </div>
-          <h3 class="audience-title">Beginners</h3>
-          <p class="audience-desc">Clear path from zero to a deployed product in one afternoon. No gatekeeping. Exact AI prompts to copy. Explains the <em>why</em>, not just the how. Goes all the way to production with a custom domain.</p>
-          <ul class="audience-list">
-            <li>Build your first website end-to-end</li>
-            <li>Deploy with Vercel, set up Google Search Console</li>
-            <li>Understand what React is doing behind the scenes</li>
-          </ul>
-        </div>
-        <div class="audience-card audience-card--featured">
-          <div class="featured-label">Most value here</div>
-          <div class="audience-icon intermediate-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          </div>
-          <h3 class="audience-title">Intermediate Devs</h3>
-          <p class="audience-desc">Bridge the gap from "I can build a todo app" to "I can ship a SaaS product." Learn AI workflow orchestration — the skill that matters most in 2025.</p>
-          <ul class="audience-list">
-            <li>Multi-tool lifecycle: Claude → Bolt → Cursor → Vercel</li>
-            <li>SSG vs SSR vs ISR vs PPR — when and why</li>
-            <li>Production patterns: caching, CORS, WebSockets vs SSE</li>
-          </ul>
-        </div>
-        <div class="audience-card">
-          <div class="audience-icon senior-icon">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-          </div>
-          <h3 class="audience-title">Senior Devs</h3>
-          <p class="audience-desc">A reference manual for AI architecture decisions. Saves time — instead of researching "best chunking strategy for RAG," read a 2-minute section and move on.</p>
-          <ul class="audience-list">
-            <li>RAG chunking strategies, MCP protocol architecture</li>
-            <li>Typography scale, color theory, motion design systems</li>
-            <li>CDN caching, edge functions, deployment strategies</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <!-- What You'll Learn vs Won't -->
-    <section class="contrast-section">
-      <div class="section-label">THE DIFFERENCE</div>
-      <h2 class="section-heading">This is not a typical dev tutorial</h2>
-      <div class="contrast-grid">
-        <div class="contrast-col contrast-col--wont">
-          <div class="contrast-header">
-            <span class="contrast-icon">✕</span>
-            <span>What you <strong>won't</strong> find here</span>
-          </div>
-          <ul class="contrast-list">
-            <li>"Learn JavaScript basics"</li>
-            <li>"Here's how to use React"</li>
-            <li>"Build a todo app"</li>
-            <li>"Copy this code"</li>
-            <li>Stops at localhost</li>
-            <li>One framework, one tool</li>
-            <li>Surface-level "what is an LLM" content</li>
-          </ul>
-        </div>
-        <div class="contrast-col contrast-col--will">
-          <div class="contrast-header">
-            <span class="contrast-icon accent">✓</span>
-            <span>What you <strong>will</strong> find here</span>
-          </div>
-          <ul class="contrast-list">
-            <li>Use AI to build — <em>and</em> understand the architecture</li>
-            <li>When to use SSG vs SSR vs ISR vs PPR and why</li>
-            <li>Build a production SaaS with auth, payments, deployment</li>
-            <li>Here's the mental model — generate the code with AI</li>
-            <li>Goes to production with custom domain and SEO</li>
-            <li>Multi-tool orchestration: Claude → Bolt → Cursor → Vercel</li>
-            <li>Token economics, RAG chunking, MCP, multi-agent systems</li>
-          </ul>
-        </div>
-      </div>
-    </section>
-
     <!-- Divider into curriculum -->
     <div class="curriculum-divider" id="curriculum">
       <div class="divider-line"></div>
@@ -339,7 +256,7 @@ const workshops = [
   .page-wrapper {
     max-width: 1100px;
     margin: 0 auto;
-    padding: calc(4rem + 56px) 2rem 6rem; /* 56px = global navbar height */
+    padding: calc(4rem + 72px) 2rem 6rem; /* 72px = 2-row global navbar height */
   }
 
   /* ========================================
