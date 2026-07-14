@@ -931,6 +931,26 @@ const jsonLd = isArticle
       color: var(--brand-accent); font-size: 0.7rem;
     }
     /* Navbar total height: row1 ~38px + row2 ~34px = ~72px */
+    body {
+      padding-top: 72px !important;
+    }
+    
+    /* Ensure fixed layouts account for body padding */
+    .content-sidebar {
+      top: 72px !important;
+      height: calc(100vh - 72px) !important;
+    }
+
+    @media (max-width: 1024px) {
+      .content-sidebar {
+        top: 0 !important;
+        height: 100vh !important;
+      }
+      .sidebar-trigger {
+        top: calc(1rem + 72px) !important;
+      }
+    }
+
     @media (max-width: 768px) {
       .nav-row-top { padding: 0.5rem 1rem; gap: 0.5rem; }
       .nav-tagline { display: none; }
