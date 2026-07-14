@@ -23,11 +23,23 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
 <PlaybookLayout title={entry.data.title}>
 
-  <div class="content-layout">
+  <div class="content-layout" id="contentLayout">
     <!-- Sidebar navigation -->
     <aside class="content-sidebar" id="contentSidebar">
+      <!-- Desktop sidebar header with collapse toggle -->
+      <div class="sidebar-head">
+        <span class="sidebar-head-label">Navigation</span>
+        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+      </div>
       <ContentNav currentSlug={entry.id} />
     </aside>
+
+    <!-- Expand button: shows when sidebar is collapsed -->
+    <button class="sidebar-expand-btn" id="sidebarExpandBtn" title="Show navigation" style="display:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
 
     <div class="content-wrapper">
     <!-- Back to dashboard -->
@@ -98,6 +110,67 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
   .content-sidebar {
     position: relative;
+  }
+
+  /* Sidebar header (desktop only) */
+  .sidebar-head {
+    display: none;
+  }
+  @media (min-width: 1025px) {
+    .sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0 0.75rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+  }
+  .sidebar-head-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .sidebar-collapse-btn {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: transparent;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .sidebar-collapse-btn:hover { color: var(--brand-accent); border-color: var(--brand-accent); background: var(--bg-elevated); }
+
+  /* Expand button — fixed on left edge, only on desktop */
+  .sidebar-expand-btn {
+    position: fixed;
+    top: calc(72px + 1rem);
+    left: 0.5rem;
+    z-index: 90;
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-default);
+    color: var(--text-muted);
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: all 0.15s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .sidebar-expand-btn:hover { color: var(--brand-accent); border-color: var(--brand-accent); }
+
+  /* Collapsed state — desktop only */
+  @media (min-width: 1025px) {
+    .content-layout.sidebar-collapsed {
+      grid-template-columns: 1fr;
+    }
+    .content-layout.sidebar-collapsed .content-sidebar {
+      display: none;
+    }
   }
 
 
@@ -695,7 +768,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
     .article-content :global(pre code) {
       font-size: 0.72rem;
-      padding: 0.75rem;
+      padding: 0.75rem 3.5rem 0.75rem 0.75rem;
     }
 
     .article-content :global(.table-wrapper) {
@@ -730,7 +803,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
     .article-content :global(pre code) {
       font-size: 0.68rem;
-      padding: 0.5rem;
+      padding: 0.6rem 3rem 0.6rem 0.75rem;
     }
   }
 </style>
@@ -965,11 +1038,13 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
       if (!articleContent || !articleContent.contains(node as Node)) { hideTooltip(); return; }
 
       currentSel = text;
-      // Position tooltip above selection
-      const range = sel!.getRangeAt(0);
+      // Position tooltip above selection (fixed position = viewport coords, no scrollY needed)
+      const range = sel.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      tooltip.style.left = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 140) + 'px';
-      tooltip.style.top  = (rect.top + window.scrollY - 42) + 'px';
+      const tipLeft = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 150);
+      const tipTop  = rect.top - 46;
+      tooltip.style.left = Math.max(8, tipLeft) + 'px';
+      tooltip.style.top  = Math.max(8, tipTop)  + 'px';
       tooltip.classList.add('visible');
     }, 100);
   });
@@ -986,4 +1061,28 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
       openPanel(currentSel);
     }
   });
+
+  // ============================================================
+  // 3. Desktop sidebar collapse / expand
+  // ============================================================
+  const collapseBtn = document.getElementById('sidebarCollapseBtn');
+  const expandBtn   = document.getElementById('sidebarExpandBtn');
+  const layout      = document.getElementById('contentLayout');
+
+  function collapseSidebar() {
+    layout && layout.classList.add('sidebar-collapsed');
+    if (expandBtn) expandBtn.style.display = 'flex';
+    try { localStorage.setItem('sidebar-collapsed', '1'); } catch(e){}
+  }
+  function expandSidebar() {
+    layout && layout.classList.remove('sidebar-collapsed');
+    if (expandBtn) expandBtn.style.display = 'none';
+    try { localStorage.removeItem('sidebar-collapsed'); } catch(e){}
+  }
+
+  // Restore state across pages
+  if (window.innerWidth >= 1025 && localStorage.getItem('sidebar-collapsed') === '1') collapseSidebar();
+
+  collapseBtn && collapseBtn.addEventListener('click', collapseSidebar);
+  expandBtn   && expandBtn.addEventListener('click', expandSidebar);
 </script>
