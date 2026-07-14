@@ -254,7 +254,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
   .article-content :global(pre code) {
     display: block;
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem 4.5rem 1.25rem 1.5rem; /* right pad clears copy button */
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     font-family: var(--font-mono);
@@ -315,11 +315,192 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
       border-left: none;
       border-right: none;
     }
-
     .article-content :global(pre code) {
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 4rem 0.75rem 1rem;
       font-size: 0.75rem;
     }
+  }
+
+  /* ===== AI Explain Feature ===== */
+  .explain-tooltip {
+    position: fixed;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    background: #0d1117;
+    border: 1px solid rgba(58,210,159,0.35);
+    border-radius: 30px;
+    cursor: pointer;
+    font-family: var(--font-sans, 'Inter', system-ui, sans-serif);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3ad29f;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 0 1px rgba(58,210,159,0.1);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px) scale(0.95);
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .explain-tooltip.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0) scale(1);
+  }
+  .explain-tooltip svg { flex-shrink: 0; }
+
+  /* Explain panel / modal */
+  .explain-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .explain-overlay.open { opacity: 1; pointer-events: all; }
+
+  .explain-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(480px, 100vw);
+    z-index: 1001;
+    background: #0d1117;
+    border-left: 1px solid rgba(58,210,159,0.15);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+    overflow: hidden;
+  }
+  .explain-panel.open { transform: translateX(0); }
+
+  .explain-panel-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+  }
+  .explain-panel-badge {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: #3ad29f;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+  .explain-panel-term {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e2ece9;
+    letter-spacing: -0.02em;
+    word-break: break-word;
+    max-width: 340px;
+  }
+  .explain-panel-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+  .explain-panel-close:hover { color: #e2ece9; border-color: rgba(255,255,255,0.25); }
+
+  .explain-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+  }
+  .explain-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: rgba(58,210,159,0.6);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+  }
+  .explain-dots span {
+    display: inline-block;
+    animation: eDot 1.2s infinite;
+    opacity: 0;
+  }
+  .explain-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .explain-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes eDot { 0%,100%{opacity:0} 50%{opacity:1} }
+
+  .explain-text {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #cdd9e5;
+    white-space: pre-wrap;
+  }
+  .explain-text strong { color: #e2ece9; }
+
+  .explain-panel-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    flex-shrink: 0;
+  }
+  .explain-byok-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .explain-byok-label {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .explain-byok-input {
+    flex: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: #cdd9e5;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.3rem 0.6rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .explain-byok-input:focus { border-color: rgba(58,210,159,0.4); }
+  .explain-byok-save {
+    background: rgba(58,210,159,0.12);
+    border: 1px solid rgba(58,210,159,0.25);
+    border-radius: 6px;
+    color: #3ad29f;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .explain-byok-save:hover { background: rgba(58,210,159,0.2); }
+  .explain-key-status {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.2);
+    font-family: var(--font-mono);
   }
 
   .article-content :global(blockquote) {
@@ -555,7 +736,9 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 </style>
 
 <script>
-  // ---- Code block copy buttons ----
+  // ============================================================
+  // 1. Code block copy buttons
+  // ============================================================
   document.querySelectorAll('.article-content pre').forEach((pre) => {
     const btn = document.createElement('button');
     btn.className = 'code-copy-btn';
@@ -569,5 +752,238 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
       setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
     });
     pre.appendChild(btn);
+  });
+
+  // ============================================================
+  // 2. AI Explain feature
+  // ============================================================
+  const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+  // Key priority: user-supplied BYOK > Vercel env var (embedded at build time)
+  const ENV_KEY = (import.meta as any).env?.PUBLIC_GROQ_API_KEY ?? '';
+
+  function getApiKey(): string {
+    return localStorage.getItem('user-groq-key') || ENV_KEY || '';
+  }
+
+  // ── Build tooltip ──────────────────────────────────────────
+  const tooltip = document.createElement('div');
+  tooltip.className = 'explain-tooltip';
+  tooltip.innerHTML = `
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+    Explain`;
+  document.body.appendChild(tooltip);
+
+  // ── Build overlay + panel ─────────────────────────────────
+  const overlay = document.createElement('div');
+  overlay.className = 'explain-overlay';
+  document.body.appendChild(overlay);
+
+  const panel = document.createElement('div');
+  panel.className = 'explain-panel';
+  panel.innerHTML = `
+    <div class="explain-panel-head">
+      <div>
+        <div class="explain-panel-badge">AI EXPLAIN</div>
+        <div class="explain-panel-term" id="explainTerm">…</div>
+      </div>
+      <button class="explain-panel-close" id="explainClose" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="explain-panel-body" id="explainBody">
+      <div class="explain-loading" id="explainLoading">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        Thinking<span class="explain-dots"><span>.</span><span>.</span><span>.</span></span>
+      </div>
+      <div class="explain-text" id="explainText" style="display:none"></div>
+    </div>
+    <div class="explain-panel-footer">
+      <div class="explain-byok-row">
+        <span class="explain-byok-label">GROQ KEY:</span>
+        <input class="explain-byok-input" id="explainKeyInput" type="password" placeholder="gsk_...your key" spellcheck="false"/>
+        <button class="explain-byok-save" id="explainKeySave">Save</button>
+      </div>
+      <div class="explain-key-status" id="explainKeyStatus"></div>
+    </div>`;
+  document.body.appendChild(panel);
+
+  // refs
+  const termEl      = document.getElementById('explainTerm')     as HTMLElement;
+  const bodyEl      = document.getElementById('explainBody')     as HTMLElement;
+  const loadingEl   = document.getElementById('explainLoading')  as HTMLElement;
+  const textEl      = document.getElementById('explainText')     as HTMLElement;
+  const closeBtn    = document.getElementById('explainClose')    as HTMLElement;
+  const keyInput    = document.getElementById('explainKeyInput') as HTMLInputElement;
+  const keySave     = document.getElementById('explainKeySave')  as HTMLElement;
+  const keyStatus   = document.getElementById('explainKeyStatus') as HTMLElement;
+
+  // populate BYOK field
+  const savedKey = localStorage.getItem('user-groq-key') || '';
+  if (keyInput) keyInput.value = savedKey;
+  updateKeyStatus();
+
+  function updateKeyStatus() {
+    const k = getApiKey();
+    if (!keyStatus) return;
+    if (k) {
+      keyStatus.textContent = k.startsWith('gsk_') ? '✓ Key loaded (groq)' : '⚠ Key format looks wrong';
+      keyStatus.style.color = k.startsWith('gsk_') ? 'rgba(58,210,159,0.5)' : 'rgba(239,68,68,0.6)';
+    } else {
+      keyStatus.textContent = 'No key found — add yours above';
+      keyStatus.style.color = 'rgba(239,68,68,0.5)';
+    }
+  }
+
+  keySave?.addEventListener('click', () => {
+    const val = keyInput?.value?.trim();
+    if (val) { localStorage.setItem('user-groq-key', val); }
+    else     { localStorage.removeItem('user-groq-key'); }
+    updateKeyStatus();
+    keySave.textContent = 'Saved!';
+    setTimeout(() => { keySave.textContent = 'Save'; }, 1800);
+  });
+
+  function openPanel(term: string) {
+    if (termEl) termEl.textContent = `"${term}"`;
+    if (loadingEl) loadingEl.style.display = 'flex';
+    if (textEl)   { textEl.style.display = 'none'; textEl.innerHTML = ''; }
+    overlay.classList.add('open');
+    panel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    callGroq(term);
+  }
+
+  function closePanel() {
+    overlay.classList.remove('open');
+    panel.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn?.addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
+
+  // ── Groq streaming call ───────────────────────────────────
+  async function callGroq(term: string) {
+    const key = getApiKey();
+    if (!key) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (textEl) {
+        textEl.style.display = 'block';
+        textEl.innerHTML = `<span style="color:#ef4444">No API key found.</span> Please add your Groq key in the field below and click Save, then try again.`;
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          stream: true,
+          max_tokens: 600,
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert teacher explaining full-stack and AI engineering concepts to learners of all levels. 
+When asked to explain a term or phrase:
+1. Start with a single simple sentence: what it IS in plain English.
+2. Use a real-world analogy that anyone can picture.
+3. Explain how it's used in software/AI engineering — concrete, practical.
+4. Give a tiny code or command example if relevant (keep it under 5 lines).
+5. End with one sentence on WHY it matters.
+Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
+            },
+            {
+              role: 'user',
+              content: `Explain this term or concept from full-stack/AI engineering so that any beginner can deeply understand it: "${term}"`
+            }
+          ]
+        })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: { message: res.statusText } }));
+        throw new Error(err?.error?.message || res.statusText);
+      }
+
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (textEl) textEl.style.display = 'block';
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split('\n')) {
+          const trimmed = line.replace(/^data: /, '').trim();
+          if (!trimmed || trimmed === '[DONE]') continue;
+          try {
+            const json = JSON.parse(trimmed);
+            const delta = json.choices?.[0]?.delta?.content || '';
+            fullText += delta;
+            // Render with basic markdown bold
+            if (textEl) textEl.innerHTML = fullText
+              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\n/g, '<br>');
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+    } catch (err: any) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (textEl) {
+        textEl.style.display = 'block';
+        textEl.innerHTML = `<span style="color:#ef4444">Error: ${err.message}</span><br><br>Check your Groq API key in the field below.`;
+      }
+    }
+  }
+
+  // ── Text selection → tooltip ──────────────────────────────
+  let selTimeout: ReturnType<typeof setTimeout>;
+  let currentSel = '';
+
+  function hideTooltip() {
+    tooltip.classList.remove('visible');
+    currentSel = '';
+  }
+
+  document.addEventListener('mouseup', (e) => {
+    clearTimeout(selTimeout);
+    selTimeout = setTimeout(() => {
+      const sel = window.getSelection();
+      const text = sel?.toString().trim() || '';
+      // Only show for 2–80 char selections inside article content
+      if (text.length < 2 || text.length > 80) { hideTooltip(); return; }
+      const node = sel?.anchorNode;
+      const articleContent = document.querySelector('.article-content');
+      if (!articleContent || !articleContent.contains(node as Node)) { hideTooltip(); return; }
+
+      currentSel = text;
+      // Position tooltip above selection
+      const range = sel!.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      tooltip.style.left = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 140) + 'px';
+      tooltip.style.top  = (rect.top + window.scrollY - 42) + 'px';
+      tooltip.classList.add('visible');
+    }, 100);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (!(e.target as HTMLElement).closest('.explain-tooltip')) {
+      setTimeout(hideTooltip, 150);
+    }
+  });
+
+  tooltip.addEventListener('click', () => {
+    if (currentSel) {
+      hideTooltip();
+      openPanel(currentSel);
+    }
   });
 </script>

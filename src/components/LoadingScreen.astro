@@ -1,27 +1,45 @@
 ---
-// LoadingScreen.astro — Animated loading overlay
+// LoadingScreen.astro — Premium animated loading overlay
 ---
 
-<div class="loading-screen" id="loadingScreen">
-  <div class="loading-content">
-    <div class="loading-logo">
-      <div class="logo-ring">
-        <svg viewBox="0 0 100 100" class="ring-svg">
-          <circle cx="50" cy="50" r="42" class="ring-track" />
-          <circle cx="50" cy="50" r="42" class="ring-progress" />
+<div class="ls" id="loadingScreen">
+  <!-- Animated background grid -->
+  <canvas class="ls-canvas" id="lsCanvas"></canvas>
+
+  <div class="ls-content">
+    <!-- Logo mark -->
+    <div class="ls-logo">
+      <div class="ls-logo-ring">
+        <svg viewBox="0 0 100 100" class="ls-ring-svg">
+          <circle cx="50" cy="50" r="40" class="ls-ring-track"/>
+          <circle cx="50" cy="50" r="40" class="ls-ring-spin"/>
         </svg>
-        <span class="logo-text">C</span>
+        <!-- Inner pulse -->
+        <div class="ls-logo-inner">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+        </div>
       </div>
     </div>
-    <div class="loading-bar">
-      <div class="loading-bar-fill"></div>
+
+    <!-- Brand -->
+    <div class="ls-brand">
+      <span class="ls-brand-main">CyderCoder</span><span class="ls-brand-dot">.playbook</span>
     </div>
-    <p class="loading-label">Loading playbook...</p>
+
+    <!-- Status typewriter -->
+    <div class="ls-status" id="lsStatus">Initialising...</div>
+
+    <!-- Progress track -->
+    <div class="ls-bar-wrap">
+      <div class="ls-bar" id="lsBar"></div>
+    </div>
   </div>
 </div>
 
 <style is:global>
-  .loading-screen {
+  .ls {
     position: fixed;
     inset: 0;
     z-index: 9999;
@@ -29,148 +47,210 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
+    overflow: hidden;
+    transition: opacity 0.6s cubic-bezier(0.4,0,0.2,1), visibility 0.6s;
   }
-
-  .loading-screen.hidden {
+  .ls.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
   }
 
-  .loading-content {
+  /* Background canvas */
+  .ls-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.35;
+  }
+
+  /* Content stack */
+  .ls-content {
+    position: relative;
+    z-index: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1.4rem;
   }
 
-  .loading-logo {
+  /* ── Logo ring ── */
+  .ls-logo { position: relative; }
+  .ls-logo-ring {
     position: relative;
+    width: 90px;
+    height: 90px;
   }
-
-  .logo-ring {
-    position: relative;
-    width: 80px;
-    height: 80px;
-  }
-
-  .ring-svg {
+  .ls-ring-svg {
     width: 100%;
     height: 100%;
     transform: rotate(-90deg);
   }
-
-  .ring-track {
+  .ls-ring-track {
     fill: none;
-    stroke: rgba(255, 255, 255, 0.06);
-    stroke-width: 3;
+    stroke: rgba(58,210,159,0.08);
+    stroke-width: 2.5;
   }
-
-  .ring-progress {
+  .ls-ring-spin {
     fill: none;
-    stroke: #3ad29f;
-    stroke-width: 3;
+    stroke: url(#lsGrad);
+    stroke-width: 2.5;
     stroke-linecap: round;
-    stroke-dasharray: 264;
-    stroke-dashoffset: 264;
-    animation: ringDraw 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    stroke-dasharray: 251;
+    stroke-dashoffset: 251;
+    animation: lsSpin 1.6s cubic-bezier(0.4,0,0.2,1) infinite;
   }
 
-  @keyframes ringDraw {
-    0% {
-      stroke-dashoffset: 264;
-      transform: rotate(0deg);
-    }
-    50% {
-      stroke-dashoffset: 66;
-    }
-    100% {
-      stroke-dashoffset: 264;
-      transform: rotate(360deg);
-    }
+  @keyframes lsSpin {
+    0%   { stroke-dashoffset: 251; }
+    50%  { stroke-dashoffset: 62; }
+    100% { stroke-dashoffset: 251; transform: rotate(360deg); }
   }
 
-  .logo-text {
+  /* SVG gradient defs embedded via CSS hack — actual defs in SVG below */
+  .ls-logo-inner {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: lsPulse 2s ease-in-out infinite;
+  }
+  @keyframes lsPulse {
+    0%,100% { opacity: 0.6; transform: scale(0.95); }
+    50%     { opacity: 1;   transform: scale(1.05); }
+  }
+
+  /* ── Brand ── */
+  .ls-brand {
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: #3ad29f;
-    letter-spacing: -0.05em;
-    animation: logoPulse 2s ease-in-out infinite;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #e2ece9;
+    animation: lsFadeUp 0.6s ease 0.2s both;
+  }
+  .ls-brand-dot { color: #3ad29f; }
+
+  /* ── Status text ── */
+  .ls-status {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: rgba(58,210,159,0.55);
+    min-height: 1rem;
+    animation: lsFadeUp 0.6s ease 0.3s both;
   }
 
-  @keyframes logoPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
-  .loading-bar {
-    width: 120px;
+  /* ── Progress bar ── */
+  .ls-bar-wrap {
+    width: 160px;
     height: 2px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255,255,255,0.05);
     border-radius: 1px;
     overflow: hidden;
+    animation: lsFadeUp 0.6s ease 0.4s both;
   }
-
-  .loading-bar-fill {
-    width: 40%;
+  .ls-bar {
     height: 100%;
-    background: linear-gradient(90deg, transparent, #3ad29f, transparent);
+    width: 0%;
+    background: linear-gradient(90deg, #1a7a55, #3ad29f, #7fffda);
     border-radius: 1px;
-    animation: barSlide 1.2s ease-in-out infinite;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+    box-shadow: 0 0 8px rgba(58,210,159,0.6);
   }
 
-  @keyframes barSlide {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(350%); }
-  }
-
-  .loading-label {
-    font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 0.7rem;
-    color: #3d564c;
-    letter-spacing: 0.05em;
-    animation: labelFade 2s ease-in-out infinite;
-  }
-
-  @keyframes labelFade {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 0.8; }
+  @keyframes lsFadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 </style>
 
+<!-- Inline SVG gradient defs (must be in DOM for stroke:url() to work) -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="lsGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3ad29f"/>
+      <stop offset="100%" stop-color="#7fffda"/>
+    </linearGradient>
+  </defs>
+</svg>
+
 <script>
-  function initLoadingScreen() {
-    const screen = document.getElementById('loadingScreen');
+  (function() {
+    const screen = document.getElementById('loadingScreen') as HTMLElement | null;
+    const bar    = document.getElementById('lsBar')       as HTMLElement | null;
+    const status = document.getElementById('lsStatus')    as HTMLElement | null;
+    const canvas = document.getElementById('lsCanvas')    as HTMLCanvasElement | null;
+
     if (!screen) return;
 
-    // Hide after page loads
-    function hideLoader() {
-      screen.classList.add('hidden');
+    // ── Particle grid animation ──────────────────────────────
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const resize = () => { canvas.width = innerWidth; canvas.height = innerHeight; };
+        resize();
+        window.addEventListener('resize', resize, { passive: true });
+
+        const COLS = Math.ceil(innerWidth / 48);
+        const ROWS = Math.ceil(innerHeight / 48);
+        const dots: { x:number; y:number; a:number; s:number }[] = [];
+        for (let c = 0; c < COLS; c++) {
+          for (let r = 0; r < ROWS; r++) {
+            dots.push({ x: c * 48 + 24, y: r * 48 + 24, a: Math.random(), s: 0.3 + Math.random() * 0.7 });
+          }
+        }
+        let raf: number;
+        const draw = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          const t = performance.now() / 1000;
+          dots.forEach(d => {
+            const alpha = (Math.sin(t * d.s + d.a * 6.28) * 0.5 + 0.5) * 0.25;
+            ctx.beginPath();
+            ctx.arc(d.x, d.y, 1.2, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(58,210,159,${alpha})`;
+            ctx.fill();
+          });
+          raf = requestAnimationFrame(draw);
+        };
+        draw();
+
+        // Stop canvas loop when hidden
+        screen.addEventListener('transitionend', () => { if (screen.classList.contains('hidden')) cancelAnimationFrame(raf); }, { once: true });
+      }
+    }
+
+    // ── Progress + status messages ───────────────────────────
+    const steps = [
+      { pct: 15, msg: 'Loading modules...' },
+      { pct: 40, msg: 'Parsing content...' },
+      { pct: 65, msg: 'Building index...' },
+      { pct: 85, msg: 'Almost there...' },
+      { pct: 100, msg: 'Ready.' },
+    ];
+    let step = 0;
+    const tick = setInterval(() => {
+      if (step >= steps.length) { clearInterval(tick); return; }
+      if (bar)    bar.style.width    = steps[step].pct + '%';
+      if (status) status.textContent = steps[step].msg;
+      step++;
+    }, 420);
+
+    // ── Hide when page is fully loaded ──────────────────────
+    function hide() {
+      clearInterval(tick);
+      if (bar)    bar.style.width    = '100%';
+      if (status) status.textContent = 'Ready.';
       setTimeout(() => {
-        screen.style.display = 'none';
-      }, 500);
+        screen.classList.add('hidden');
+        setTimeout(() => { screen.style.display = 'none'; }, 600);
+      }, 240);
     }
 
-    // Hide on window load
-    if (document.readyState === 'complete') {
-      hideLoader();
-    } else {
-      window.addEventListener('load', hideLoader);
-    }
-
-    // Safety: hide after 4 seconds max
-    setTimeout(hideLoader, 4000);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initLoadingScreen);
-  } else {
-    initLoadingScreen();
-  }
+    if (document.readyState === 'complete') { hide(); }
+    else { window.addEventListener('load', hide); }
+    setTimeout(hide, 4200); // safety cap
+  })();
 </script>
