@@ -23,6 +23,18 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
 <PlaybookLayout title={entry.data.title}>
 
+  <!-- Portrait Lock Overlay -->
+  <div class="portrait-lock-overlay">
+    <div class="lock-box">
+      <svg class="lock-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+        <line x1="12" y1="18" x2="12.01" y2="18"/>
+      </svg>
+      <div class="lock-title">Portrait Lock Active</div>
+      <div class="lock-desc">Please rotate your device back to Portrait orientation to read the playbook content.</div>
+    </div>
+  </div>
+
   <div class="content-layout" id="contentLayout">
     <!-- Sidebar navigation -->
     <aside class="content-sidebar" id="contentSidebar">
@@ -1003,6 +1015,71 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
       padding: 0.6rem 3rem 0.6rem 0.75rem;
     }
   }
+
+  /* Portrait Lock Screen for mobile orientation */
+  .portrait-lock-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #070a09;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  @media screen and (max-width: 900px) and (orientation: landscape) {
+    .portrait-lock-overlay {
+      display: flex;
+    }
+    body {
+      overflow: hidden !important;
+    }
+  }
+
+  .lock-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    max-width: 320px;
+  }
+  .lock-icon {
+    animation: lockRotate 2s ease-in-out infinite;
+  }
+  @keyframes lockRotate {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+  }
+  .lock-title {
+    font-family: var(--font-sans);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #3ad29f;
+  }
+  .lock-desc {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* Offline Badge style */
+  .chat-badge-offline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-top: 0.35rem;
+    align-self: flex-start;
+  }
 </style>
 
 <script>
@@ -1201,7 +1278,7 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     messagesEl.appendChild(loadingEl);
     loadingEl.style.display = 'flex';
 
-    callGroq(`Explain this term or concept from full-stack/AI engineering so that any beginner can deeply understand it: "${term}"`);
+    callGroq(`Explain this term or concept from full-stack/AI engineering so that any beginner can deeply understand it: "${term}"`, term);
   }
 
   function closePanel() {
@@ -1239,7 +1316,7 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
   }
 
   // ── Groq API Streaming ──────────────────────────────────
-  async function callGroq(promptText: string) {
+  async function callGroq(promptText: string, termKey: string = '') {
     const key = getApiKey();
     if (!key) {
       loadingEl.style.display = 'none';
@@ -1299,13 +1376,40 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
         }
       }
 
+      // Cache the response if it is the primary concept query
+      if (termKey) {
+        try {
+          localStorage.setItem('explain-cache-' + termKey.toLowerCase().trim(), fullText);
+        } catch (e) {
+          console.warn('LocalStorage limit hit, could not cache explanation.', e);
+        }
+      }
+
       // Add final assistant message to conversation context
       conversationHistory.push({ role: 'assistant', content: fullText });
       activeStreamBubble = null;
 
     } catch (err: any) {
       loadingEl.style.display = 'none';
-      appendMessageBubble('assistant', `<span style="color:#ef4444">Error: ${err.message}</span><br><br>Check your Groq key or connection.`);
+      
+      // Check offline cache fallback
+      const cachedResponse = termKey ? localStorage.getItem('explain-cache-' + termKey.toLowerCase().trim()) : null;
+      
+      if (cachedResponse) {
+        const bubble = appendMessageBubble('assistant', cachedResponse);
+        
+        // Append offline badge
+        const badge = document.createElement('div');
+        badge.className = 'chat-badge-offline';
+        badge.innerHTML = `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Offline Cache`;
+        bubble.appendChild(badge);
+        
+        conversationHistory.push({ role: 'assistant', content: cachedResponse });
+      } else {
+        appendMessageBubble('assistant', `<span style="color:#ef4444">Error: ${err.message || 'Offline'}</span><br><br>You appear to be offline, and this term hasn't been cached yet.`);
+      }
       activeStreamBubble = null;
     }
   }
