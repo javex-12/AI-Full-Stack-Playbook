@@ -463,26 +463,33 @@ const jsonLd = isArticle
         </button>
         <button class="nav-install-btn" id="navInstallBtn" title="Install App" style="display:none">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Install App
+          <span class="install-text">Install</span>
         </button>
       </div>
     </div>
     <!-- Row 2: Navigation links -->
     <div class="nav-row-bottom">
       <div class="nav-links-group">
-        <a href="/#curriculum" class="nav-link-item">
+        <!-- Curriculum: opens full module drawer -->
+        <button class="nav-link-item nav-dropdown-btn" id="navCurriculumBtn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
           Curriculum
-        </a>
-        <a href="/content/part-2-ai-foundations" class="nav-link-item">
+          <svg class="nav-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <!-- Deep Dives: popup with AI/framework modules -->
+        <button class="nav-link-item nav-dropdown-btn" id="navDeepDivesBtn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          AI Foundations
-        </a>
-        <a href="/content/guide-build-website" class="nav-link-item">
+          Deep Dives
+          <svg class="nav-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <!-- Workshops: popup with guide picker -->
+        <button class="nav-link-item nav-dropdown-btn" id="navWorkshopsBtn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          Workshop Guides
-        </a>
-        <button class="nav-link-item nav-about-btn" id="navAboutBtn">
+          Workshops
+          <svg class="nav-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <!-- About -->
+        <button class="nav-link-item" id="navAboutBtn">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           About
         </button>
@@ -538,6 +545,91 @@ const jsonLd = isArticle
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ===== Curriculum Drawer ===== -->
+  <div class="cdrawer-overlay" id="cdrawerOverlay"></div>
+  <aside class="cdrawer" id="cdrawer" aria-label="All Modules">
+    <div class="cdrawer-top">
+      <div>
+        <div class="cdrawer-badge">FULL CURRICULUM</div>
+        <div class="cdrawer-title">All 15 Modules</div>
+      </div>
+      <button class="cdrawer-close" id="cdrawerClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="cdrawer-body">
+      <div class="cdrawer-phase">
+        <div class="cdrawer-phase-label" style="--pc:#3ad29f">01 — Global Infrastructure</div>
+        <a href="/content/part-1-global-foundations" class="cdrawer-item"><span class="cdrawer-num">01</span>How the Internet Works</a>
+        <a href="/content/part-7-authentication" class="cdrawer-item"><span class="cdrawer-num">02</span>Authentication &amp; Security</a>
+        <a href="/content/part-11-deployment" class="cdrawer-item"><span class="cdrawer-num">03</span>Deployment &amp; Edge</a>
+      </div>
+      <div class="cdrawer-phase">
+        <div class="cdrawer-phase-label" style="--pc:#8b5cf6">02 — Data &amp; Frameworks</div>
+        <a href="/content/part-6-databases" class="cdrawer-item"><span class="cdrawer-num">01</span>Databases &amp; Modeling</a>
+        <a href="/content/part-3-framework-thinking" class="cdrawer-item"><span class="cdrawer-num">02</span>Framework Thinking</a>
+        <a href="/content/part-10-design-systems" class="cdrawer-item"><span class="cdrawer-num">03</span>Design &amp; Motion</a>
+      </div>
+      <div class="cdrawer-phase">
+        <div class="cdrawer-phase-label" style="--pc:#f59e0b">03 — AI Engineering</div>
+        <a href="/content/part-2-ai-foundations" class="cdrawer-item"><span class="cdrawer-num">01</span>AI Foundations</a>
+        <a href="/content/part-14-ai-prompting" class="cdrawer-item"><span class="cdrawer-num">02</span>AI Prompting</a>
+        <a href="/content/part-4-ai-workflow" class="cdrawer-item"><span class="cdrawer-num">03</span>AI Workflow</a>
+      </div>
+      <div class="cdrawer-phase">
+        <div class="cdrawer-phase-label" style="--pc:#ef4444">04 — Production &amp; Ops</div>
+        <a href="/content/part-12-13-seo-security" class="cdrawer-item"><span class="cdrawer-num">01</span>SEO &amp; Security</a>
+        <a href="/content/part-5-production-and-ops" class="cdrawer-item"><span class="cdrawer-num">02</span>CI/CD &amp; Docker</a>
+        <a href="/content/part-15-production-thinking" class="cdrawer-item"><span class="cdrawer-num">03</span>Telemetry &amp; Recovery</a>
+      </div>
+      <div class="cdrawer-phase">
+        <div class="cdrawer-phase-label" style="--pc:#3ad29f">W — Workshops</div>
+        <a href="/content/guide-build-website" class="cdrawer-item"><span class="cdrawer-num">01</span>Build a Website</a>
+        <a href="/content/guide-build-ai" class="cdrawer-item"><span class="cdrawer-num">02</span>Build AI Apps</a>
+        <a href="/content/guide-projects" class="cdrawer-item"><span class="cdrawer-num">03</span>10 Projects</a>
+      </div>
+      <a href="/content/part-search-integration" class="cdrawer-item cdrawer-bonus"><span class="cdrawer-num">+</span>Search Integration</a>
+    </div>
+  </aside>
+
+  <!-- ===== Deep Dives Popup ===== -->
+  <div class="nav-popup" id="deepDivesPopup">
+    <div class="nav-popup-header">Deep Dive Modules</div>
+    <a href="/content/part-2-ai-foundations" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">⚡</span>
+      <div><div class="nav-popup-title">AI Foundations</div><div class="nav-popup-desc">LLMs, tokens, RAG, MCP, agents</div></div>
+    </a>
+    <a href="/content/part-14-ai-prompting" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">💬</span>
+      <div><div class="nav-popup-title">AI Prompting</div><div class="nav-popup-desc">Prompt engineering and meta-prompting</div></div>
+    </a>
+    <a href="/content/part-4-ai-workflow" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b">🔄</span>
+      <div><div class="nav-popup-title">AI Workflow</div><div class="nav-popup-desc">Claude → Bolt → Cursor → Vercel</div></div>
+    </a>
+    <a href="/content/part-3-framework-thinking" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6">🏗️</span>
+      <div><div class="nav-popup-title">Framework Thinking</div><div class="nav-popup-desc">SSG vs SSR vs ISR vs PPR</div></div>
+    </a>
+  </div>
+
+  <!-- ===== Workshops Popup ===== -->
+  <div class="nav-popup" id="workshopsPopup">
+    <div class="nav-popup-header">Workshop Guides</div>
+    <a href="/content/guide-build-website" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(58,210,159,0.12);color:#3ad29f">🌐</span>
+      <div><div class="nav-popup-title">Build a Website</div><div class="nav-popup-desc">Zero to deployed in one afternoon</div></div>
+    </a>
+    <a href="/content/guide-build-ai" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(58,210,159,0.12);color:#3ad29f">🤖</span>
+      <div><div class="nav-popup-title">Build AI Apps</div><div class="nav-popup-desc">RAG, agents, production AI systems</div></div>
+    </a>
+    <a href="/content/guide-projects" class="nav-popup-item">
+      <span class="nav-popup-icon" style="background:rgba(58,210,159,0.12);color:#3ad29f">🚀</span>
+      <div><div class="nav-popup-title">10 Projects</div><div class="nav-popup-desc">Portfolio-ready builds with full source</div></div>
+    </a>
   </div>
 
   <slot />
@@ -930,36 +1022,213 @@ const jsonLd = isArticle
       content: '→'; position: absolute; left: 0;
       color: var(--brand-accent); font-size: 0.7rem;
     }
-    /* Navbar total height: row1 ~38px + row2 ~34px = ~72px */
-    body {
-      padding-top: 72px !important;
-    }
-    
-    /* Ensure fixed layouts account for body padding */
+    /* ===== Layout offset for fixed 2-row navbar ===== */
+    body { padding-top: 72px !important; }
+
+    /* Desk sidebar account for nav height */
     .content-sidebar {
       top: 72px !important;
       height: calc(100vh - 72px) !important;
     }
-
     @media (max-width: 1024px) {
-      .content-sidebar {
-        top: 0 !important;
-        height: 100vh !important;
-      }
-      .sidebar-trigger {
-        top: calc(1rem + 72px) !important;
-      }
+      .content-sidebar { top: 0 !important; height: 100vh !important; }
     }
 
+    /* ===== Nav chevron ===== */
+    .nav-chevron {
+      opacity: 0.5;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      flex-shrink: 0;
+    }
+    .nav-dropdown-btn.open .nav-chevron {
+      transform: rotate(180deg);
+      opacity: 1;
+    }
+
+    /* ===== Mobile: install button icon-only ===== */
+    @media (max-width: 520px) {
+      .install-text { display: none; }
+      .nav-install-btn { padding: 0.32rem 0.5rem; min-width: 0; }
+      .nav-tagline { display: none; }
+    }
+
+    /* ===== Mobile: responsive nav row 2 ===== */
     @media (max-width: 768px) {
       .nav-row-top { padding: 0.5rem 1rem; gap: 0.5rem; }
       .nav-tagline { display: none; }
       .nav-search-btn span { display: none; }
       .nav-search-btn { padding: 0.3rem 0.5rem; }
-      .nav-links-group { padding: 0 0.5rem; overflow-x: auto; }
-      .nav-link-item { padding: 0.42rem 0.6rem; font-size: 0.73rem; }
+      .nav-links-group { padding: 0 0.5rem; overflow-x: auto; scrollbar-width: none; }
+      .nav-links-group::-webkit-scrollbar { display: none; }
+      .nav-link-item { padding: 0.42rem 0.6rem; font-size: 0.73rem; white-space: nowrap; flex-shrink: 0; }
       .about-cards { grid-template-columns: 1fr; }
       .about-modal { padding: 1.5rem; }
+    }
+
+    /* ===== Curriculum Drawer ===== */
+    .cdrawer-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 350;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.28s ease;
+    }
+    .cdrawer-overlay.open { opacity: 1; pointer-events: all; }
+
+    .cdrawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(380px, 90vw);
+      z-index: 360;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-default);
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .cdrawer.open { transform: translateX(0); }
+
+    .cdrawer-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-elevated);
+      flex-shrink: 0;
+    }
+    .cdrawer-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--brand-accent);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.2rem;
+    }
+    .cdrawer-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+    .cdrawer-close {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--bg-hover);
+      border: 1px solid var(--border-default);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .cdrawer-close:hover { color: var(--text-primary); border-color: var(--border-strong); }
+
+    .cdrawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem 0;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-default) transparent;
+    }
+    .cdrawer-phase { margin-bottom: 0.5rem; }
+    .cdrawer-phase-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--pc, var(--brand-accent));
+      letter-spacing: 0.06em;
+      padding: 0.6rem 1.5rem 0.3rem;
+      text-transform: uppercase;
+    }
+    .cdrawer-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 1.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: background 0.15s, color 0.15s;
+      border-left: 3px solid transparent;
+    }
+    .cdrawer-item:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      border-left-color: var(--brand-accent);
+    }
+    .cdrawer-num {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-faint);
+      min-width: 1.5rem;
+    }
+    .cdrawer-bonus { border-top: 1px solid var(--border-subtle); margin-top: 0.5rem; }
+
+    /* ===== Nav Popups (Workshops / Deep Dives) ===== */
+    .nav-popup {
+      position: fixed;
+      top: 72px;
+      z-index: 320;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 14px;
+      padding: 0.5rem;
+      min-width: 280px;
+      max-width: 340px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.04) inset;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px) scale(0.97);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .nav-popup.open {
+      opacity: 1;
+      pointer-events: all;
+      transform: translateY(0) scale(1);
+    }
+    .nav-popup-header {
+      font-family: var(--font-mono);
+      font-size: 0.63rem;
+      color: var(--text-faint);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.5rem 0.75rem 0.4rem;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 0.3rem;
+    }
+    .nav-popup-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.75rem;
+      border-radius: 9px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .nav-popup-item:hover { background: var(--bg-elevated); }
+    .nav-popup-icon {
+      width: 34px; height: 34px;
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .nav-popup-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.15rem;
+    }
+    .nav-popup-desc {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      line-height: 1.4;
     }
   </style>
 
@@ -1010,99 +1279,132 @@ const jsonLd = isArticle
       }, { passive: true });
     }
 
-    // ---- Active nav link highlighting ----
-    const currentPath = window.location.pathname;
-    document.querySelectorAll('.nav-link-item[href]').forEach((link) => {
-      const href = (link as HTMLAnchorElement).getAttribute('href') || '';
-      if (href === '/' && currentPath === '/') {
-        link.classList.add('active');
-      } else if (href !== '/' && currentPath.startsWith(href)) {
-        link.classList.add('active');
-      }
-    });
-
-    // ---- About Modal ----
+    // ====== About Modal ======
     const aboutBtn = document.getElementById('navAboutBtn');
     const aboutOverlay = document.getElementById('aboutModalOverlay');
     const aboutClose = document.getElementById('aboutModalClose');
-
-    function openAbout() { aboutOverlay?.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function openAbout() { closeAll(); aboutOverlay?.classList.add('open'); document.body.style.overflow = 'hidden'; }
     function closeAbout() { aboutOverlay?.classList.remove('open'); document.body.style.overflow = ''; }
-
     aboutBtn?.addEventListener('click', openAbout);
     aboutClose?.addEventListener('click', closeAbout);
-    aboutOverlay?.addEventListener('click', (e: MouseEvent) => {
-      if (e.target === aboutOverlay) closeAbout();
-    });
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeAbout();
-    });
+    aboutOverlay?.addEventListener('click', (e: MouseEvent) => { if (e.target === aboutOverlay) closeAbout(); });
 
-    // ---- PWA Install prompt management ----
-    let deferredInstallPrompt: any = null;
-    const navInstallBtn = document.getElementById('navInstallBtn') as HTMLButtonElement | null;
+    // ====== Curriculum Drawer ======
+    const cdrawerOverlay = document.getElementById('cdrawerOverlay');
+    const cdrawer = document.getElementById('cdrawer');
+    const cdrawerClose = document.getElementById('cdrawerClose');
+    const curriculumBtn = document.getElementById('navCurriculumBtn');
 
-    // If already installed (localStorage flag), never show install button
-    if (localStorage.getItem('pwa-installed') === 'true') {
-      if (navInstallBtn) navInstallBtn.style.display = 'none';
+    function openCdrawer() {
+      closeAll();
+      cdrawerOverlay?.classList.add('open');
+      cdrawer?.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      curriculumBtn?.classList.add('open');
+    }
+    function closeCdrawer() {
+      cdrawerOverlay?.classList.remove('open');
+      cdrawer?.classList.remove('open');
+      document.body.style.overflow = '';
+      curriculumBtn?.classList.remove('open');
+    }
+    curriculumBtn?.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      cdrawer?.classList.contains('open') ? closeCdrawer() : openCdrawer();
+    });
+    cdrawerClose?.addEventListener('click', closeCdrawer);
+    cdrawerOverlay?.addEventListener('click', closeCdrawer);
+
+    // ====== Nav Popups (generic) ======
+    function positionPopup(popup: HTMLElement, triggerBtn: HTMLElement) {
+      const rect = triggerBtn.getBoundingClientRect();
+      const pw = popup.offsetWidth || 300;
+      let left = rect.left;
+      if (left + pw > window.innerWidth - 12) left = window.innerWidth - pw - 12;
+      if (left < 8) left = 8;
+      popup.style.left = left + 'px';
     }
 
-    // Capture the beforeinstallprompt event
-    window.addEventListener('beforeinstallprompt', (e: Event) => {
-      e.preventDefault();
-      deferredInstallPrompt = e;
-      // Only show if not already installed
-      if (localStorage.getItem('pwa-installed') !== 'true' && navInstallBtn) {
-        navInstallBtn.style.display = 'flex';
+    function openPopup(popupId: string, btnId: string) {
+      closeAll();
+      const popup = document.getElementById(popupId) as HTMLElement | null;
+      const btn = document.getElementById(btnId) as HTMLElement | null;
+      if (!popup || !btn) return;
+      popup.classList.add('open');
+      btn.classList.add('open');
+      positionPopup(popup, btn);
+    }
+
+    function closePopup(popupId: string, btnId: string) {
+      document.getElementById(popupId)?.classList.remove('open');
+      document.getElementById(btnId)?.classList.remove('open');
+    }
+
+    function closeAll() {
+      closeCdrawer();
+      closeAbout();
+      closePopup('deepDivesPopup', 'navDeepDivesBtn');
+      closePopup('workshopsPopup', 'navWorkshopsBtn');
+    }
+
+    document.getElementById('navDeepDivesBtn')?.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      const popup = document.getElementById('deepDivesPopup');
+      popup?.classList.contains('open') ? closePopup('deepDivesPopup','navDeepDivesBtn') : openPopup('deepDivesPopup','navDeepDivesBtn');
+    });
+
+    document.getElementById('navWorkshopsBtn')?.addEventListener('click', (e: Event) => {
+      e.stopPropagation();
+      const popup = document.getElementById('workshopsPopup');
+      popup?.classList.contains('open') ? closePopup('workshopsPopup','navWorkshopsBtn') : openPopup('workshopsPopup','navWorkshopsBtn');
+    });
+
+    // Close all on outside click
+    document.addEventListener('click', (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest('.nav-popup') && !t.closest('.nav-dropdown-btn') &&
+          !t.closest('.cdrawer') && !t.closest('#navAboutBtn')) {
+        closeAll();
       }
     });
 
-    // If user installs via native prompt, mark as installed permanently
+    // Escape closes everything
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeAll();
+    });
+
+    // ====== PWA Install ======
+    let deferredInstallPrompt: any = null;
+    const navInstallBtn = document.getElementById('navInstallBtn') as HTMLButtonElement | null;
+    if (localStorage.getItem('pwa-installed') === 'true' && navInstallBtn) navInstallBtn.style.display = 'none';
+    window.addEventListener('beforeinstallprompt', (e: Event) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      if (localStorage.getItem('pwa-installed') !== 'true' && navInstallBtn) navInstallBtn.style.display = 'flex';
+    });
     window.addEventListener('appinstalled', () => {
       deferredInstallPrompt = null;
       if (navInstallBtn) navInstallBtn.style.display = 'none';
       localStorage.setItem('pwa-installed', 'true');
     });
+    navInstallBtn?.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) { alert('Open browser menu → "Add to Home Screen" or "Install app".'); return; }
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') { deferredInstallPrompt = null; navInstallBtn.style.display = 'none'; localStorage.setItem('pwa-installed', 'true'); }
+    });
 
-    // Nav install button click → show prompt
-    if (navInstallBtn) {
-      navInstallBtn.addEventListener('click', async () => {
-        if (!deferredInstallPrompt) {
-          alert('To install: open your browser menu and choose "Add to Home Screen" or "Install app".');
-          return;
-        }
-        deferredInstallPrompt.prompt();
-        const { outcome } = await deferredInstallPrompt.userChoice;
-        if (outcome === 'accepted') {
-          deferredInstallPrompt = null;
-          navInstallBtn.style.display = 'none';
-          localStorage.setItem('pwa-installed', 'true');
-        }
-      });
-    }
-
-    // ---- Global search shortcut ----
-    const searchBtn = document.getElementById('globalSearchBtn');
-    if (searchBtn) {
-      searchBtn.addEventListener('click', () => {
-        const pf = document.querySelector('[data-pagefind-ui]') as HTMLElement;
-        if (pf) {
-          const input = pf.querySelector('input') as HTMLInputElement;
-          if (input) { input.focus(); input.click(); }
-        }
-        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
-      });
-    }
-
-    // ---- Keyboard shortcut Ctrl+K / Cmd+K ----
+    // ====== Search ======
+    document.getElementById('globalSearchBtn')?.addEventListener('click', () => {
+      const pf = document.querySelector('[data-pagefind-ui]') as HTMLElement;
+      if (pf) { const i = pf.querySelector('input') as HTMLInputElement; if (i) { i.focus(); i.click(); } }
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+    });
     document.addEventListener('keydown', (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         const pf = document.querySelector('[data-pagefind-ui]') as HTMLElement;
-        if (pf) {
-          const input = pf.querySelector('input') as HTMLInputElement;
-          if (input) input.focus();
-        }
+        if (pf) { const i = pf.querySelector('input') as HTMLInputElement; if (i) i.focus(); }
       }
     });
   </script>
