@@ -424,6 +424,71 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
   .explain-tooltip svg { flex-shrink: 0; }
 
+  /* Mobile Sticky Explain Bar */
+  .mobile-explain-bar {
+    position: fixed;
+    bottom: 1.25rem;
+    left: 1rem;
+    right: 1rem;
+    z-index: 999;
+    background: #0d1117;
+    border: 1px solid rgba(58,210,159,0.3);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 1px rgba(58,210,159,0.05);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  .mobile-explain-bar.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateY(0);
+  }
+  .mobile-bar-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .mobile-bar-label {
+    font-family: var(--font-mono);
+    font-size: 0.58rem;
+    color: #3ad29f;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.15rem;
+  }
+  .mobile-bar-term {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #e2ece9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .mobile-bar-btn {
+    background: #3ad29f;
+    border: none;
+    border-radius: 8px;
+    color: #070a09;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+  .mobile-bar-btn:active {
+    background: #50e4b3;
+  }
+
   /* Explain panel / modal */
   .explain-overlay {
     position: fixed;
@@ -1282,48 +1347,63 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     callGroq(text);
   }
 
-  // ── Text selection → tooltip ──────────────────────────────
+  // ── Text selection → tooltip or bottom bar ────────────────
   let selTimeout: ReturnType<typeof setTimeout>;
   let currentSel = '';
 
-  function hideTooltip() {
+  function hideTooltipOrBar() {
     tooltip.classList.remove('visible');
+    mobileBar.classList.remove('visible');
     currentSel = '';
   }
 
-  document.addEventListener('mouseup', (e) => {
-    // If clicking on the tooltip itself, do not clear
-    if ((e.target as HTMLElement).closest('.explain-tooltip')) return;
-
+  function handleSelectionUpdate() {
     clearTimeout(selTimeout);
     selTimeout = setTimeout(() => {
       const sel = window.getSelection();
       const text = sel?.toString().trim() || '';
       
       // Only show for 2–80 char selections inside article content
-      if (text.length < 2 || text.length > 80) { hideTooltip(); return; }
+      if (text.length < 2 || text.length > 80) { hideTooltipOrBar(); return; }
       const node = sel?.anchorNode;
       const articleContent = document.querySelector('.article-content');
-      if (!articleContent || !articleContent.contains(node as Node)) { hideTooltip(); return; }
+      if (!articleContent || !articleContent.contains(node as Node)) { hideTooltipOrBar(); return; }
 
       // Save selection globally
       currentSel = text;
       lockedSel = text;
 
-      // Position tooltip above selection (fixed position relative to viewport)
-      const range = sel.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const tipLeft = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 150);
-      const tipTop  = rect.top - 46;
-      tooltip.style.left = Math.max(8, tipLeft) + 'px';
-      tooltip.style.top  = Math.max(8, tipTop)  + 'px';
-      tooltip.classList.add('visible');
-    }, 100);
-  });
+      // Check if mobile viewport or touch support
+      const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
 
+      if (isMobile) {
+        // Show sticky bottom bar on mobile
+        if (mobileBarTerm) mobileBarTerm.textContent = `"${text}"`;
+        tooltip.classList.remove('visible');
+        mobileBar.classList.add('visible');
+      } else {
+        // Show tooltip above selection on desktop
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        const tipLeft = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 150);
+        const tipTop  = rect.top - 46;
+        tooltip.style.left = Math.max(8, tipLeft) + 'px';
+        tooltip.style.top  = Math.max(8, tipTop)  + 'px';
+        mobileBar.classList.remove('visible');
+        tooltip.classList.add('visible');
+      }
+    }, 150);
+  }
+
+  // Bind to selection change for maximum reliability on mobile browsers (covers touch selection)
+  document.addEventListener('selectionchange', handleSelectionUpdate);
+  document.addEventListener('mouseup', handleSelectionUpdate);
+
+  // Clear selections on tapping elsewhere
   document.addEventListener('mousedown', (e) => {
-    if (!(e.target as HTMLElement).closest('.explain-tooltip')) {
-      setTimeout(hideTooltip, 150);
+    const target = e.target as HTMLElement;
+    if (!target.closest('.explain-tooltip') && !target.closest('.mobile-explain-bar')) {
+      setTimeout(hideTooltipOrBar, 150);
     }
   });
 
@@ -1332,7 +1412,7 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     e.stopPropagation();
     if (lockedSel) {
       const termToExplain = lockedSel;
-      hideTooltip();
+      hideTooltipOrBar();
       openPanel(termToExplain);
     }
   });
