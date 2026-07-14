@@ -1364,7 +1364,6 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
 
       // Add final assistant message to conversation context
       conversationHistory.push({ role: 'assistant', content: fullText });
-      activeStreamBubble = null;
 
     } catch (err: any) {
       loadingEl.style.display = 'none';
@@ -1387,7 +1386,6 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
       } else {
         appendMessageBubble('assistant', `<span style="color:#ef4444">Error: ${err.message || 'Offline'}</span><br><br>You appear to be offline, and this term hasn't been cached yet.`);
       }
-      activeStreamBubble = null;
     }
   }
 
@@ -1434,7 +1432,6 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
 
   function hideTooltip() {
     tooltip.classList.remove('visible');
-    currentSel = '';
   }
 
   function positionAndShowTooltip(sel: Selection) {
