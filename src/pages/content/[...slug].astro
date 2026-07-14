@@ -530,12 +530,13 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     padding: 1rem 1.5rem;
     border-top: 1px solid rgba(255,255,255,0.05);
     flex-shrink: 0;
+    background: #090d12;
   }
   .explain-byok-row {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.6rem;
+    margin-bottom: 0.3rem;
   }
   .explain-byok-label {
     font-family: var(--font-mono);
@@ -546,13 +547,13 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
   .explain-byok-input {
     flex: 1;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
     color: #cdd9e5;
     font-family: var(--font-mono);
     font-size: 0.7rem;
-    padding: 0.3rem 0.6rem;
+    padding: 0.35rem 0.6rem;
     outline: none;
     transition: border-color 0.15s;
   }
@@ -564,7 +565,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     color: #3ad29f;
     font-size: 0.7rem;
     font-weight: 600;
-    padding: 0.3rem 0.7rem;
+    padding: 0.35rem 0.7rem;
     cursor: pointer;
     transition: all 0.15s;
     white-space: nowrap;
@@ -575,6 +576,137 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     color: rgba(255,255,255,0.2);
     font-family: var(--font-mono);
   }
+
+  /* Chat System */
+  .explain-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .explain-header-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .explain-header-btn:hover, .explain-header-btn.active {
+    color: #3ad29f;
+    border-color: rgba(58,210,159,0.3);
+    background: rgba(58,210,159,0.05);
+  }
+
+  .explain-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  .explain-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.08) transparent;
+  }
+  .chat-msg {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    max-width: 88%;
+  }
+  .chat-msg.user {
+    align-self: flex-end;
+    align-items: flex-end;
+  }
+  .chat-msg.assistant {
+    align-self: flex-start;
+    align-items: flex-start;
+  }
+  .chat-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    word-break: break-word;
+  }
+  .chat-msg.user .chat-bubble {
+    background: rgba(58,210,159,0.08);
+    border: 1px solid rgba(58,210,159,0.2);
+    color: #e2ece9;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-msg.assistant .chat-bubble {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    color: #cdd9e5;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-sender {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.25);
+    text-transform: uppercase;
+  }
+
+  /* Chat Input Area */
+  .explain-input-container {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    background: #090d12;
+    display: flex;
+    gap: 0.5rem;
+  }
+  .explain-input-field {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    color: #e2ece9;
+    font-size: 0.85rem;
+    padding: 0.55rem 0.85rem;
+    outline: none;
+    transition: all 0.15s;
+  }
+  .explain-input-field:focus {
+    border-color: rgba(58,210,159,0.4);
+    background: rgba(255,255,255,0.05);
+  }
+  .explain-send-btn {
+    background: #3ad29f;
+    border: none;
+    border-radius: 8px;
+    color: #070a09;
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0 1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .explain-send-btn:hover {
+    background: #50e4b3;
+    transform: translateY(-1px);
+  }
+  .explain-send-btn:disabled {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.3);
+    cursor: not-allowed;
+    transform: none;
+  }
+
 
   .article-content :global(blockquote) {
     border-left: 3px solid var(--brand-accent);
@@ -828,10 +960,9 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   });
 
   // ============================================================
-  // 2. AI Explain feature
+  // 2. AI Explain & Interactive Chat feature
   // ============================================================
   const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-  // Key priority: user-supplied BYOK > Vercel env var (embedded at build time)
   const ENV_KEY = (import.meta as any).env?.PUBLIC_GROQ_API_KEY ?? '';
 
   function getApiKey(): string {
@@ -842,11 +973,17 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   const tooltip = document.createElement('div');
   tooltip.className = 'explain-tooltip';
   tooltip.innerHTML = `
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </svg>
     Explain`;
   document.body.appendChild(tooltip);
+
+  // Prevent selection clear when clicking the tooltip
+  tooltip.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
 
   // ── Build overlay + panel ─────────────────────────────────
   const overlay = document.createElement('div');
@@ -858,41 +995,92 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   panel.innerHTML = `
     <div class="explain-panel-head">
       <div>
-        <div class="explain-panel-badge">AI EXPLAIN</div>
+        <div class="explain-panel-badge">AI EXPLAIN &amp; CHAT</div>
         <div class="explain-panel-term" id="explainTerm">…</div>
       </div>
-      <button class="explain-panel-close" id="explainClose" aria-label="Close">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>
-    <div class="explain-panel-body" id="explainBody">
-      <div class="explain-loading" id="explainLoading">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-        Thinking<span class="explain-dots"><span>.</span><span>.</span><span>.</span></span>
+      <div class="explain-header-actions">
+        <button class="explain-header-btn active" id="explainTabChat" title="Chat Room">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button class="explain-header-btn" id="explainTabSettings" title="API Settings">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="explain-panel-close" id="explainClose" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
-      <div class="explain-text" id="explainText" style="display:none"></div>
     </div>
-    <div class="explain-panel-footer">
-      <div class="explain-byok-row">
-        <span class="explain-byok-label">GROQ KEY:</span>
-        <input class="explain-byok-input" id="explainKeyInput" type="password" placeholder="gsk_...your key" spellcheck="false"/>
-        <button class="explain-byok-save" id="explainKeySave">Save</button>
+
+    <!-- MAIN CHAT VIEW -->
+    <div class="explain-chat-container" id="explainChatView">
+      <div class="explain-messages" id="explainMessages">
+        <div class="explain-loading" id="explainLoading" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+          Thinking<span class="explain-dots"><span>.</span><span>.</span><span>.</span></span>
+        </div>
       </div>
-      <div class="explain-key-status" id="explainKeyStatus"></div>
+      <div class="explain-input-container">
+        <input class="explain-input-field" id="explainInputField" type="text" placeholder="Ask follow-up..." autocomplete="off"/>
+        <button class="explain-send-btn" id="explainSendBtn" disabled>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- SETTINGS VIEW (Hidden by default) -->
+    <div class="explain-chat-container" id="explainSettingsView" style="display:none; padding:1.5rem; justify-content:space-between;">
+      <div>
+        <h3 style="font-size:0.9rem; color:#e2ece9; margin-bottom:0.75rem;">Custom API Key (BYOK)</h3>
+        <p style="font-size:0.8rem; color:var(--text-secondary); margin-bottom:1.5rem; line-height:1.5;">
+          Paste your own custom Groq API key below. This key will be stored securely on your browser's LocalStorage and will take priority over default settings.
+        </p>
+        <div class="explain-byok-row">
+          <input class="explain-byok-input" id="explainKeyInput" type="password" placeholder="gsk_...your key" spellcheck="false"/>
+          <button class="explain-byok-save" id="explainKeySave">Save</button>
+        </div>
+        <div class="explain-key-status" id="explainKeyStatus" style="margin-top:0.5rem;"></div>
+      </div>
+      <div style="font-size:0.7rem; color:rgba(255,255,255,0.2); text-align:center;">
+        Handbook Chat System v1.5
+      </div>
     </div>`;
   document.body.appendChild(panel);
 
-  // refs
-  const termEl      = document.getElementById('explainTerm')     as HTMLElement;
-  const bodyEl      = document.getElementById('explainBody')     as HTMLElement;
-  const loadingEl   = document.getElementById('explainLoading')  as HTMLElement;
-  const textEl      = document.getElementById('explainText')     as HTMLElement;
-  const closeBtn    = document.getElementById('explainClose')    as HTMLElement;
-  const keyInput    = document.getElementById('explainKeyInput') as HTMLInputElement;
-  const keySave     = document.getElementById('explainKeySave')  as HTMLElement;
-  const keyStatus   = document.getElementById('explainKeyStatus') as HTMLElement;
+  // Refs
+  const termEl         = document.getElementById('explainTerm')         as HTMLElement;
+  const messagesEl     = document.getElementById('explainMessages')     as HTMLElement;
+  const loadingEl      = document.getElementById('explainLoading')      as HTMLElement;
+  const closeBtn       = document.getElementById('explainClose')        as HTMLElement;
+  const keyInput       = document.getElementById('explainKeyInput')     as HTMLInputElement;
+  const keySave        = document.getElementById('explainKeySave')      as HTMLElement;
+  const keyStatus      = document.getElementById('explainKeyStatus')     as HTMLElement;
+  const chatView       = document.getElementById('explainChatView')     as HTMLElement;
+  const settingsView   = document.getElementById('explainSettingsView') as HTMLElement;
+  const tabChat        = document.getElementById('explainTabChat')      as HTMLElement;
+  const tabSettings    = document.getElementById('explainTabSettings')  as HTMLElement;
+  const inputField     = document.getElementById('explainInputField')   as HTMLInputElement;
+  const sendBtn        = document.getElementById('explainSendBtn')      as HTMLButtonElement;
 
-  // populate BYOK field
+  let conversationHistory: { role: string; content: string }[] = [];
+  let lockedSel = ''; // Holds the selection even if deselected
+  let activeStreamBubble: HTMLElement | null = null;
+
+  // View toggles
+  tabChat?.addEventListener('click', () => {
+    tabChat.classList.add('active');
+    tabSettings.classList.remove('active');
+    chatView.style.display = 'flex';
+    settingsView.style.display = 'none';
+  });
+
+  tabSettings?.addEventListener('click', () => {
+    tabSettings.classList.add('active');
+    tabChat.classList.remove('active');
+    chatView.style.display = 'none';
+    settingsView.style.display = 'flex';
+  });
+
+  // Key handling
   const savedKey = localStorage.getItem('user-groq-key') || '';
   if (keyInput) keyInput.value = savedKey;
   updateKeyStatus();
@@ -918,14 +1106,37 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     setTimeout(() => { keySave.textContent = 'Save'; }, 1800);
   });
 
+  // Open/Close
   function openPanel(term: string) {
     if (termEl) termEl.textContent = `"${term}"`;
-    if (loadingEl) loadingEl.style.display = 'flex';
-    if (textEl)   { textEl.style.display = 'none'; textEl.innerHTML = ''; }
     overlay.classList.add('open');
     panel.classList.add('open');
     document.body.style.overflow = 'hidden';
-    callGroq(term);
+
+    // Reset views
+    tabChat.click();
+
+    // Reset conversation history
+    conversationHistory = [
+      {
+        role: 'system',
+        content: `You are an expert teacher explaining full-stack and AI engineering concepts to learners of all levels. 
+When asked to explain a term or phrase:
+1. Start with a single simple sentence: what it IS in plain English.
+2. Use a real-world analogy that anyone can picture.
+3. Explain how it's used in software/AI engineering — concrete, practical.
+4. Give a tiny code or command example if relevant (keep it under 5 lines).
+5. End with one sentence on WHY it matters.
+Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
+      }
+    ];
+
+    // Clear previous elements from chat log except loading
+    messagesEl.innerHTML = '';
+    messagesEl.appendChild(loadingEl);
+    loadingEl.style.display = 'flex';
+
+    callGroq(`Explain this term or concept from full-stack/AI engineering so that any beginner can deeply understand it: "${term}"`);
   }
 
   function closePanel() {
@@ -938,17 +1149,41 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   overlay.addEventListener('click', closePanel);
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
 
-  // ── Groq streaming call ───────────────────────────────────
-  async function callGroq(term: string) {
+  // ── Render message bubbles ────────────────────────────────
+  function appendMessageBubble(role: 'user' | 'assistant', text: string): HTMLElement {
+    const wrapper = document.createElement('div');
+    wrapper.className = `chat-msg ${role}`;
+    
+    const sender = document.createElement('span');
+    sender.className = 'chat-sender';
+    sender.textContent = role === 'user' ? 'YOU' : 'AI TUTOR';
+    
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    bubble.innerHTML = text
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+    
+    wrapper.appendChild(sender);
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    
+    // Auto-scroll
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+    return bubble;
+  }
+
+  // ── Groq API Streaming ──────────────────────────────────
+  async function callGroq(promptText: string) {
     const key = getApiKey();
     if (!key) {
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (textEl) {
-        textEl.style.display = 'block';
-        textEl.innerHTML = `<span style="color:#ef4444">No API key found.</span> Please add your Groq key in the field below and click Save, then try again.`;
-      }
+      loadingEl.style.display = 'none';
+      appendMessageBubble('assistant', '<span style="color:#ef4444">No API key found.</span> Please tap the Settings Cog icon in the header, paste your Groq key, and try again.');
       return;
     }
+
+    // Add prompt text to local history
+    conversationHistory.push({ role: 'user', content: promptText });
 
     try {
       const res = await fetch(GROQ_API_URL, {
@@ -958,23 +1193,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
           model: 'llama-3.3-70b-versatile',
           stream: true,
           max_tokens: 600,
-          messages: [
-            {
-              role: 'system',
-              content: `You are an expert teacher explaining full-stack and AI engineering concepts to learners of all levels. 
-When asked to explain a term or phrase:
-1. Start with a single simple sentence: what it IS in plain English.
-2. Use a real-world analogy that anyone can picture.
-3. Explain how it's used in software/AI engineering — concrete, practical.
-4. Give a tiny code or command example if relevant (keep it under 5 lines).
-5. End with one sentence on WHY it matters.
-Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
-            },
-            {
-              role: 'user',
-              content: `Explain this term or concept from full-stack/AI engineering so that any beginner can deeply understand it: "${term}"`
-            }
-          ]
+          messages: conversationHistory
         })
       });
 
@@ -983,8 +1202,11 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
         throw new Error(err?.error?.message || res.statusText);
       }
 
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (textEl) textEl.style.display = 'block';
+      loadingEl.style.display = 'none';
+
+      // Create stream bubble
+      const bubble = appendMessageBubble('assistant', '');
+      activeStreamBubble = bubble;
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -1001,20 +1223,63 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
             const json = JSON.parse(trimmed);
             const delta = json.choices?.[0]?.delta?.content || '';
             fullText += delta;
-            // Render with basic markdown bold
-            if (textEl) textEl.innerHTML = fullText
+            
+            // Format and update content on-the-fly
+            bubble.innerHTML = fullText
               .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
               .replace(/\n/g, '<br>');
-          } catch { /* skip malformed chunks */ }
+            
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+          } catch { /* skip bad chunks */ }
         }
       }
+
+      // Add final assistant message to conversation context
+      conversationHistory.push({ role: 'assistant', content: fullText });
+      activeStreamBubble = null;
+
     } catch (err: any) {
-      if (loadingEl) loadingEl.style.display = 'none';
-      if (textEl) {
-        textEl.style.display = 'block';
-        textEl.innerHTML = `<span style="color:#ef4444">Error: ${err.message}</span><br><br>Check your Groq API key in the field below.`;
-      }
+      loadingEl.style.display = 'none';
+      appendMessageBubble('assistant', `<span style="color:#ef4444">Error: ${err.message}</span><br><br>Check your Groq key or connection.`);
+      activeStreamBubble = null;
     }
+  }
+
+  // ── Chat Interactive Input ──────────────────────────────
+  inputField?.addEventListener('input', () => {
+    if (sendBtn) {
+      sendBtn.disabled = !inputField.value.trim();
+    }
+  });
+
+  inputField?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && inputField.value.trim()) {
+      handleChatSend();
+    }
+  });
+
+  sendBtn?.addEventListener('click', () => {
+    if (inputField.value.trim()) handleChatSend();
+  });
+
+  function handleChatSend() {
+    const text = inputField.value.trim();
+    if (!text) return;
+    
+    // Clear input
+    inputField.value = '';
+    sendBtn.disabled = true;
+
+    // Add user bubble
+    appendMessageBubble('user', text);
+
+    // Show inline loading indicator
+    messagesEl.appendChild(loadingEl);
+    loadingEl.style.display = 'flex';
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+
+    // Send query to Groq
+    callGroq(text);
   }
 
   // ── Text selection → tooltip ──────────────────────────────
@@ -1027,18 +1292,25 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
   }
 
   document.addEventListener('mouseup', (e) => {
+    // If clicking on the tooltip itself, do not clear
+    if ((e.target as HTMLElement).closest('.explain-tooltip')) return;
+
     clearTimeout(selTimeout);
     selTimeout = setTimeout(() => {
       const sel = window.getSelection();
       const text = sel?.toString().trim() || '';
+      
       // Only show for 2–80 char selections inside article content
       if (text.length < 2 || text.length > 80) { hideTooltip(); return; }
       const node = sel?.anchorNode;
       const articleContent = document.querySelector('.article-content');
       if (!articleContent || !articleContent.contains(node as Node)) { hideTooltip(); return; }
 
+      // Save selection globally
       currentSel = text;
-      // Position tooltip above selection (fixed position = viewport coords, no scrollY needed)
+      lockedSel = text;
+
+      // Position tooltip above selection (fixed position relative to viewport)
       const range = sel.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       const tipLeft = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 150);
@@ -1055,10 +1327,13 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     }
   });
 
-  tooltip.addEventListener('click', () => {
-    if (currentSel) {
+  tooltip.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (lockedSel) {
+      const termToExplain = lockedSel;
       hideTooltip();
-      openPanel(currentSel);
+      openPanel(termToExplain);
     }
   });
 
