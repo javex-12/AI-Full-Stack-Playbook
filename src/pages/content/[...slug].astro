@@ -436,69 +436,14 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
   .explain-tooltip svg { flex-shrink: 0; }
 
-  /* Mobile Sticky Explain Bar */
-  .mobile-explain-bar {
-    position: fixed;
-    bottom: 1.25rem;
-    left: 1rem;
-    right: 1rem;
-    z-index: 999;
-    background: #0d1117;
-    border: 1px solid rgba(58,210,159,0.3);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.7), 0 0 0 1px rgba(58,210,159,0.05);
-    opacity: 0;
-    pointer-events: none;
-    transform: translateY(12px);
-    transition: opacity 0.2s, transform 0.2s;
-  }
-  .mobile-explain-bar.visible {
-    opacity: 1;
-    pointer-events: all;
-    transform: translateY(0);
-  }
-  .mobile-bar-info {
-    flex: 1;
-    min-width: 0;
-  }
-  .mobile-bar-label {
-    font-family: var(--font-mono);
-    font-size: 0.58rem;
-    color: #3ad29f;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 0.15rem;
-  }
-  .mobile-bar-term {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #e2ece9;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .mobile-bar-btn {
-    background: #3ad29f;
-    border: none;
-    border-radius: 8px;
-    color: #070a09;
-    font-size: 0.75rem;
-    font-weight: 600;
-    padding: 0.45rem 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    flex-shrink: 0;
-    transition: background 0.15s;
-  }
-  .mobile-bar-btn:active {
-    background: #50e4b3;
+  /* Tooltip — larger tap target on mobile */
+  @media (max-width: 768px) {
+    .explain-tooltip {
+      padding: 0.5rem 1rem;
+      font-size: 0.82rem;
+      border-radius: 30px;
+      gap: 0.45rem;
+    }
   }
 
   /* Explain panel / modal */
@@ -580,20 +525,50 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
   }
   .explain-loading {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.6rem;
-    color: rgba(58,210,159,0.6);
+    justify-content: center;
+    gap: 1.25rem;
+    color: rgba(58,210,159,0.85);
     font-family: var(--font-mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3rem 1.5rem;
+    width: 100%;
+    text-align: center;
   }
-  .explain-dots span {
-    display: inline-block;
-    animation: eDot 1.2s infinite;
-    opacity: 0;
+  .explain-loading-spinner {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .explain-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .explain-dots span:nth-child(3) { animation-delay: 0.4s; }
-  @keyframes eDot { 0%,100%{opacity:0} 50%{opacity:1} }
+  .explain-loading-ring {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(58,210,159,0.1);
+    border-top-color: #3ad29f;
+    border-radius: 50%;
+    animation: explainSpin 0.9s linear infinite;
+  }
+  .explain-loading-pulse {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    background: rgba(58,210,159,0.15);
+    border-radius: 50%;
+    animation: explainPulse 1.6s ease-in-out infinite;
+  }
+  @keyframes explainSpin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes explainPulse {
+    0%, 100% { transform: scale(0.95); opacity: 0.4; }
+    50% { transform: scale(1.15); opacity: 0.85; }
+  }
 
   .explain-text {
     font-size: 0.9rem;
@@ -1157,8 +1132,11 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
     <div class="explain-chat-container" id="explainChatView">
       <div class="explain-messages" id="explainMessages">
         <div class="explain-loading" id="explainLoading" style="display:none">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ad29f" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-          Thinking<span class="explain-dots"><span>.</span><span>.</span><span>.</span></span>
+          <div class="explain-loading-spinner">
+            <div class="explain-loading-ring"></div>
+            <div class="explain-loading-pulse"></div>
+          </div>
+          <div>Thinking...</div>
         </div>
       </div>
       <div class="explain-input-container">
@@ -1205,7 +1183,7 @@ const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex
 
   let conversationHistory: { role: string; content: string }[] = [];
   let lockedSel = ''; // Holds the selection even if deselected
-  let activeStreamBubble: HTMLElement | null = null;
+
 
   // View toggles
   tabChat?.addEventListener('click', () => {
@@ -1348,7 +1326,6 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
 
       // Create stream bubble
       const bubble = appendMessageBubble('assistant', '');
-      activeStreamBubble = bubble;
 
       const reader = res.body!.getReader();
       const decoder = new TextDecoder();
@@ -1451,63 +1428,79 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     callGroq(text);
   }
 
-  // ── Text selection → tooltip or bottom bar ────────────────
+  // ── Text selection → floating tooltip ────────────────────
   let selTimeout: ReturnType<typeof setTimeout>;
-  let currentSel = '';
 
-  function hideTooltipOrBar() {
+
+  function hideTooltip() {
     tooltip.classList.remove('visible');
-    mobileBar.classList.remove('visible');
     currentSel = '';
+  }
+
+  function positionAndShowTooltip(sel: Selection) {
+    try {
+      const range = sel.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const isMobileVP = window.innerWidth <= 900;
+
+      // On mobile, show BELOW selection (native menu appears above)
+      // On desktop, show ABOVE selection
+      const tipWidth = isMobileVP ? 110 : 110;
+      let tipLeft = rect.left + rect.width / 2 - tipWidth / 2;
+      tipLeft = Math.max(8, Math.min(tipLeft, window.innerWidth - tipWidth - 8));
+
+      let tipTop: number;
+      if (isMobileVP) {
+        // Below the selection, with a gap
+        tipTop = rect.bottom + 10;
+        // If it would go off-screen bottom, put it above instead
+        if (tipTop + 44 > window.innerHeight) {
+          tipTop = rect.top - 46;
+        }
+      } else {
+        tipTop = rect.top - 46;
+        if (tipTop < 8) tipTop = rect.bottom + 10;
+      }
+
+      tooltip.style.left = tipLeft + 'px';
+      tooltip.style.top  = tipTop + 'px';
+      tooltip.classList.add('visible');
+    } catch(e) {
+      // getRangeAt can throw if selection collapsed — ignore
+    }
   }
 
   function handleSelectionUpdate() {
     clearTimeout(selTimeout);
+    // Longer delay on touch to let native browser menus settle first
+    const delay = ('ontouchstart' in window) ? 400 : 120;
     selTimeout = setTimeout(() => {
       const sel = window.getSelection();
       const text = sel?.toString().trim() || '';
-      
+
       // Only show for 2–80 char selections inside article content
-      if (text.length < 2 || text.length > 80) { hideTooltipOrBar(); return; }
+      if (text.length < 2 || text.length > 80) { hideTooltip(); return; }
       const node = sel?.anchorNode;
       const articleContent = document.querySelector('.article-content');
-      if (!articleContent || !articleContent.contains(node as Node)) { hideTooltipOrBar(); return; }
+      if (!articleContent || !articleContent.contains(node as Node)) { hideTooltip(); return; }
 
-      // Save selection globally
-      currentSel = text;
+      // Lock selection text
       lockedSel = text;
 
-      // Check if mobile viewport or touch support
-      const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window);
-
-      if (isMobile) {
-        // Show sticky bottom bar on mobile
-        if (mobileBarTerm) mobileBarTerm.textContent = `"${text}"`;
-        tooltip.classList.remove('visible');
-        mobileBar.classList.add('visible');
-      } else {
-        // Show tooltip above selection on desktop
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const tipLeft = Math.min(rect.left + rect.width / 2 - 55, window.innerWidth - 150);
-        const tipTop  = rect.top - 46;
-        tooltip.style.left = Math.max(8, tipLeft) + 'px';
-        tooltip.style.top  = Math.max(8, tipTop)  + 'px';
-        mobileBar.classList.remove('visible');
-        tooltip.classList.add('visible');
-      }
-    }, 150);
+      positionAndShowTooltip(sel!);
+    }, delay);
   }
 
-  // Bind to selection change for maximum reliability on mobile browsers (covers touch selection)
+  // All three events for maximum cross-platform coverage
   document.addEventListener('selectionchange', handleSelectionUpdate);
   document.addEventListener('mouseup', handleSelectionUpdate);
+  document.addEventListener('touchend', handleSelectionUpdate);
 
-  // Clear selections on tapping elsewhere
-  document.addEventListener('mousedown', (e) => {
+  // Clear tooltip when tapping/clicking empty space
+  document.addEventListener('pointerdown', (e) => {
     const target = e.target as HTMLElement;
-    if (!target.closest('.explain-tooltip') && !target.closest('.mobile-explain-bar')) {
-      setTimeout(hideTooltipOrBar, 150);
+    if (!target.closest('.explain-tooltip')) {
+      setTimeout(hideTooltip, 100);
     }
   });
 
@@ -1516,7 +1509,23 @@ Keep it friendly, clear, and dense with value. Use **bold** for key terms.`
     e.stopPropagation();
     if (lockedSel) {
       const termToExplain = lockedSel;
-      hideTooltipOrBar();
+      hideTooltip();
+      openPanel(termToExplain);
+    }
+  });
+
+  // Touch tap on tooltip — also intercept touchstart to prevent deselect
+  tooltip.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, { passive: false });
+
+  tooltip.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (lockedSel) {
+      const termToExplain = lockedSel;
+      hideTooltip();
       openPanel(termToExplain);
     }
   });
